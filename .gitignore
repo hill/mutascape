@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+wheels/
+.venv/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ruff
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/*.nbconvert.*
+
+# OS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# Crush (Claude)
+.crush/
+
+# Data (large files, downloaded per-machine)
+data/structures/*.pdb
+data/structures/*.cif
+data/contact_maps/*.npz

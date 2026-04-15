@@ -1531,6 +1531,8 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "biopython" },
+    { name = "esm", version = "3.2.1.post1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "esm", version = "3.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "matplotlib" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -1539,6 +1541,7 @@ dependencies = [
     { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "seaborn" },
+    { name = "torch" },
 ]
 
 [package.optional-dependencies]
@@ -1546,16 +1549,11 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
 ]
-structure = [
-    { name = "esm", version = "3.2.1.post1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "esm", version = "3.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "torch" },
-]
 
 [package.metadata]
 requires-dist = [
     { name = "biopython", specifier = ">=1.83" },
-    { name = "esm", marker = "extra == 'structure'", specifier = ">=2.0" },
+    { name = "esm", specifier = ">=2.0" },
     { name = "matplotlib", specifier = ">=3.7" },
     { name = "numpy", specifier = ">=1.24" },
     { name = "pandas", specifier = ">=2.0" },
@@ -1563,9 +1561,9 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
     { name = "scipy", specifier = ">=1.11" },
     { name = "seaborn", specifier = ">=0.13" },
-    { name = "torch", marker = "extra == 'structure'", specifier = ">=2.0" },
+    { name = "torch", specifier = ">=2.0" },
 ]
-provides-extras = ["structure", "dev"]
+provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = []

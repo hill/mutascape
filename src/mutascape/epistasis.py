@@ -6,19 +6,16 @@ mutations at contacting positions interact. The coupling topology (which pairs
 get non-zero J) is determined by a structural contact map. The coupling
 *strengths* are determined by the model.
 
-Models implemented
-------------------
+Models implemented:
 - RandomEpistasis: couplings drawn from N(0, sigma) for contacting pairs
 - SignConsistentEpistasis: coupling signs respect single-site effect signs
   (beneficial mutations at contacting sites cooperate)
 
-Planned
--------
+Planned:
 - PottsEpistasis: import couplings from inverse Potts model fits (cf. SLIP,
   Thomas et al. 2022)
 
-References
-----------
+References:
 - Thomas et al. (2022). Tuned Fitness Landscapes for Benchmarking Model-Guided
   Protein Design. (SLIP - Potts model approach)
 - Sandhu et al. (2025). Investigating the determinants of performance in machine

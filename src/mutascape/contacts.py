@@ -12,8 +12,7 @@ and hydrophobic packing. Mutations at contacting positions are more likely
 to show non-additive fitness effects (epistasis) because they physically
 influence each other's local environment.
 
-References
-----------
+References:
 - Jumper et al. (2021). Highly accurate protein structure prediction with AlphaFold.
 - Lin et al. (2023). Evolutionary-scale prediction of atomic-level protein structure
   with a language model. (ESMFold)
@@ -21,11 +20,15 @@ References
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import esm
 import numpy as np
+import torch
+from Bio.PDB import MMCIFParser, PDBParser
 from numpy.typing import NDArray
 
 
@@ -58,8 +61,7 @@ class ContactMap:
         n = len(self.positions)
         if self.matrix.shape != (n, n):
             raise ValueError(
-                f"Contact matrix shape {self.matrix.shape} does not match "
-                f"number of positions ({n})"
+                f"Contact matrix shape {self.matrix.shape} does not match number of positions ({n})"
             )
 
     @property
@@ -90,13 +92,11 @@ class ContactMap:
     def submap(self, positions: Sequence[int]) -> ContactMap:
         """Extract a sub-contact-map for a subset of positions.
 
-        Parameters
-        ----------
+        Parameters:
         positions : sequence of int
             Residue numbers to retain (must be a subset of self.positions).
 
-        Returns
-        -------
+        Returns:
         ContactMap
             New contact map restricted to the specified positions.
         """
@@ -185,8 +185,7 @@ class ContactMap:
     ) -> ContactMap:
         """Build a contact map from a precomputed distance matrix.
 
-        Parameters
-        ----------
+        Parameters:
         distances : NDArray
             Symmetric pairwise distance matrix of shape (n, n).
         positions : sequence of int
@@ -194,8 +193,7 @@ class ContactMap:
         threshold : float
             Distance cutoff in Angstroms.
 
-        Returns
-        -------
+        Returns:
         ContactMap
         """
         contact_matrix = distances <= threshold
@@ -207,6 +205,65 @@ class ContactMap:
             distances=distances,
         )
 
+    @classmethod
+    def from_sequence(
+        cls,
+        sequence: str,
+        threshold: float = 8.0,
+        cache_dir: Path | None = None,
+    ) -> ContactMap:
+        """Predict structure with ESMFold and extract a contact map.
+
+        Runs ESMFold to predict a 3D structure from the amino acid
+        sequence alone (no MSA, no PDB download). The predicted
+        structure is cached so subsequent calls are instant.
+
+        Requires the `structure` extra: ``uv sync --extra structure``
+
+        Parameters:
+        sequence : str
+            Amino acid sequence.
+        threshold : float
+            Distance cutoff in Angstroms (default 8.0).
+        cache_dir : Path or None
+            Directory for cached PDB files. Defaults to
+            ~/.cache/mutascape/structures/.
+
+        Returns:
+            ContactMap
+        """
+
+        if cache_dir is None:
+            cache_dir = Path.home() / ".cache" / "mutascape" / "structures"
+        cache_dir = Path(cache_dir)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        seq_hash = hashlib.sha256(sequence.encode()).hexdigest()[:16]
+        cached_pdb = cache_dir / f"esmfold_{seq_hash}.pdb"
+
+        if not cached_pdb.exists():
+            pdb_string = _predict_esmfold(sequence)
+            cached_pdb.write_text(pdb_string)
+
+        # Use 1-indexed positions matching the sequence
+        positions = list(range(1, len(sequence) + 1))
+        return cls.from_pdb(cached_pdb, threshold=threshold, positions=positions)
+
+
+def _predict_esmfold(sequence: str) -> str:
+    """Run ESMFold structure prediction. Returns PDB-format string."""
+    model = esm.pretrained.esmfold_v1()
+    model = model.eval()
+
+    # Use GPU if available
+    if torch.cuda.is_available():
+        model = model.cuda()
+
+    with torch.no_grad():
+        output = model.infer_pdb(sequence)
+
+    return output
+
 
 def _extract_cbeta_coords(
     pdb_path: str | Path,
@@ -216,21 +273,18 @@ def _extract_cbeta_coords(
 
     Uses C-alpha for glycine residues (which lack a C-beta atom).
 
-    Parameters
-    ----------
+    Parameters:
     pdb_path : str or Path
         Path to structure file (.pdb or .cif/.mmcif).
     chain_id : str or None
         Chain to extract. If None, uses the first chain found.
 
-    Returns
-    -------
+    Returns:
     coords : NDArray of shape (n_residues, 3)
         C-beta (or C-alpha for Gly) coordinates.
     residue_ids : list of int
         PDB residue sequence numbers, 1-indexed.
     """
-    from Bio.PDB import MMCIFParser, PDBParser
 
     pdb_path = Path(pdb_path)
     suffix = pdb_path.suffix.lower()

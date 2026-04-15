@@ -11,13 +11,11 @@ dependencies = [
     "pandas>=2.0",
     "matplotlib>=3.7",
     "seaborn>=0.13",
+    "torch>=2.0",
+    "esm>=2.0",
 ]
 
 [project.optional-dependencies]
-structure = [
-    "torch>=2.0",
-    "esm>=2.0",        # ESMFold + masked marginal scoring
-]
 dev = [
     "pytest>=8.0",
     "ruff>=0.4",

@@ -29,7 +29,7 @@ notebooks/*.nbconvert.*
 # Crush (Claude)
 .crush/
 
-# Data (large files, downloaded per-machine)
-data/structures/*.pdb
-data/structures/*.cif
-data/contact_maps/*.npz
+# Data (large files, downloaded/generated per-machine)
+data/**/*.pdb
+data/**/*.cif
+data/**/*.npz

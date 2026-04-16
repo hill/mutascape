@@ -50,6 +50,9 @@ class Mutant(dict[int, str]):
                 )
             wt_aa, pos_str, mut_aa = match.groups()
             pos = int(pos_str)
+            # Skip synonymous mutations (no-ops)
+            if wt_aa == mut_aa:
+                continue
             self[pos] = mut_aa
             self._wild_type[pos] = wt_aa
 

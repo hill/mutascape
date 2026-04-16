@@ -146,10 +146,22 @@ class Landscape:
         """Look up fitness: landscape[Mutant("A5G")] or landscape["A5G+L10V"]."""
         if isinstance(mutations, str):
             mutations = Mutant(mutations)
+        # Validate claimed wildtype matches actual wildtype
+        if isinstance(mutations, Mutant):
+            for pos, claimed_wt in mutations._wild_type.items():
+                actual_wt = self.wild_type.get(pos)
+                if actual_wt and claimed_wt != actual_wt:
+                    raise ValueError(
+                        f"Position {pos}: claimed wildtype '{claimed_wt}' "
+                        f"but actual wildtype is '{actual_wt}'"
+                    )
         return self.evaluate(mutations)
 
     def evaluate(self, mutations: dict[int, str]) -> float:
         """Compute fitness of a variant specified by its mutations.
+
+        Fitness is relative to wild type: 0.0 means wild-type fitness,
+        positive values are better than WT, negative values are worse.
 
         Parameters
         mutations : dict[int, str]
@@ -158,8 +170,7 @@ class Landscape:
 
         Returns
         float
-            Predicted fitness value. A purely additive prediction (alpha=0)
-            would just sum the single-site effects.
+            Fitness relative to wild type (WT = 0.0).
 
         Examples
         >>> landscape.evaluate({57: "G", 72: "V"})

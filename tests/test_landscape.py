@@ -83,6 +83,28 @@ class TestLandscapeEvaluation:
         m = Mutant("A10G") + Mutant("L20I")
         assert landscape[m] == pytest.approx(landscape.evaluate({10: "G", 20: "I"}))
 
+    def test_synonymous_mutation_returns_zero(self, landscape):
+        """A10A means 'keep wildtype at position 10', so fitness = 0.0."""
+        assert landscape["A10A"] == pytest.approx(0.0)
+
+    def test_synonymous_in_combo_is_ignored(self, landscape):
+        """A10G+L20L should equal A10G (the synonymous part is a no-op)."""
+        assert landscape["A10G+L20L"] == pytest.approx(landscape["A10G"])
+
+    def test_all_synonymous_returns_zero(self, landscape):
+        """A10A+L20L = wildtype = 0.0."""
+        assert landscape["A10A+L20L"] == pytest.approx(0.0)
+
+    def test_wrong_wildtype_raises(self, landscape):
+        """Position 10 is A, not G. Claiming G10V should raise."""
+        with pytest.raises(ValueError, match="claimed wildtype 'G'.*actual wildtype is 'A'"):
+            landscape["G10V"]
+
+    def test_wrong_wildtype_in_combo_raises(self, landscape):
+        """One wrong wildtype in a combo should raise."""
+        with pytest.raises(ValueError, match="claimed wildtype"):
+            landscape["A10G+G20I"]  # position 20 is L, not G
+
     def test_getitem_wt_string(self, landscape):
         assert landscape["wt"] == pytest.approx(0.0)
 

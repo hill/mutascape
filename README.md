@@ -35,7 +35,7 @@ landscape = Landscape.from_dms(
     alpha=1.0,
 )
 
-# Query fitness
+# Query fitness (relative to wild type: 0.0 = WT, positive = better, negative = worse)
 landscape["A29H"]
 landscape[Mutant("A29H") + Mutant("R60D")]
 

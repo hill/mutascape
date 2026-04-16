@@ -154,6 +154,28 @@ class TestRepr:
         assert repr(m) == "Mutant('A5G')"
 
 
+class TestSynonymousMutations:
+    def test_single_synonymous_becomes_wildtype(self):
+        m = Mutant("A5A")
+        assert m.depth == 0
+        assert m.label == "wt"
+
+    def test_synonymous_in_combo_is_dropped(self):
+        m = Mutant("A5G+R10R+L20V")
+        assert m.depth == 2
+        assert m.label == "A5G+L20V"
+        assert 10 not in m
+
+    def test_all_synonymous_becomes_wildtype(self):
+        m = Mutant("A5A+R10R")
+        assert m.depth == 0
+        assert m.label == "wt"
+
+    def test_synonymous_not_in_wild_type_dict(self):
+        m = Mutant("A5G+R10R")
+        assert 10 not in m._wild_type
+
+
 class TestEdgeCases:
     def test_whitespace_in_label(self):
         m = Mutant("A5G + L10V")

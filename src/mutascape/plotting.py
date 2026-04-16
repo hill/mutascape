@@ -130,7 +130,16 @@ def plot_contact_map(
 
     # Plot as sparse scatter for cleaner look at scale
     rows, cols = np.where(cm.matrix)
-    ax.scatter(cols, rows, s=max(1, 80 / (n / 20)), marker="s", color=sns.color_palette()[0], alpha=0.7, linewidths=0)
+    dot_size = max(1, 80 / (n / 20))
+    ax.scatter(
+        cols,
+        rows,
+        s=dot_size,
+        marker="s",
+        color=sns.color_palette()[0],
+        alpha=0.7,
+        linewidths=0,
+    )
 
     ax.set_xlim(-0.5, n - 0.5)
     ax.set_ylim(n - 0.5, -0.5)

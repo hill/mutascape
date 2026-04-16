@@ -4,7 +4,7 @@
 
 # mutascape
 
-Synthetic fitness landscapes with tuneable epistasis.
+Synthetic combinatorial protein fitness landscapes with tuneable, structurally informed epistasis.
 
 Built on real single-site DMS data, with epistatic topology derived from 3D protein structure. Control landscape ruggedness with a single parameter (`alpha`), and query arbitrary multi-mutant fitness on the fly.
 

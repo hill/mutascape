@@ -1,5 +1,4 @@
-"""
-Epistatic coupling models for synthetic fitness landscapes.
+"""Epistatic coupling models for synthetic fitness landscapes.
 
 Each model generates a pairwise coupling tensor J_ij(a, b) that defines how
 mutations at contacting positions interact. The coupling topology (which pairs
@@ -22,8 +21,6 @@ References:
   learning for protein fitness. (NK landscape approach)
 """
 
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -42,7 +39,6 @@ class CouplingTensor:
     (one entry per amino acid pair).
 
     Attributes
-    ----------
     couplings : dict[tuple[int, int], NDArray[np.float64]]
         Maps (position_i, position_j) -> coupling matrix of shape (20, 20).
         Keys are ordered such that position_i < position_j.
@@ -66,14 +62,12 @@ class CouplingTensor:
         """Look up the coupling between two specific mutations.
 
         Parameters
-        ----------
         pos_i, pos_j : int
             Residue positions (PDB numbering).
         aa_i, aa_j : str
             Single-letter amino acid codes.
 
         Returns
-        -------
         float
             Coupling value J_ij(aa_i, aa_j). Returns 0.0 if the pair
             is not in contact.
@@ -121,7 +115,6 @@ class EpistasisModel(ABC):
         """Generate pairwise couplings for all contacting pairs.
 
         Parameters
-        ----------
         contact_map : ContactMap
             Defines which position pairs get non-zero couplings.
         single_site_effects : dict or None
@@ -130,7 +123,6 @@ class EpistasisModel(ABC):
             coupling signs.
 
         Returns
-        -------
         CouplingTensor
             Sparse coupling tensor for the landscape.
         """
@@ -150,7 +142,6 @@ class RandomEpistasis(EpistasisModel):
     than K random neighbours.
 
     Parameters
-    ----------
     sigma : float
         Standard deviation of coupling distribution. Controls epistatic
         strength. Typical values: 0.1-1.0 (relative to DMS fitness scale).
@@ -206,7 +197,6 @@ class SignConsistentEpistasis(EpistasisModel):
     protein fitness landscapes.
 
     Parameters
-    ----------
     sigma : float
         Scale of coupling magnitudes.
     seed : int or None

@@ -27,9 +27,9 @@ def small_contact_map():
 def single_site_effects():
     """Simple single-site effects for positions 10, 20, 30."""
     return {
-        10: {"A": 0.0, "G": 0.5, "V": -0.3},   # A is wt; G beneficial, V deleterious
-        20: {"L": 0.0, "I": 0.2, "F": -0.5},    # L is wt; I beneficial, F deleterious
-        30: {"K": 0.0, "R": 0.1, "E": -0.2},    # K is wt; R beneficial, E deleterious
+        10: {"A": 0.0, "G": 0.5, "V": -0.3},  # A is wt; G beneficial, V deleterious
+        20: {"L": 0.0, "I": 0.2, "F": -0.5},  # L is wt; I beneficial, F deleterious
+        30: {"K": 0.0, "R": 0.1, "E": -0.2},  # K is wt; R beneficial, E deleterious
     }
 
 

@@ -4,16 +4,17 @@
 
 # mutascape
 
-Synthetic combinatorial protein fitness landscapes with tuneable, structurally informed epistasis.
+Synthetic fitness landscapes with tuneable epistasis.
 
-Built on real single-site DMS data, with epistatic topology derived from predicted 3D protein structure. Control landscape ruggedness with a single parameter (`alpha`), and query arbitrary multi-mutant fitness on the fly.
+Built on real single-site DMS data, with epistatic topology derived from 3D protein structure. Control landscape ruggedness with a single parameter (`alpha`), and query arbitrary multi-mutant fitness on the fly.
 
 ## Installation
 
+Requires Python 3.12+.
+
 ```bash
-uv sync                      # core dependencies
-uv sync --extra structure     # + ESM2 for pLM scoring
-uv sync --extra dev           # + pytest/ruff
+uv sync              # core dependencies
+uv sync --extra dev  # + pytest/ruff
 ```
 
 ## Quick start
@@ -21,10 +22,14 @@ uv sync --extra dev           # + pytest/ruff
 ```python
 from mutascape import Landscape, ContactMap, Mutant, RandomEpistasis
 
+# Contact map from PDB file or predicted from sequence (ESMFold)
 contacts = ContactMap.from_pdb("structure.pdb", threshold=8.0)
+contacts = ContactMap.from_sequence("MAEQLA...", threshold=8.0)
+
+# Build landscape from DMS data
 landscape = Landscape.from_dms(
     dms_path="dms_data.csv",
-    wt_fasta="wt.fasta",
+    wt_sequence="MAEQLA...",
     contact_map=contacts,
     epistasis=RandomEpistasis(sigma=0.3, seed=42),
     alpha=1.0,
@@ -45,6 +50,33 @@ df = landscape.to_dataframe(n_variants=10000, n_mutations=(1, 5), seed=42)
 landscape.stats(n_samples=5000, n_mutations=3)
 landscape.plot_epistasis()
 landscape.plot_alpha_sweep()
+```
+
+### Full-protein landscapes with pLM scoring
+
+When DMS data only covers a subset of positions, use ESM2 masked marginal scoring to predict single-site effects for the rest:
+
+```python
+from mutascape import Landscape, ContactMap, ESM2Scorer, RandomEpistasis
+
+scorer = ESM2Scorer()
+
+# Pure pLM landscape (no DMS data needed)
+landscape = Landscape.from_plm(
+    sequence="MAEQLA...",
+    contact_map=contacts,
+    epistasis=RandomEpistasis(sigma=0.3, seed=42),
+    scorer=scorer,
+)
+
+# Hybrid: DMS where available, pLM for remaining positions
+landscape = Landscape.from_dms(
+    dms_path="dms_data.csv",
+    wt_sequence="MAEQLA...",
+    contact_map=contacts,
+    epistasis=RandomEpistasis(sigma=0.3, seed=42),
+    scorer=scorer,  # fills unscreened positions
+)
 ```
 
 ## Why mutascape?

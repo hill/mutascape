@@ -18,16 +18,12 @@ References:
   with a language model. (ESMFold)
 """
 
-from __future__ import annotations
-
 import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import esm
 import numpy as np
-import torch
 from Bio.PDB import MMCIFParser, PDBParser
 from numpy.typing import NDArray
 
@@ -40,7 +36,6 @@ class ContactMap:
     positions i and j are within the distance threshold in 3D space.
 
     Attributes
-    ----------
     matrix : NDArray[np.bool_]
         Symmetric boolean contact matrix of shape (n_positions, n_positions).
     positions : tuple[int, ...]
@@ -89,7 +84,7 @@ class ContactMap:
         rows, cols = np.where(np.triu(self.matrix, k=1))
         return [(self.positions[r], self.positions[c]) for r, c in zip(rows, cols)]
 
-    def submap(self, positions: Sequence[int]) -> ContactMap:
+    def submap(self, positions: Sequence[int]) -> "ContactMap":
         """Extract a sub-contact-map for a subset of positions.
 
         Parameters:
@@ -128,14 +123,13 @@ class ContactMap:
         threshold: float = 8.0,
         chain_id: str | None = None,
         positions: Sequence[int] | None = None,
-    ) -> ContactMap:
+    ) -> "ContactMap":
         """Build a contact map from a PDB or mmCIF file.
 
         Extracts C-beta atoms (C-alpha for glycine), computes pairwise
         Euclidean distances, and thresholds to produce a binary contact map.
 
         Parameters
-        ----------
         pdb_path : str or Path
             Path to PDB or mmCIF structure file.
         threshold : float
@@ -148,7 +142,6 @@ class ContactMap:
             If None, includes all resolved residues.
 
         Returns
-        -------
         ContactMap
             Binary contact map with distance information retained.
         """
@@ -182,7 +175,7 @@ class ContactMap:
         distances: NDArray[np.float64],
         positions: Sequence[int],
         threshold: float = 8.0,
-    ) -> ContactMap:
+    ) -> "ContactMap":
         """Build a contact map from a precomputed distance matrix.
 
         Parameters:
@@ -211,7 +204,7 @@ class ContactMap:
         sequence: str,
         threshold: float = 8.0,
         cache_dir: Path | None = None,
-    ) -> ContactMap:
+    ) -> "ContactMap":
         """Predict structure with ESMFold and extract a contact map.
 
         Runs ESMFold to predict a 3D structure from the amino acid
@@ -250,19 +243,20 @@ class ContactMap:
         return cls.from_pdb(cached_pdb, threshold=threshold, positions=positions)
 
 
+ESMFOLD_API_URL = "https://api.esmatlas.com/foldSequence/v1/pdb/"
+
+
 def _predict_esmfold(sequence: str) -> str:
-    """Run ESMFold structure prediction. Returns PDB-format string."""
-    model = esm.pretrained.esmfold_v1()
-    model = model.eval()
+    """Predict structure via the public ESMFold API. Returns PDB-format string."""
+    from urllib.request import Request, urlopen
 
-    # Use GPU if available
-    if torch.cuda.is_available():
-        model = model.cuda()
+    req = Request(ESMFOLD_API_URL, data=sequence.encode(), method="POST")
+    resp = urlopen(req, timeout=120)
 
-    with torch.no_grad():
-        output = model.infer_pdb(sequence)
+    if resp.status != 200:
+        raise RuntimeError(f"ESMFold API returned status {resp.status}")
 
-    return output
+    return resp.read().decode()
 
 
 def _extract_cbeta_coords(

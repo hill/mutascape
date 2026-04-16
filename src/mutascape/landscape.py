@@ -1,5 +1,4 @@
-"""
-Core fitness landscape class.
+"""Core fitness landscape class.
 
 Combines real single-site DMS data with structurally informed epistatic
 couplings to create synthetic combinatorial fitness landscapes. The landscape
@@ -19,8 +18,6 @@ and J from Potts model fits to MSAs, and from NK landscapes (Sandhu et al.
 2025), which use abstract random interactions. mutascape grounds single-site
 effects in experimental data and epistatic topology in 3D structure.
 """
-
-from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -55,7 +52,6 @@ class Landscape:
     """Synthetic combinatorial protein fitness landscape.
 
     Attributes
-    ----------
     wild_type : dict[int, str]
         Maps position -> wild-type amino acid (single letter).
     single_site_effects : dict[int, dict[str, float]]
@@ -90,9 +86,7 @@ class Landscape:
             self._validate_wt_sequence()
 
     def __repr__(self) -> str:
-        positions = ", ".join(
-            f"{pos}({self.wild_type[pos]})" for pos in self.positions
-        )
+        positions = ", ".join(f"{pos}({self.wild_type[pos]})" for pos in self.positions)
         return (
             f"Landscape(positions=[{positions}], "
             f"alpha={self.alpha}, "
@@ -131,12 +125,10 @@ class Landscape:
         """Apply mutations to the wild-type sequence and return the full mutant string.
 
         Parameters
-        ----------
         mutations : dict[int, str]
             Maps position -> mutant amino acid.
 
         Returns
-        -------
         str
             Full mutant amino acid sequence.
         """
@@ -160,19 +152,16 @@ class Landscape:
         """Compute fitness of a variant specified by its mutations.
 
         Parameters
-        ----------
         mutations : dict[int, str]
             Maps position -> mutant amino acid. Positions not included
             are assumed to be wild type.
 
         Returns
-        -------
         float
             Predicted fitness value. A purely additive prediction (alpha=0)
             would just sum the single-site effects.
 
         Examples
-        --------
         >>> landscape.evaluate({57: "G", 72: "V"})
         0.42
         """
@@ -226,12 +215,10 @@ class Landscape:
         """Evaluate fitness for a batch of variants.
 
         Parameters
-        ----------
         variants : list of dict
             Each dict maps position -> mutant amino acid.
 
         Returns
-        -------
         NDArray of shape (n_variants,)
             Fitness values.
         """
@@ -244,8 +231,7 @@ class Landscape:
         epistatic contributions.
         """
         return sum(
-            self.single_site_effects.get(pos, {}).get(aa, 0.0)
-            for pos, aa in mutations.items()
+            self.single_site_effects.get(pos, {}).get(aa, 0.0) for pos, aa in mutations.items()
         )
 
     def _sample(
@@ -257,7 +243,6 @@ class Landscape:
         """Sample random multi-mutant variants and compute their fitness.
 
         Parameters
-        ----------
         n : int
             Number of variants to sample.
         n_mutations : int
@@ -267,7 +252,6 @@ class Landscape:
             at that position (i.e. all positions are truly mutated).
 
         Returns
-        -------
         variants : list of dict
             Each dict maps position -> mutant amino acid.
         fitness : NDArray of shape (n,)
@@ -302,23 +286,19 @@ class Landscape:
         fitness = self.evaluate_batch(variants)
         return variants, fitness
 
-    def stats(
-        self, n_samples: int = 5000, n_mutations: int = 2
-    ) -> dict[str, float]:
+    def stats(self, n_samples: int = 5000, n_mutations: int = 2) -> dict[str, float]:
         """Compute summary statistics characterising the landscape.
 
         Samples random double (or n-fold) mutants and compares their
         actual fitness to the additive prediction to quantify epistasis.
 
         Parameters
-        ----------
         n_samples : int
             Number of random variants to sample.
         n_mutations : int
             Number of mutations per variant.
 
         Returns
-        -------
         dict with keys:
             - 'mean_fitness': average fitness across samples
             - 'std_fitness': standard deviation of fitness
@@ -368,7 +348,6 @@ class Landscape:
         """Yield random variants from the combinatorial landscape.
 
         Parameters
-        ----------
         n_mutations : int or (min, max)
             Fixed mutation count, or inclusive range to sample uniformly from.
         n : int or None
@@ -377,7 +356,6 @@ class Landscape:
             Random seed for this generator. Uses the landscape's RNG if None.
 
         Yields
-        ------
         Variant
             Named tuple with mutations, sequence, fitness, and label.
         """
@@ -403,11 +381,7 @@ class Landscape:
 
             for pos in mut_positions:
                 wt_aa = self.wild_type[pos]
-                available = [
-                    aa
-                    for aa in self.single_site_effects.get(pos, {})
-                    if aa != wt_aa
-                ]
+                available = [aa for aa in self.single_site_effects.get(pos, {}) if aa != wt_aa]
                 if not available:
                     available = [aa for aa in AMINO_ACIDS if aa != wt_aa]
                 raw_mutations[int(pos)] = rng.choice(available)
@@ -432,7 +406,6 @@ class Landscape:
         """Generate a DataFrame of random combinatorial variants.
 
         Parameters
-        ----------
         n_variants : int
             Target number of unique variants (may oversample to hit target
             after deduplication).
@@ -442,7 +415,6 @@ class Landscape:
             Random seed for reproducibility.
 
         Returns
-        -------
         pd.DataFrame
             Columns: sequence, variant, fitness, n_mutations.
         """
@@ -460,12 +432,14 @@ class Landscape:
                 continue
             stale = 0
             seen.add(key)
-            rows.append({
-                "sequence": variant.sequence,
-                "variant": variant.mutations.label,
-                "fitness": variant.fitness,
-                "n_mutations": variant.mutations.depth,
-            })
+            rows.append(
+                {
+                    "sequence": variant.sequence,
+                    "variant": variant.mutations.label,
+                    "fitness": variant.fitness,
+                    "n_mutations": variant.mutations.depth,
+                }
+            )
             if len(rows) >= n_variants:
                 break
 
@@ -514,6 +488,15 @@ class Landscape:
 
         return plot_contact_map(self)
 
+    def plot_morphing(self, **kwargs):
+        """Animated 3D landscape that morphs as alpha changes.
+
+        See :func:`interactive.morphing_landscape` for full arguments.
+        """
+        from mutascape.interactive import morphing_landscape
+
+        return morphing_landscape(self, **kwargs)
+
     @classmethod
     def from_plm(
         cls,
@@ -525,14 +508,13 @@ class Landscape:
         alpha: float = 1.0,
         noise_sigma: float = 0.0,
         seed: int | None = None,
-    ) -> Landscape:
+    ) -> "Landscape":
         """Build a landscape from pLM-predicted single-site effects.
 
         Uses masked marginal log-likelihood ratios as fitness proxies
         for every position (or a subset) in the protein.
 
         Parameters
-        ----------
         sequence : str
             Wild-type protein sequence.
         contact_map : ContactMap
@@ -591,14 +573,13 @@ class Landscape:
         wildtype_col: str = "wildtype",
         mutant_col: str = "mutant",
         fitness_col: str = "fitness",
-    ) -> Landscape:
+    ) -> "Landscape":
         """Construct a landscape from a DMS CSV file and structural data.
 
         Expected CSV format: one row per single-site variant, with columns
         for position, wild-type AA, mutant AA, and fitness effect.
 
         Parameters
-        ----------
         dms_path : str or Path
             Path to DMS CSV file.
         contact_map : ContactMap
@@ -627,7 +608,6 @@ class Landscape:
             Column names in the CSV.
 
         Returns
-        -------
         Landscape
         """
         df = pd.read_csv(dms_path)

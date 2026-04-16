@@ -1,7 +1,5 @@
 """Tests for the scoring module."""
 
-from __future__ import annotations
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -72,13 +70,15 @@ class TestPLMScorerInterface:
 class TestFromPLM:
     @pytest.fixture
     def contact_map(self):
-        distances = np.array([
-            [0.0, 5.0, 12.0, 15.0, 20.0],
-            [5.0, 0.0, 7.0, 10.0, 18.0],
-            [12.0, 7.0, 0.0, 4.0, 11.0],
-            [15.0, 10.0, 4.0, 0.0, 9.0],
-            [20.0, 18.0, 11.0, 9.0, 0.0],
-        ])
+        distances = np.array(
+            [
+                [0.0, 5.0, 12.0, 15.0, 20.0],
+                [5.0, 0.0, 7.0, 10.0, 18.0],
+                [12.0, 7.0, 0.0, 4.0, 11.0],
+                [15.0, 10.0, 4.0, 0.0, 9.0],
+                [20.0, 18.0, 11.0, 9.0, 0.0],
+            ]
+        )
         return ContactMap.from_distance_matrix(distances, [1, 2, 3, 4, 5], threshold=8.0)
 
     def test_builds_landscape(self, contact_map):
@@ -169,13 +169,15 @@ class TestHybridDMSandPLM:
 
     @pytest.fixture
     def contact_map(self):
-        distances = np.array([
-            [0.0, 5.0, 12.0, 15.0, 20.0],
-            [5.0, 0.0, 7.0, 10.0, 18.0],
-            [12.0, 7.0, 0.0, 4.0, 11.0],
-            [15.0, 10.0, 4.0, 0.0, 9.0],
-            [20.0, 18.0, 11.0, 9.0, 0.0],
-        ])
+        distances = np.array(
+            [
+                [0.0, 5.0, 12.0, 15.0, 20.0],
+                [5.0, 0.0, 7.0, 10.0, 18.0],
+                [12.0, 7.0, 0.0, 4.0, 11.0],
+                [15.0, 10.0, 4.0, 0.0, 9.0],
+                [20.0, 18.0, 11.0, 9.0, 0.0],
+            ]
+        )
         return ContactMap.from_distance_matrix(distances, [1, 2, 3, 4, 5], threshold=8.0)
 
     def test_expands_to_all_positions(self, dms_csv, contact_map):

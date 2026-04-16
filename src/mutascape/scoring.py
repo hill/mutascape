@@ -16,8 +16,6 @@ The output format matches mutascape's single_site_effects structure,
 so pLM-predicted effects plug directly into Landscape construction.
 """
 
-from __future__ import annotations
-
 import hashlib
 import logging
 from abc import ABC, abstractmethod
@@ -54,14 +52,12 @@ class PLMScorer(ABC):
         """Compute masked marginal log-likelihood ratios.
 
         Parameters
-        ----------
         sequence : str
             Wild-type protein sequence.
         positions : list[int] or None
             1-indexed positions to score. None scores all positions.
 
         Returns
-        -------
         dict[int, dict[str, float]]
             Maps position -> {amino_acid: log_ratio}.
             Wild-type amino acid is always 0.0.
@@ -84,7 +80,6 @@ class ESM2Scorer(PLMScorer):
     """Masked marginal scoring using ESM2.
 
     Parameters
-    ----------
     model_name : str
         ESM2 model variant.
     device : str
@@ -104,8 +99,7 @@ class ESM2Scorer(PLMScorer):
     ) -> None:
         if not _TORCH_AVAILABLE:
             raise ImportError(
-                "ESM2Scorer requires torch and fair-esm. "
-                "Install with: uv sync --extra structure"
+                "ESM2Scorer requires torch and fair-esm. Install with: uv sync --extra structure"
             )
 
         if model_name not in _ESM2_MODELS:
@@ -138,9 +132,7 @@ class ESM2Scorer(PLMScorer):
         import esm
 
         logger.info(f"Loading {self.model_name} on {self.device}")
-        self._model, self._alphabet = esm.pretrained.load_model_and_alphabet(
-            self.model_name
-        )
+        self._model, self._alphabet = esm.pretrained.load_model_and_alphabet(self.model_name)
         self._model = self._model.to(self.device)
         self._model.eval()
         self._batch_converter = self._alphabet.get_batch_converter()
@@ -210,9 +202,7 @@ class ESM2Scorer(PLMScorer):
         seq_hash = hashlib.sha256(sequence.encode()).hexdigest()[:16]
         return self.cache_dir / f"{self.model_name}_{seq_hash}.parquet"
 
-    def _save_cache(
-        self, sequence: str, results: dict[int, dict[str, float]]
-    ) -> None:
+    def _save_cache(self, sequence: str, results: dict[int, dict[str, float]]) -> None:
         path = self._cache_path(sequence)
         path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -224,9 +214,7 @@ class ESM2Scorer(PLMScorer):
         pd.DataFrame(rows).to_parquet(path, compression="snappy")
         logger.info(f"Cached scores to {path.name}")
 
-    def _load_cache(
-        self, sequence: str
-    ) -> dict[int, dict[str, float]] | None:
+    def _load_cache(self, sequence: str) -> dict[int, dict[str, float]] | None:
         path = self._cache_path(sequence)
         if not path.exists():
             return None

@@ -6,7 +6,6 @@ Built on real single-site DMS data with epistatic topology derived from
 predicted 3D structure (ESMFold/AlphaFold2).
 
 Quick start
------------
 >>> from mutascape import Landscape, ContactMap, RandomEpistasis
 >>> contacts = ContactMap.from_pdb("structure.pdb", threshold=8.0)
 >>> landscape = Landscape.from_dms(
@@ -35,6 +34,7 @@ try:
 except ImportError:
     pass
 
+from mutascape.interactive import morphing_landscape
 from mutascape.plotting import (
     plot_alpha_sweep,
     plot_contact_map,
@@ -54,6 +54,7 @@ __all__ = [
     "RandomEpistasis",
     "SignConsistentEpistasis",
     "Variant",
+    "morphing_landscape",
     "plot_alpha_sweep",
     "plot_contact_map",
     "plot_epistasis_scatter",

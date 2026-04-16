@@ -1,16 +1,11 @@
 """Plotting utilities for mutascape fitness landscapes."""
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from matplotlib.figure import Figure
 
-if TYPE_CHECKING:
-    from mutascape.landscape import Landscape
+from mutascape.landscape import Landscape
 
 
 def plot_epistasis_scatter(
@@ -125,21 +120,43 @@ def plot_alpha_sweep(
 
 def plot_contact_map(
     landscape: Landscape,
+    max_labels: int = 30,
 ) -> Figure:
-    """Heatmap of the structural contact map with DMS positions labelled."""
+    """Heatmap of the structural contact map."""
     cm = landscape.contact_map
-    fig, ax = plt.subplots(figsize=(6, 5))
+    n = cm.n_positions
 
-    sns.heatmap(
-        cm.matrix.astype(int),
-        xticklabels=cm.positions,
-        yticklabels=cm.positions,
-        cmap="Blues",
-        cbar=False,
-        square=True,
-        linewidths=0.5,
-        ax=ax,
+    fig, ax = plt.subplots(figsize=(7, 6))
+
+    # Plot as sparse scatter for cleaner look at scale
+    rows, cols = np.where(cm.matrix)
+    ax.scatter(cols, rows, s=max(1, 80 / (n / 20)), marker="s", color=sns.color_palette()[0], alpha=0.7, linewidths=0)
+
+    ax.set_xlim(-0.5, n - 0.5)
+    ax.set_ylim(n - 0.5, -0.5)
+    ax.set_aspect("equal")
+
+    # Only show a subset of tick labels to avoid overlap
+    positions = list(cm.positions)
+    if n > max_labels:
+        step = max(1, n // max_labels)
+        tick_indices = list(range(0, n, step))
+        ax.set_xticks(tick_indices)
+        ax.set_xticklabels([positions[i] for i in tick_indices], fontsize=8, rotation=45)
+        ax.set_yticks(tick_indices)
+        ax.set_yticklabels([positions[i] for i in tick_indices], fontsize=8)
+    else:
+        ax.set_xticks(range(n))
+        ax.set_xticklabels(positions, fontsize=8, rotation=45)
+        ax.set_yticks(range(n))
+        ax.set_yticklabels(positions, fontsize=8)
+
+    ax.set_xlabel("Position")
+    ax.set_ylabel("Position")
+    ax.set_title(
+        f"Contact map (threshold={cm.threshold}\u00c5, {cm.n_contacts} contacts)",
+        fontsize=11,
     )
-    ax.set_title(f"Contact map (threshold={cm.threshold}A, {cm.n_contacts} contacts)")
     fig.tight_layout()
+    plt.close(fig)
     return fig

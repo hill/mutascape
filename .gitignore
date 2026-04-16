@@ -19,6 +19,9 @@ htmlcov/
 .ipynb_checkpoints/
 notebooks/*.nbconvert.*
 
+# Plotly HTML exports
+*.html
+
 # OS
 .DS_Store
 

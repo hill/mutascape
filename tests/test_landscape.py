@@ -419,3 +419,52 @@ class TestToDataframe:
         df = landscape_seq.to_dataframe(n_variants=10, n_mutations=1, seed=42)
         for label in df["variant"]:
             assert "?" not in label
+
+
+class TestLocalOptima:
+    def test_returns_expected_keys(self, landscape):
+        result = landscape.local_optima()
+        for key in (
+            "n_optima", "peak_indices", "peak_fitnesses", "global_peak",
+            "basin_sizes", "positions", "alphabets", "tensor",
+        ):
+            assert key in result
+
+    def test_tensor_shape_matches_alphabets(self, landscape):
+        result = landscape.local_optima()
+        expected_shape = tuple(len(result["alphabets"][p]) for p in result["positions"])
+        assert result["tensor"].shape == expected_shape
+        assert result["n_variants"] == int(np.prod(expected_shape))
+
+    def test_basin_sizes_sum_to_space_size(self, landscape):
+        result = landscape.local_optima()
+        assert sum(result["basin_sizes"]) == result["n_variants"]
+
+    def test_additive_landscape_has_single_peak_matching_argmax(
+        self, small_contact_map, dms_csv
+    ):
+        # With alpha=0 and no epistatic contribution, the global optimum is
+        # the combination of the best single-site mutations at each position.
+        additive = Landscape.from_dms(
+            dms_path=dms_csv,
+            contact_map=small_contact_map,
+            epistasis=RandomEpistasis(sigma=0.3, seed=42),
+            alpha=0.0,
+        )
+        result = additive.local_optima()
+        assert result["n_optima"] == 1
+        best_aa_per_pos = {
+            pos: max(additive.single_site_effects[pos].items(), key=lambda kv: kv[1])[0]
+            for pos in additive.positions
+        }
+        expected_global = tuple(
+            result["alphabets"][pos].index(best_aa_per_pos[pos])
+            for pos in result["positions"]
+        )
+        assert result["global_peak"] == expected_global
+
+    def test_restricted_positions(self, landscape):
+        subset = landscape.positions[:2]
+        result = landscape.local_optima(positions=subset)
+        assert result["positions"] == subset
+        assert result["tensor"].ndim == 2

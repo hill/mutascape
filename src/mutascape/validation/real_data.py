@@ -115,6 +115,65 @@ def load_proteingym_multimutant(
     return df
 
 
+def load_gb1_combinatorial(
+    combinatorial_csv: str | Path,
+    dms_csv: str | Path,
+    positions: tuple[int, ...] = (39, 40, 41, 54),
+    min_depth: int = 1,
+    max_depth: int = 4,
+) -> pd.DataFrame:
+    """Load the prepared GB1 combinatorial CSV into the standard schema.
+
+    The CSV is the output of data/gb1/prepare_gb1.py and has columns
+    (mutant, fitness, depth) where fitness is already relative to WT=0.
+    Keeps only variants whose mutated positions are a subset of `positions`.
+
+    Returns DataFrame with columns: mutations (dict), fitness, additive_prediction,
+    depth, epistatic_deviation.
+    """
+    raw = pd.read_csv(combinatorial_csv)
+    effects = load_single_site_effects(dms_csv)
+    pos_set = set(positions)
+
+    rows = []
+    n_skipped = 0
+    for _, row in raw.iterrows():
+        depth = int(row["depth"])
+        if depth < min_depth or depth > max_depth:
+            continue
+        parsed = parse_proteingym_mutant(row["mutant"])
+        if not set(parsed.keys()).issubset(pos_set):
+            continue
+        additive = 0.0
+        mutations: dict[int, str] = {}
+        all_known = True
+        for pos, (_wt, mut) in parsed.items():
+            if pos not in effects or mut not in effects[pos]:
+                all_known = False
+                break
+            additive += effects[pos][mut]
+            mutations[pos] = mut
+        if not all_known:
+            n_skipped += 1
+            continue
+        fitness = float(row["fitness"])
+        rows.append({
+            "mutations": mutations,
+            "fitness": fitness,
+            "additive_prediction": additive,
+            "depth": depth,
+            "epistatic_deviation": fitness - additive,
+        })
+
+    df = pd.DataFrame(rows)
+    print(
+        f"Loaded {len(df)}/{len(raw)} variants "
+        f"({n_skipped} skipped, missing single-site effects)"
+    )
+    print(f"Depth distribution: {df['depth'].value_counts().sort_index().to_dict()}")
+    return df
+
+
 def sample_synthetic_data(
     landscape,
     depths: list[int],

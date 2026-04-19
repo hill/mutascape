@@ -25,9 +25,13 @@ def small_contact_map():
 
 @pytest.fixture
 def single_site_effects():
-    """Simple single-site effects for positions 10, 20, 30."""
+    """Simple single-site effects for positions 10, 20, 30.
+
+    Magnitudes are chosen so no two-mutant linear sum is exactly zero, so the
+    SignConsistentEpistasis tie-at-zero case (sign(sum) = 0) never fires here.
+    """
     return {
-        10: {"A": 0.0, "G": 0.5, "V": -0.3},  # A is wt; G beneficial, V deleterious
+        10: {"A": 0.0, "G": 0.6, "V": -0.3},  # A is wt; G beneficial, V deleterious
         20: {"L": 0.0, "I": 0.2, "F": -0.5},  # L is wt; I beneficial, F deleterious
         30: {"K": 0.0, "R": 0.1, "E": -0.2},  # K is wt; R beneficial, E deleterious
     }
@@ -122,25 +126,22 @@ class TestSignConsistentEpistasis:
         with pytest.raises(ValueError, match="requires single_site_effects"):
             model.generate(small_contact_map, single_site_effects=None)
 
-    def test_sign_consistency(self, small_contact_map, single_site_effects):
-        """Both-beneficial pair should have positive coupling."""
+    def test_sign_rule_follows_sum(self, small_contact_map, single_site_effects):
+        """Coupling sign tracks sign(h_a + h_b), amplifying the linear sum."""
         model = SignConsistentEpistasis(sigma=0.3, seed=42)
         tensor = model.generate(small_contact_map, single_site_effects)
 
-        # G at pos 10 is beneficial (+0.5), I at pos 20 is beneficial (+0.2)
-        # Their coupling should be positive (cooperative)
-        j_beneficial = tensor.get_coupling(10, 20, "G", "I")
-        assert j_beneficial >= 0
+        # Both beneficial (h_G=+0.6, h_I=+0.2, sum=+0.8) -> J > 0, reinforces benefit
+        assert tensor.get_coupling(10, 20, "G", "I") > 0
 
-        # V at pos 10 is deleterious (-0.3), F at pos 20 is deleterious (-0.5)
-        # Both negative * negative = positive sign -> positive coupling
-        j_both_del = tensor.get_coupling(10, 20, "V", "F")
-        assert j_both_del >= 0
+        # Both deleterious (h_V=-0.3, h_F=-0.5, sum=-0.8) -> J < 0, reinforces damage
+        assert tensor.get_coupling(10, 20, "V", "F") < 0
 
-        # G at pos 10 is beneficial (+0.5), F at pos 20 is deleterious (-0.5)
-        # Positive * negative = negative -> antagonistic coupling
-        j_mixed = tensor.get_coupling(10, 20, "G", "F")
-        assert j_mixed <= 0
+        # Mixed, net-beneficial (h_G=+0.6, h_F=-0.5, sum=+0.1) -> J > 0
+        assert tensor.get_coupling(10, 20, "G", "F") > 0
+
+        # Mixed, net-deleterious (h_V=-0.3, h_I=+0.2, sum=-0.1) -> J < 0
+        assert tensor.get_coupling(10, 20, "V", "I") < 0
 
     def test_wild_type_coupling_is_zero(self, small_contact_map, single_site_effects):
         """Wild-type amino acids (effect = 0) should have zero coupling."""

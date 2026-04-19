@@ -7,8 +7,8 @@ get non-zero J) is determined by a structural contact map. The coupling
 
 Models implemented:
 - RandomEpistasis: couplings drawn from N(0, sigma) for contacting pairs
-- SignConsistentEpistasis: coupling signs respect single-site effect signs
-  (beneficial mutations at contacting sites cooperate)
+- SignConsistentEpistasis: coupling signs follow the linear-sum direction of
+  the two single-site effects (amplifies whichever way the singles point)
 
 Planned:
 - PottsEpistasis: import couplings from inverse Potts model fits (cf. SLIP,
@@ -178,23 +178,29 @@ class RandomEpistasis(EpistasisModel):
 
 @dataclass
 class SignConsistentEpistasis(EpistasisModel):
-    """Couplings whose signs respect single-site fitness effects.
+    """Couplings that amplify the linear-sum direction of single-site effects.
 
-    The biophysical intuition: if two mutations are individually beneficial
-    and are at contacting positions, they likely cooperate (positive coupling).
-    If both are deleterious, they compound the damage (positive coupling,
-    amplifying the deleterious effect). If one is beneficial and one
-    deleterious, they may partially cancel (negative coupling).
+    For positions i, j with single-site effects h_i(a) and h_j(b):
 
-    More precisely, for positions i, j with single-site effects h_i(a) and
-    h_j(b):
-
-        sign(J_ij(a, b)) = sign(h_i(a)) * sign(h_j(b))
+        sign(J_ij(a, b)) = sign(h_i(a) + h_j(b))
         |J_ij(a, b)| ~ |N(0, sigma)|
 
-    This produces landscapes with smoother fitness ridges connecting
-    beneficial mutations, which is biophysically plausible for many
-    protein fitness landscapes.
+    Behaviour on double mutants relative to the additive prediction:
+
+    - both beneficial: J > 0, benefit is reinforced (cooperation)
+    - both deleterious: J < 0, damage is reinforced (synthetic-lethal-like)
+    - mixed signs: J takes the sign of whichever single dominates the sum,
+      accentuating that direction
+
+    Couplings involving a wild-type AA (effect = 0) are set to zero, so the
+    J(a,b) - J(wt,b) - J(a,wt) + J(wt,wt) baseline correction inside
+    Landscape.evaluate drops out cleanly to J(a, b).
+
+    Note: the simpler product rule sign(J) = sign(h_a) * sign(h_b) would
+    instead *compensate* both-deleterious pairs (positive J added to a
+    negative sum softens it). That compensation mechanism overlaps with the
+    saturating non-linearity in `mutascape.nonlinearity`; this amplification
+    rule is the complementary "direct pairwise reinforcement" mechanism.
 
     Parameters
     sigma : float
@@ -232,16 +238,16 @@ class SignConsistentEpistasis(EpistasisModel):
                 for b_idx, aa_b in enumerate(AMINO_ACIDS):
                     h_b = effects_j.get(aa_b, 0.0)
 
-                    # Magnitude from half-normal
                     magnitude = abs(rng.normal(0, self.sigma))
 
-                    # Sign from product of single-site effect signs
-                    # Both beneficial or both deleterious -> positive (cooperative/compounding)
-                    # Mixed -> negative (antagonistic)
+                    # Sign of the pairwise term reinforces whichever direction
+                    # the linear sum of singles already points. Wild-type-like
+                    # effects (h = 0) zero the coupling so the J(wt, *) baseline
+                    # drops out in Landscape.evaluate.
                     if h_a == 0.0 or h_b == 0.0:
-                        sign = 0.0  # no coupling if either is wild-type-like
+                        sign = 0.0
                     else:
-                        sign = np.sign(h_a) * np.sign(h_b)
+                        sign = np.sign(h_a + h_b)
 
                     matrix[a_idx, b_idx] = sign * magnitude
 

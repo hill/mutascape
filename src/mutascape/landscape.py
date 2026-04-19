@@ -21,7 +21,7 @@ effects in experimental data and epistatic topology in 3D structure.
 
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from itertools import combinations
+from itertools import combinations, product
 from pathlib import Path
 from typing import NamedTuple
 
@@ -36,7 +36,10 @@ from mutascape.epistasis import (
     EpistasisModel,
 )
 from mutascape.mutant import Mutant
+from mutascape.nonlinearity import Identity, NonLinearity
+from mutascape.nonlinearity import resolve as _resolve_nonlinearity
 from mutascape.scoring import PLMScorer
+from mutascape.validation.metrics import local_optima_from_tensor
 
 
 class Variant(NamedTuple):
@@ -78,12 +81,28 @@ class Landscape:
     noise_sigma: float = 0.0
     seed: int | None = None
     wt_sequence: str | None = None
+    nonlinearity: NonLinearity = field(default_factory=Identity)
     _rng: np.random.Generator = field(init=False, repr=False)
+    _preimage_effects: dict[int, dict[str, float]] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._rng = np.random.default_rng(self.seed)
         if self.wt_sequence is not None:
             self._validate_wt_sequence()
+        self._cache_preimages()
+
+    def _cache_preimages(self) -> None:
+        """Precompute g^{-1}(h_i) for every single-site effect.
+
+        Under the thermodynamic-non-linearity model the additive component of
+        fitness is summed in stability-equivalent units (the preimage) and then
+        passed through g. Caching the preimages keeps per-evaluation cost equal
+        to the Identity-nonlinearity case.
+        """
+        self._preimage_effects = {
+            pos: {aa: float(self.nonlinearity.inverse(v)) for aa, v in effects.items()}
+            for pos, effects in self.single_site_effects.items()
+        }
 
     def __repr__(self) -> str:
         positions = ", ".join(f"{pos}({self.wild_type[pos]})" for pos in self.positions)
@@ -176,11 +195,12 @@ class Landscape:
         >>> landscape.evaluate({57: "G", 72: "V"})
         0.42
         """
-        # Additive component: sum of single-site effects for mutated positions
-        additive = 0.0
+        # Additive component summed in preimage (stability-equivalent) space
+        # so that the non-linearity g wraps the whole fitness function.
+        additive_preimage = 0.0
         for pos, aa in mutations.items():
-            effects = self.single_site_effects.get(pos, {})
-            additive += effects.get(aa, 0.0)
+            effects = self._preimage_effects.get(pos, {})
+            additive_preimage += effects.get(aa, 0.0)
 
         # Epistatic component: pairwise couplings between all position pairs
         # where at least one position is mutated
@@ -214,13 +234,13 @@ class Landscape:
 
             epistatic += coupling
 
-        fitness = additive + self.alpha * epistatic
+        raw = additive_preimage + self.alpha * epistatic
 
-        # Add noise if configured
+        # Noise enters pre-nonlinearity (stability-scale noise).
         if self.noise_sigma > 0:
-            fitness += self._rng.normal(0, self.noise_sigma)
+            raw += self._rng.normal(0, self.noise_sigma)
 
-        return float(fitness)
+        return float(self.nonlinearity.forward(raw))
 
     def evaluate_batch(self, variants: list[dict[int, str]]) -> NDArray[np.float64]:
         """Evaluate fitness for a batch of variants.
@@ -456,6 +476,62 @@ class Landscape:
 
         return pd.DataFrame(rows)
 
+    def local_optima(
+        self,
+        positions: list[int] | None = None,
+        alphabets: dict[int, list[str]] | None = None,
+    ) -> dict:
+        """Enumerate the complete combinatorial space and report local optima.
+
+        A local optimum is a variant whose fitness is strictly greater than all
+        its single-mutation neighbours over the product of observed alphabets.
+        Reports the number of peaks, their basin sizes under greedy ascent, and
+        the global peak.
+
+        Parameters
+        positions : list[int] or None
+            Subset of landscape positions to enumerate over. Default is all.
+        alphabets : dict[position -> list[aa]] or None
+            Amino acids to consider at each position. Default is the union of
+            the wild-type AA and all mutant AAs with measured effects.
+
+        Returns dict with keys: n_optima, peak_indices, peak_fitnesses,
+        global_peak, basin_sizes, positions, alphabets, tensor.
+        """
+        if positions is None:
+            positions = self.positions
+        if alphabets is None:
+            alphabets = {}
+            for pos in positions:
+                wt = self.wild_type[pos]
+                aas = set(self.single_site_effects.get(pos, {}).keys())
+                aas.add(wt)
+                alphabets[pos] = sorted(aas)
+
+        shape = tuple(len(alphabets[p]) for p in positions)
+        n = int(np.prod(shape))
+        variants = []
+        indices = []
+
+        for combo in product(*(alphabets[p] for p in positions)):
+            mutations = {
+                pos: aa for pos, aa in zip(positions, combo) if aa != self.wild_type[pos]
+            }
+            variants.append(mutations)
+            indices.append(tuple(alphabets[p].index(aa) for p, aa in zip(positions, combo)))
+
+        fitness = self.evaluate_batch(variants)
+        tensor = np.empty(shape, dtype=np.float64)
+        for idx, f in zip(indices, fitness):
+            tensor[idx] = f
+
+        result = local_optima_from_tensor(tensor)
+        result["positions"] = positions
+        result["alphabets"] = alphabets
+        result["tensor"] = tensor
+        result["n_variants"] = n
+        return result
+
     def plot_epistasis(
         self,
         depths: list[int] | None = None,
@@ -519,6 +595,7 @@ class Landscape:
         alpha: float = 1.0,
         noise_sigma: float = 0.0,
         seed: int | None = None,
+        nonlinearity: NonLinearity | str | None = None,
     ) -> "Landscape":
         """Build a landscape from pLM-predicted single-site effects.
 
@@ -556,6 +633,7 @@ class Landscape:
         restricted_contacts = contact_map.submap(available)
 
         couplings = epistasis.generate(restricted_contacts, single_site_effects)
+        nl = _resolve_nonlinearity(nonlinearity, single_site_effects)
 
         return cls(
             wild_type=wild_type,
@@ -566,6 +644,7 @@ class Landscape:
             noise_sigma=noise_sigma,
             seed=seed,
             wt_sequence=sequence,
+            nonlinearity=nl,
         )
 
     @classmethod
@@ -584,6 +663,7 @@ class Landscape:
         wildtype_col: str = "wildtype",
         mutant_col: str = "mutant",
         fitness_col: str = "fitness",
+        nonlinearity: NonLinearity | str | None = None,
     ) -> "Landscape":
         """Construct a landscape from a DMS CSV file and structural data.
 
@@ -683,6 +763,7 @@ class Landscape:
 
         # Generate couplings
         couplings = epistasis.generate(restricted_contacts, single_site_effects)
+        nl = _resolve_nonlinearity(nonlinearity, single_site_effects)
 
         return cls(
             wild_type=wild_type,
@@ -692,5 +773,6 @@ class Landscape:
             alpha=alpha,
             noise_sigma=noise_sigma,
             seed=seed,
+            nonlinearity=nl,
             wt_sequence=wt_sequence,
         )

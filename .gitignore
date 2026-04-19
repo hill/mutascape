@@ -36,3 +36,9 @@ notebooks/*.nbconvert.*
 data/**/*.pdb
 data/**/*.cif
 data/**/*.npz
+
+# Web (Bun / TS viz at /web/)
+web/node_modules/
+web/dist/
+web/bun.lock
+!web/index.html

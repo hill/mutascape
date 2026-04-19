@@ -7,10 +7,40 @@ import pandas as pd
 from Bio import SeqIO
 
 from mutascape import ContactMap, Landscape, RandomEpistasis, SignConsistentEpistasis
+from mutascape.nonlinearity import Identity, NonLinearity, ThermodynamicSigmoid
 
 from .comparisons import composite_validation_score
 from .metrics import compute_all_metrics
-from .real_data import sample_synthetic_data
+from .real_data import load_single_site_effects, sample_synthetic_data
+
+
+def _resolve_nonlinearity_arg(
+    nonlinearity, dms_csv: str | Path
+) -> NonLinearity:
+    """Normalise the `nonlinearity` argument used throughout this module.
+
+    Supports: None (Identity), a NonLinearity instance (used as-is), the string
+    "fit" (MLE-fit ThermodynamicSigmoid from the DMS singles), or a float
+    (ThermodynamicSigmoid with that scale; floor/ceiling auto-set from singles).
+    """
+    if nonlinearity is None:
+        return Identity()
+    if isinstance(nonlinearity, NonLinearity):
+        return nonlinearity
+    if isinstance(nonlinearity, str):
+        if nonlinearity == "fit":
+            return ThermodynamicSigmoid.fit_from_singles(load_single_site_effects(dms_csv))
+        raise ValueError(f"Unknown nonlinearity string {nonlinearity!r}")
+    if isinstance(nonlinearity, int | float):
+        # Auto-set floor/ceiling from singles, use user-supplied scale.
+        effects = load_single_site_effects(dms_csv)
+        fitted = ThermodynamicSigmoid.fit_from_singles(effects)
+        return ThermodynamicSigmoid(
+            floor=fitted.floor,
+            ceiling=fitted.ceiling,
+            scale=float(nonlinearity),
+        )
+    raise TypeError(f"Unsupported nonlinearity type: {type(nonlinearity)}")
 
 
 def build_landscape(
@@ -22,8 +52,20 @@ def build_landscape(
     seed: int = 42,
     epistasis_model: str = "random",
     threshold: float = 8.0,
+    nonlinearity: NonLinearity | str | float | None = None,
+    noise_sigma: float = 0.0,
 ) -> Landscape:
-    """Build a landscape from DMS data and a precomputed distance matrix."""
+    """Build a landscape from DMS data and a precomputed distance matrix.
+
+    `nonlinearity` accepts None (default, Identity passthrough), a NonLinearity
+    instance, "fit" (auto-fit a ThermodynamicSigmoid from the DMS singles), or
+    a float (use that sigmoid scale, with floor/ceiling auto-set from singles).
+
+    `noise_sigma` is the std dev of Gaussian measurement noise added to each
+    evaluated variant in pre-nonlinearity (stability-equivalent) units. 0.0
+    gives a deterministic landscape; values in the 0.1-0.5 range add a small
+    amount of per-variant stochasticity that mimics DMS assay noise.
+    """
     distances = np.load(distances_npz)
     contact_map = ContactMap.from_distance_matrix(
         distances["distances"],
@@ -37,14 +79,17 @@ def build_landscape(
         epistasis = RandomEpistasis(sigma=sigma, seed=seed)
 
     wt_seq = str(next(SeqIO.parse(str(wt_fasta), "fasta")).seq)
+    nl = _resolve_nonlinearity_arg(nonlinearity, dms_csv)
 
     return Landscape.from_dms(
         dms_path=dms_csv,
         contact_map=contact_map,
         epistasis=epistasis,
         alpha=alpha,
+        noise_sigma=noise_sigma,
         seed=seed,
         wt_sequence=wt_seq,
+        nonlinearity=nl,
     )
 
 
@@ -98,6 +143,57 @@ def find_optimal_alpha(sweep_df: pd.DataFrame) -> float:
     """Return the alpha with the lowest composite score."""
     best_idx = sweep_df["composite_score"].idxmin()
     return float(sweep_df.loc[best_idx, "alpha"])
+
+
+def thermo_sweep(
+    real_metrics: dict,
+    single_site_effects: dict[int, dict[str, float]],
+    build_fn,
+    alphas: list[float],
+    scales: list[float],
+    depths: list[int] | None = None,
+    n_per_depth: int = 3000,
+) -> pd.DataFrame:
+    """Joint 2D sweep over (alpha, sigmoid_scale) for thermodynamic non-linearity.
+
+    Parameters
+    build_fn : callable(alpha, scale) -> Landscape
+        Builds a landscape with the given alpha and sigmoid scale. The
+        caller is responsible for setting floor/ceiling (usually via
+        ThermodynamicSigmoid.fit_from_singles once, then varying scale).
+
+    Returns DataFrame with columns: alpha, scale, composite_score, and
+    per-depth additive_corr_d{d} / sign_epi_d{d} for d in depths.
+    """
+    if depths is None:
+        depths = list(range(2, 8))
+
+    rows = []
+    for alpha in alphas:
+        for scale in scales:
+            print(f"  alpha={alpha:.2f} scale={scale:.3f}", end="", flush=True)
+            landscape = build_fn(alpha, scale)
+            synth_df = sample_synthetic_data(landscape, depths, n_per_depth=n_per_depth)
+            synth_metrics = compute_all_metrics(synth_df, single_site_effects, depths)
+            score = composite_validation_score(real_metrics, synth_metrics)
+
+            row = {"alpha": alpha, "scale": scale, "composite_score": score}
+            for d in depths:
+                if d in synth_metrics["additive_correlation"]:
+                    row[f"additive_corr_d{d}"] = synth_metrics["additive_correlation"][d]
+                if d in synth_metrics["sign_epistasis"]:
+                    row[f"sign_epi_d{d}"] = synth_metrics["sign_epistasis"][d]
+            rows.append(row)
+            print(f" -> score={score:.4f}")
+
+    return pd.DataFrame(rows)
+
+
+def find_optimal_thermo(sweep_df: pd.DataFrame) -> tuple[float, float]:
+    """Return (alpha, scale) with the lowest composite score."""
+    best_idx = sweep_df["composite_score"].idxmin()
+    row = sweep_df.loc[best_idx]
+    return float(row["alpha"]), float(row["scale"])
 
 
 def refine_alpha(

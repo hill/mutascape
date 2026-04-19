@@ -39,6 +39,52 @@ def distributional_comparison(
     }
 
 
+def tensor_pearson_r(
+    real_tensor: np.ndarray,
+    synth_tensor: np.ndarray,
+) -> float:
+    """Pearson correlation between real and synthetic fitness tensors.
+
+    Tensors must share shape. Only matched positions where both entries are
+    finite contribute; NaNs in either are skipped. Returns NaN if fewer than
+    two overlapping finite entries or if either side has zero variance.
+
+    This is the single-number answer to "does the synthetic landscape predict
+    the right fitness for each variant," independent of any distributional
+    or structural objective.
+    """
+    if real_tensor.shape != synth_tensor.shape:
+        raise ValueError(
+            f"tensor shape mismatch: real={real_tensor.shape}, synth={synth_tensor.shape}"
+        )
+    mask = np.isfinite(real_tensor) & np.isfinite(synth_tensor)
+    if int(mask.sum()) < 2:
+        return float("nan")
+    r = real_tensor[mask].ravel()
+    s = synth_tensor[mask].ravel()
+    if np.std(r) == 0 or np.std(s) == 0:
+        return float("nan")
+    return float(np.corrcoef(r, s)[0, 1])
+
+
+def fitness_wasserstein(
+    real_tensor: np.ndarray,
+    synth_tensor: np.ndarray,
+) -> float:
+    """Wasserstein-1 distance between the marginal fitness distributions of
+    the real and synthetic tensors.
+
+    Ignores NaNs on either side. Measures "shape match" independently of any
+    per-variant correspondence; complements `tensor_pearson_r` which measures
+    per-variant match.
+    """
+    r = real_tensor[np.isfinite(real_tensor)].ravel()
+    s = synth_tensor[np.isfinite(synth_tensor)].ravel()
+    if r.size == 0 or s.size == 0:
+        return float("nan")
+    return float(sp_stats.wasserstein_distance(r, s))
+
+
 def bootstrap_ci(
     data: np.ndarray,
     metric_fn,

@@ -13,3 +13,23 @@ lint:
 fmt:
     uv run ruff check --fix src tests
     uv run ruff format src tests
+
+# Regenerate web/data/gb1.json from the GB1 CSVs (run after updating data/gb1/).
+web-data:
+    uv run python -m mutascape.viz_export
+
+# Install frontend deps (bun) and build the TypeScript bundle into web/dist/.
+web-build:
+    cd web && bun install --silent && bun run build
+
+# Frontend-only dev server (Bun). No oracle; client-side synthetic couplings.
+web-dev:
+    cd web && bun install --silent && bun run dev
+
+# Run the FastAPI oracle. Serves both the frontend and POST /api/score.
+# Rebuild the frontend first so web/dist/ exists.
+api-dev: web-build
+    uv run uvicorn mutascape.server:app --reload --port 8000
+
+# Full stack dev (alias). http://localhost:8000
+dev: api-dev

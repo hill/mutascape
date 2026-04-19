@@ -5,10 +5,16 @@ All functions accept a DataFrame with columns:
 
 This lets us compute identical metrics on both real multi-mutant data
 and synthetic mutascape samples.
+
+The complete-space metrics (local_optima_from_tensor, accessible_paths,
+fitness_distance_correlation_from_tensor) operate on a fitness tensor
+of shape (|A_1|, ..., |A_L|) for L positions with observed alphabets A_i,
+as returned by fourier.fitness_tensor_from_real / _from_landscape.
 """
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 from scipy import stats as sp_stats
 
 
@@ -220,6 +226,237 @@ def _estimate_pairwise_from_doubles(
         pairwise[key][aa_key] = row["epistatic_deviation"]
 
     return pairwise
+
+
+def roughness_slope_ratio(
+    df: pd.DataFrame,
+) -> float:
+    """Roughness-to-slope ratio (Szendro et al. 2013, J Stat Mech).
+
+    r/s = RMSD(residuals from the best-fit additive model) / mean(|additive predictions|).
+    Single scalar; larger values mean a more rugged landscape relative to its
+    additive slope. Collapses the depth-resolved profiles into one number that
+    is directly comparable across datasets.
+    """
+    add_pred = df["additive_prediction"].to_numpy()
+    fitness = df["fitness"].to_numpy()
+    residuals = fitness - add_pred
+    rmsd = float(np.sqrt(np.mean(residuals**2)))
+    slope = float(np.mean(np.abs(add_pred)))
+    if slope <= 0:
+        return float("inf")
+    return rmsd / slope
+
+
+def fitness_distance_correlation(
+    df: pd.DataFrame,
+) -> float:
+    """Pearson correlation between fitness and Hamming distance from WT (Jones & Forrest 1995).
+
+    Distance from WT is taken as the variant's `depth` (number of mutations away).
+    Negative values indicate a funnel-like landscape (closer to WT -> higher fitness).
+    """
+    if len(df) < 3:
+        return float("nan")
+    r, _ = sp_stats.pearsonr(df["depth"].to_numpy(), df["fitness"].to_numpy())
+    return float(r)
+
+
+def _neighbours_of(idx: tuple[int, ...], shape: tuple[int, ...]):
+    """Single-mutation neighbour indices for a cell of a fitness tensor."""
+    for d in range(len(idx)):
+        for v in range(shape[d]):
+            if v == idx[d]:
+                continue
+            new = list(idx)
+            new[d] = v
+            yield tuple(new)
+
+
+def local_optima_from_tensor(
+    tensor: NDArray[np.float64],
+) -> dict[str, object]:
+    """Count local optima of a complete fitness tensor.
+
+    A local optimum is a cell whose fitness is strictly greater than all of
+    its single-mutation (Hamming-1) neighbours. Returns a dict with:
+        n_optima : number of local optima
+        peak_indices : list of argmax indices, sorted by fitness descending
+        peak_fitnesses : corresponding fitness values
+        global_peak : index of the single global optimum
+        basin_sizes : list of basin sizes (count of cells that reach each peak
+            via greedy single-step ascent)
+    """
+    tensor = np.where(np.isnan(tensor), np.nanmin(tensor) - 1e6, tensor)
+    shape = tensor.shape
+    is_peak = np.zeros(shape, dtype=bool)
+    for idx in np.ndindex(*shape):
+        f = tensor[idx]
+        if all(tensor[n] < f for n in _neighbours_of(idx, shape)):
+            is_peak[idx] = True
+
+    peak_coords = list(zip(*np.where(is_peak)))
+    peak_fitnesses = [float(tensor[p]) for p in peak_coords]
+    order = np.argsort(peak_fitnesses)[::-1]
+    peak_coords = [peak_coords[i] for i in order]
+    peak_fitnesses = [peak_fitnesses[i] for i in order]
+
+    peak_id: dict[tuple[int, ...], int] = {p: i for i, p in enumerate(peak_coords)}
+
+    def ascend(start: tuple[int, ...]) -> tuple[int, ...]:
+        current = start
+        while current not in peak_id:
+            best = current
+            best_f = tensor[current]
+            for n in _neighbours_of(current, shape):
+                if tensor[n] > best_f:
+                    best_f = tensor[n]
+                    best = n
+            if best == current:
+                break
+            current = best
+        return current
+
+    basin_counts = [0] * len(peak_coords)
+    for idx in np.ndindex(*shape):
+        final = ascend(idx)
+        if final in peak_id:
+            basin_counts[peak_id[final]] += 1
+
+    return {
+        "n_optima": len(peak_coords),
+        "peak_indices": peak_coords,
+        "peak_fitnesses": peak_fitnesses,
+        "global_peak": peak_coords[0] if peak_coords else None,
+        "basin_sizes": basin_counts,
+    }
+
+
+def accessible_paths(
+    tensor: NDArray[np.float64],
+    peak_idx: tuple[int, ...] | None = None,
+    n_sources: int | None = None,
+    n_rsign_samples: int = 20000,
+    seed: int = 42,
+) -> dict[str, float]:
+    """Fraction of monotonic single-step paths from each variant to the global peak.
+
+    For each source variant at Hamming distance d from the peak, there are d!
+    direct paths fixing one position at a time. A path is "accessible" if every
+    step strictly increases fitness (Weinreich et al. 2006). The reported fraction
+    is the mean across sampled sources of (accessible_paths / d!). Also returns
+    the fraction of 2x2 sub-landscapes that show reciprocal sign epistasis, the
+    predominant cause of inaccessible paths (Poelwijk 2011).
+    """
+    from itertools import combinations, permutations
+
+    tensor = np.where(np.isnan(tensor), np.nanmin(tensor) - 1e6, tensor)
+    shape = tensor.shape
+    L = tensor.ndim
+    rng = np.random.default_rng(seed)
+
+    if peak_idx is None:
+        peak_idx = np.unravel_index(int(np.argmax(tensor)), shape)
+
+    all_sources = list(np.ndindex(*shape))
+    if n_sources is not None and n_sources < len(all_sources):
+        sample_idx = rng.choice(len(all_sources), size=n_sources, replace=False)
+        sources = [all_sources[i] for i in sample_idx]
+    else:
+        sources = all_sources
+
+    total_fraction = 0.0
+    counted = 0
+    for src in sources:
+        differing = [d for d in range(L) if src[d] != peak_idx[d]]
+        k = len(differing)
+        if k == 0:
+            continue
+        n_accessible = 0
+        n_paths = 1
+        for i in range(1, k + 1):
+            n_paths *= i
+        for order in permutations(differing):
+            cur = list(src)
+            cur_f = tensor[tuple(cur)]
+            ok = True
+            for d in order:
+                cur[d] = peak_idx[d]
+                nxt_f = tensor[tuple(cur)]
+                if nxt_f <= cur_f:
+                    ok = False
+                    break
+                cur_f = nxt_f
+            if ok:
+                n_accessible += 1
+        total_fraction += n_accessible / n_paths
+        counted += 1
+    mean_fraction = total_fraction / counted if counted else float("nan")
+
+    # Reciprocal sign epistasis: sample random 2x2 sub-landscapes.
+    if L >= 2:
+        n_rsign = 0
+        n_sampled = 0
+        pair_choices = list(combinations(range(L), 2))
+        for _ in range(n_rsign_samples):
+            i, j = pair_choices[rng.integers(len(pair_choices))]
+            others = [d for d in range(L) if d != i and d != j]
+            bg = [int(rng.integers(shape[d])) for d in others]
+            a1, b1 = rng.choice(shape[i], size=2, replace=False)
+            a2, b2 = rng.choice(shape[j], size=2, replace=False)
+            idx = [0] * L
+            for d, v in zip(others, bg):
+                idx[d] = v
+            def cell(x1, x2, base=idx, i=i, j=j):
+                base = list(base)
+                base[i] = int(x1)
+                base[j] = int(x2)
+                return float(tensor[tuple(base)])
+            f_aa = cell(a1, a2)
+            f_ab = cell(a1, b2)
+            f_ba = cell(b1, a2)
+            f_bb = cell(b1, b2)
+            e1 = (f_ba - f_aa) * (f_bb - f_ab)
+            e2 = (f_ab - f_aa) * (f_bb - f_ba)
+            if e1 < 0 and e2 < 0:
+                n_rsign += 1
+            n_sampled += 1
+        reciprocal_sign_frac = n_rsign / n_sampled if n_sampled else 0.0
+    else:
+        reciprocal_sign_frac = 0.0
+
+    return {
+        "mean_accessible_fraction": float(mean_fraction),
+        "reciprocal_sign_frac": float(reciprocal_sign_frac),
+        "n_sources": counted,
+        "peak_idx": tuple(int(x) for x in peak_idx),
+    }
+
+
+def fitness_distance_correlation_from_tensor(
+    tensor: NDArray[np.float64],
+    peak_idx: tuple[int, ...] | None = None,
+) -> float:
+    """Pearson correlation between fitness and Hamming distance from the global peak.
+
+    Tensor variant of fitness_distance_correlation, for complete combinatorial
+    spaces where every variant is present.
+    """
+    tensor = np.where(np.isnan(tensor), np.nanmean(tensor), tensor)
+    shape = tensor.shape
+    if peak_idx is None:
+        peak_idx = np.unravel_index(int(np.argmax(tensor)), shape)
+
+    distances = np.empty(shape, dtype=int)
+    for idx in np.ndindex(*shape):
+        distances[idx] = sum(1 for d, p in zip(idx, peak_idx) if d != p)
+
+    flat_f = tensor.ravel()
+    flat_d = distances.ravel()
+    if np.std(flat_f) <= 0 or np.std(flat_d) <= 0:
+        return float("nan")
+    r, _ = sp_stats.pearsonr(flat_d, flat_f)
+    return float(r)
 
 
 def compute_all_metrics(

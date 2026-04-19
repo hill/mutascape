@@ -28,6 +28,7 @@ from mutascape.epistasis import (
 from mutascape.interactive import morphing_landscape
 from mutascape.landscape import Landscape, Variant
 from mutascape.mutant import Mutant
+from mutascape.nonlinearity import Identity, NonLinearity, ThermodynamicSigmoid
 from mutascape.plotting import (
     plot_alpha_sweep,
     plot_contact_map,
@@ -42,11 +43,14 @@ __all__ = [
     "CouplingTensor",
     "ESM2Scorer",
     "EpistasisModel",
+    "Identity",
     "Landscape",
     "Mutant",
+    "NonLinearity",
     "PLMScorer",
     "RandomEpistasis",
     "SignConsistentEpistasis",
+    "ThermodynamicSigmoid",
     "Variant",
     "morphing_landscape",
     "plot_alpha_sweep",

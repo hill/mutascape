@@ -1,0 +1,14 @@
+{
+  "name": "mutascape-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun serve.ts --watch",
+    "build": "bun build src/main.ts --outdir dist --target browser --minify",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/bun": "latest"
+  }
+}

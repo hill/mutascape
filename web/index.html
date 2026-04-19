@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mutascape · hamming lattice navigator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <div class="title">
+        <h1>mutascape</h1>
+        <span class="subtitle">hamming lattice navigator</span>
+      </div>
+      <div class="header-actions">
+        <span id="oracle-badge" class="oracle-badge">static data</span>
+        <button id="load-gb1" class="ghost">GB1</button>
+        <button id="paste-fasta" class="ghost">paste FASTA</button>
+      </div>
+    </header>
+
+    <section class="sequence-panel">
+      <div class="sequence-meta">
+        <span id="protein-label">GB1 · 56 aa</span>
+        <span class="hint">click residues to toggle (min 2 positions)</span>
+      </div>
+      <div id="sequence-strip" class="sequence-strip"></div>
+    </section>
+
+    <section class="variant-panel" id="variant-panel" hidden>
+      <div class="variant-header">
+        <span class="variant-label" id="variant-label">WT</span>
+        <div class="variant-meta">
+          <span>depth <b id="variant-depth">0</b></span>
+          <span>fitness <b class="pill" id="variant-fitness">0.000</b></span>
+          <span id="variant-measured-wrap" hidden>measured <b class="pill" id="variant-measured">0.000</b></span>
+        </div>
+      </div>
+      <div id="variant-strip" class="sequence-strip"></div>
+    </section>
+
+    <main>
+      <aside class="controls">
+        <div class="control-group">
+          <div class="group-label">
+            <span>variants shown</span>
+            <span id="vertex-count" class="count">16</span>
+          </div>
+          <div id="positions" class="positions"></div>
+          <div class="hint" id="focus-hint" hidden></div>
+        </div>
+
+        <div class="control-group">
+          <div class="group-label">
+            <span>epistasis α</span>
+            <span id="alpha-value" class="count">1.00</span>
+          </div>
+          <input
+            id="alpha"
+            type="range"
+            min="0"
+            max="3"
+            step="0.01"
+            value="1.0"
+          />
+          <div class="alpha-note" id="alpha-note">higher = more epistasis</div>
+        </div>
+
+        <div class="control-group buttons">
+          <button id="greedy">greedy walk</button>
+          <button id="reseed" class="ghost">reseed</button>
+          <button id="reset-view" class="ghost">reset</button>
+        </div>
+
+        <div class="control-group stats">
+          <div class="group-label"><span>stats</span></div>
+          <dl>
+            <dt>local optima</dt><dd id="stat-optima">·</dd>
+            <dt>best variant</dt><dd id="stat-best">·</dd>
+            <dt>best fitness</dt><dd id="stat-best-f">·</dd>
+            <dt>WT percentile</dt><dd id="stat-wt-rank">·</dd>
+          </dl>
+        </div>
+      </aside>
+
+      <div class="canvas-wrap">
+        <canvas id="lattice"></canvas>
+        <div id="tooltip" class="tooltip" hidden></div>
+        <div id="legend" class="legend">
+          <span class="legend-item"><span class="swatch bad"></span>worse than WT</span>
+          <span class="legend-item"><span class="swatch wt"></span>WT</span>
+          <span class="legend-item"><span class="swatch good"></span>better than WT</span>
+          <span class="legend-item"><span class="swatch dot"></span>measured (Olson 2014)</span>
+        </div>
+      </div>
+    </main>
+
+    <dialog id="fasta-dialog">
+      <form method="dialog">
+        <h2>paste a FASTA</h2>
+        <p class="hint">
+          a single-record FASTA. multi-record input is allowed; only the first
+          record is used. only the 20 canonical amino acids are accepted.
+        </p>
+        <textarea id="fasta-input" rows="12" spellcheck="false" placeholder=">MY_PROTEIN&#10;MAEQLA..."></textarea>
+        <div id="fasta-error" class="error" hidden></div>
+        <div class="dialog-actions">
+          <button value="cancel" class="ghost">cancel</button>
+          <button id="fasta-submit" value="submit">load</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" hidden></div>
+
+    <script type="module" src="./dist/main.js"></script>
+  </body>
+</html>

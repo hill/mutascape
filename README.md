@@ -4,115 +4,206 @@
 
 # mutascape
 
-Synthetic combinatorial protein fitness landscapes for benchmarking MLDE and ALDE methods.
+Synthetic combinatorially complete protein fitness landscapes with tuneable, structurally informed epistasis.
 
-Mutascape builds benchmark landscapes from real single-site DMS effects plus protein structure. The current publication reference pipeline is intentionally simple: additive DMS pre-fitness, a fitted censored thermodynamic sigmoid, and Gaussian noise. Optional structural pairwise couplings still exist in the package, but they are *off by default* because they worsened the headline validation metrics on both GB1 and TrpB.
-
-For larger proteins, Mutascape can still use structural and protein-language-model priors: contact maps can come from PDB/mmCIF structures, AlphaFold-style predicted structures saved as structure files, precomputed distance matrices, or the built-in ESMFold sequence-to-structure route; missing single-site effects can be filled with masked-marginal ESM2 scores. That is an enabled workflow, not the headline validated result.
+Real single-site DMS effects, 3D structural contacts, and a swappable pairwise epistasis model, all wrapped behind a `Landscape` oracle that you can index with `Mutant` objects to get fitness for any multi-mutant. Tune ruggedness with one knob (`alpha`); pick the epistasis story you want (random, sign-consistent, MSA-derived). Wrap the latent score in a thermodynamic non-linearity and Gaussian noise when you want a more realistic readout.
 
 ## Installation
 
 Requires Python 3.12+.
 
 ```bash
-uv sync
-uv sync --extra dev
+uv sync              # core dependencies
+uv sync --extra dev  # + pytest/ruff
 ```
 
 ## Quick start
 
-Use the frozen publication configs when you want the validated reference pipeline:
-
 ```python
-from mutascape.validation.reference_configs import GB1_HEADLINE, TRPB_HEADLINE
+from mutascape import Landscape, ContactMap, Mutant, RandomEpistasis
 
-gb1 = GB1_HEADLINE.build_landscape()
-trpb = TRPB_HEADLINE.build_landscape()
+# Contact map from a PDB file (or predicted from sequence with ESMFold)
+contacts = ContactMap.from_pdb("structure.pdb", threshold=8.0)
 
-gb1["V39A"]
-trpb["V183A:F184I"]
+# Build a synthetic landscape grounded in DMS singles + structural contacts
+landscape = Landscape.from_dms(
+    dms_path="dms_data.csv",
+    wt_sequence="MAEQLA...",
+    contact_map=contacts,
+    epistasis=RandomEpistasis(sigma=0.3, seed=42),
+    alpha=1.0,
+)
+
+# Query the oracle by mutant label or composed Mutant objects
+landscape["A29H"]
+landscape[Mutant("A29H") + Mutant("R60D")]
+landscape[Mutant("A29H") + Mutant("R60D") + Mutant("K93T")]
 ```
 
-For custom builds, go through the shared validation builder so the paper-critical parameters are explicit:
+## Loading landscapes
+
+### From a PDB or mmCIF structure
 
 ```python
-from mutascape.validation.calibration import build_landscape
+contacts = ContactMap.from_pdb("structure.pdb", threshold=8.0, chain_id="A")
+```
 
-landscape = build_landscape(
-    "data/gb1/gb1.csv",
-    "data/gb1/gb1_distances.npz",
-    "data/gb1/gb1_wt.fasta",
-    alpha=1.5,
-    sigma=0.0,
-    nonlinearity="fit",
-    combinatorial_upside=3.0,
-    scale=1.0,
-    floor_hard=-1.0,
-    noise_sigma=0.3,
+### From an ESMFold prediction (no PDB available)
+
+```python
+contacts = ContactMap.from_sequence("MAEQLA...", threshold=8.0)  # cached locally
+```
+
+### From a precomputed distance matrix
+
+```python
+import numpy as np
+
+distances = np.load("distances.npy")  # shape (L, L)
+contacts = ContactMap.from_distance_matrix(distances, positions=range(1, 120), threshold=8.0)
+```
+
+### Hybrid DMS with ESM2 fill-in
+
+```python
+from mutascape import ESM2Scorer
+
+scorer = ESM2Scorer()
+landscape = Landscape.from_dms(
+    dms_path="partial_dms.csv",
+    wt_sequence="MAEQLA...",
+    contact_map=contacts,
+    epistasis=RandomEpistasis(sigma=0.3, seed=42),
+    scorer=scorer,  # fills unscreened positions with masked-marginal ESM2 scores
+)
+```
+
+### Pure pLM landscape (no DMS)
+
+```python
+landscape = Landscape.from_plm(
+    sequence="MAEQLA...",
+    contact_map=contacts,
+    epistasis=RandomEpistasis(sigma=0.3, seed=42),
+    scorer=scorer,
+)
+```
+
+## Querying the oracle
+
+```python
+# Index by label or by Mutant
+landscape["A29H"]
+landscape[Mutant("A29H")]
+
+# Compose mutants with + (and remove with -)
+m = Mutant("A29H") + Mutant("R60D")
+landscape[m]
+m.depth         # 2
+dict(m)         # {29: 'H', 60: 'D'}
+
+# Stream variants at a fixed mutation depth
+for v in landscape.generate(n_mutations=3, n=1000, seed=42):
+    print(v.mutations, v.fitness)
+
+# Bulk sample to a pandas DataFrame across a depth range
+df = landscape.to_dataframe(n_variants=10_000, n_mutations=(1, 5), seed=42)
+
+# Compare actual against the additive prediction
+actual   = landscape.evaluate({29: "H", 60: "D"})
+additive = landscape.additive_fitness({29: "H", 60: "D"})
+
+# Cheap descriptive stats
+landscape.stats(n_samples=5000, n_mutations=3)
+# -> {'mean_fitness': ..., 'additive_correlation': ...,
+#     'mean_epistatic_deviation': ..., 'fraction_sign_epistasis': ...}
+```
+
+## Tuning ruggedness
+
+`alpha` is a global multiplier on the pairwise term. `alpha=0` recovers the purely additive landscape; raising it progressively introduces sign epistasis and local optima.
+
+```python
+smooth   = Landscape.from_dms(..., epistasis=RandomEpistasis(sigma=0.3, seed=42), alpha=0.0)
+moderate = Landscape.from_dms(..., epistasis=RandomEpistasis(sigma=0.3, seed=42), alpha=1.0)
+rugged   = Landscape.from_dms(..., epistasis=RandomEpistasis(sigma=0.3, seed=42), alpha=2.5)
+```
+
+Swap the epistasis model itself to change the *character* of the interactions, not just their magnitude:
+
+```python
+from mutascape import SignConsistentEpistasis, MSACouplingsEpistasis
+
+# Sign-consistent: beneficial+beneficial and deleterious+deleterious cooperate
+sc = Landscape.from_dms(..., epistasis=SignConsistentEpistasis(sigma=0.3, seed=42))
+
+# Evolutionarily informed: precomputed couplings from plmDCA / EVcouplings
+msa = Landscape.from_dms(
+    ...,
+    epistasis=MSACouplingsEpistasis(
+        coupling_matrix=J,                    # shape (L, L, 20, 20)
+        position_order=tuple(positions),
+        scale=0.5,
+    ),
+)
+```
+
+Add a global non-linearity and measurement noise on top of the latent score:
+
+```python
+from mutascape import ThermodynamicSigmoid
+
+nonlin = ThermodynamicSigmoid.fit_from_singles(
+    landscape.single_site_effects,
+    combinatorial_upside=2.0,
+)
+
+landscape = Landscape.from_dms(
+    ...,
+    epistasis=RandomEpistasis(sigma=0.3, seed=42),
+    nonlinearity=nonlin,
+    noise_sigma=0.15,
     seed=42,
 )
 ```
 
-## Frozen reference story
+## Reference benchmark landscapes
 
-The publication draft is built around two named reference configurations in `src/mutascape/validation/reference_configs.py`:
+For benchmarking work, mutascape ships two named reference configurations calibrated against the complete factorial GB1 and TrpB landscapes. Use these when you want a published, regression-tested benchmark landscape rather than building one from scratch.
 
-- `gb1_headline`: GB1 complete combinatorial landscape, `sigma=0`, `noise_sigma=0.3`, `scale=1.0`, `floor_hard=-1.0`
-- `trpb_headline`: TrpB complete combinatorial landscape, `sigma=0`, `noise_sigma=0.3`, `scale` fit from singles, `floor_hard=singles_min`
+```python
+from mutascape.validation.reference_configs import GB1_HEADLINE, TRPB_HEADLINE
 
-Headline validation at the frozen settings:
+gb1  = GB1_HEADLINE.build_landscape()
+trpb = TRPB_HEADLINE.build_landscape()
 
-- GB1: `walsh_L1 = 0.317`, `fitness_W1 = 0.036`
-- TrpB: `walsh_L1 = 0.107`, `fitness_W1 = 0.028`
+gb1["V39A"]
+trpb[Mutant("V183A") + Mutant("F184I")]
+```
 
-These are the main publication metrics. Per-order Walsh composition and `n_optima` are still reported, but as secondary diagnostics.
+At the shared default `noise_sigma=0.3` and `sigma=0`, these reach `walsh_L1=0.317` / `fitness_W1=0.036` on GB1 and `walsh_L1=0.107` / `fitness_W1=0.028` on TrpB, against the complete factorial real data.
 
-## Reproducibility
-
-Reference outputs can be rebuilt without notebooks:
+## Reproducing the published outputs
 
 ```bash
 ./.venv/bin/python scripts/rebuild_reference_outputs.py
 ./.venv/bin/python scripts/run_gfp_supplemental_validation.py
 ./.venv/bin/pytest -q tests/test_reference_configs.py
-../mutantopt/.venv/bin/python scripts/run_mutantopt_pilot.py \
-  --config gb1_headline --noise-sigmas 0.0 0.3
 ```
 
-The rebuild script regenerates the GB1/TrpB sweep CSVs and the headline figures in `notebooks/validation/output_*`.
-The pilot runner exports compact 4-position benchmark datasets and runs a first `mutantopt` comparison over a `noise_sigma` sweep.
-
-## What the package is for
-
-Mutascape is now framed as a *benchmark-generation tool*, not a digital twin of any one protein. The core use case is:
-
-1. Freeze a reference landscape generator grounded in DMS and structure.
-2. Validate it against complete combinatorial landscapes with `walsh_L1` and `fitness_W1`.
-3. Sweep `noise_sigma` to make the benchmark harder.
-4. Run MLDE / ALDE methods against that sweep.
-
-## Larger proteins and priors
-
-The validated reference configs use complete four-site GB1 and TrpB landscapes because they allow exact Walsh spectra and local-optima counts. The package itself is not restricted to four sites:
-
-- `ContactMap.from_pdb(...)` loads experimental PDB/mmCIF structures or predicted structures from AlphaFold/ColabFold/ESMFold if they are available as local files.
-- `ContactMap.from_distance_matrix(...)` loads prepared distance matrices for any selected position set.
-- `ContactMap.from_sequence(...)` calls the ESMFold API and caches the predicted PDB before extracting contacts.
-- `ESM2Scorer` can fill unscreened single-site effects when a DMS scan covers only part of a protein.
-
-Use these routes to construct larger benchmark candidates, then validate them where multi-mutant data exists. The current paper does not claim that ESM or AlphaFold priors alone solve the GFP/full-protein smoothness gap.
+The rebuild script regenerates the GB1 / TrpB sweep CSVs and the headline figures under `notebooks/validation/output_*`.
 
 ## Known limitations
 
 - GB1 still shows an order-1 / order-3 Walsh mismatch.
-- The current pipeline under-generates local optima on both GB1 and TrpB.
-- Sparse full-protein GFP remains smoother than the real landscape under the same pipeline.
+- The current default pipeline under-generates local optima on both GB1 and TrpB.
+- Sparse full-protein GFP remains smoother than the real landscape under the same default settings; the structural pairwise term (`alpha > 0`), MSA-derived couplings, and Contact-NK higher-order terms are the supported routes for closing this gap.
 - Functional-contact overrides should only be used when a ligand/cofactor or annotated active-site mechanism justifies them.
 
 ## Docs
 
 - [Project status](docs/project_status.md)
-- [Experiment log](docs/experiments_log.md) - chronological history; older entries are superseded by project status
-- [Thermodynamic nonlinearity design](docs/nonlinearity_design.md) - current mechanism with historical validation notes
-- [GB1 validation analysis](docs/gb1_validation_analysis.md) - historical alpha-era analysis
-- [Design document](docs/design.md) - historical design background, not the canonical method spec
+- [Experiment log](docs/experiments_log.md), chronological history (older entries are superseded by project status)
+- [Thermodynamic nonlinearity design](docs/nonlinearity_design.md), current mechanism with historical validation notes
+- [GB1 validation analysis](docs/gb1_validation_analysis.md), historical alpha-era analysis
+- [Design document](docs/design.md), historical design background

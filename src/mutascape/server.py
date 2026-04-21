@@ -1,8 +1,12 @@
-"""FastAPI oracle for the web viz at /web/.
+"""FastAPI oracle for the legacy alpha web viz at /web/.
 
 Exposes POST /api/score so the browser can ask the real mutascape Landscape
 for fitness predictions instead of running a random-coupling model in JS.
 Also serves the static frontend so the whole app runs on a single port.
+
+This demo intentionally keeps the old alpha/pairwise UI model for interactive
+visualization. It is not the frozen publication reference pipeline; use
+mutascape.validation.reference_configs for paper-grade outputs.
 
 Usage
     uv run uvicorn mutascape.server:app --reload --port 8000
@@ -140,6 +144,7 @@ app = FastAPI(title="mutascape oracle", docs_url="/api/docs")
 def meta() -> dict[str, Any]:
     return {
         "oracle": True,
+        "mode": "legacy-alpha-demo",
         "datasets": ["gb1"],
         "hard_max_k": 20,
     }
@@ -165,10 +170,10 @@ def score(req: ScoreRequest) -> ScoreResponse:
     masks = req.masks if req.masks is not None else list(range(1 << k))
 
     if req.wt == GB1_WT:
-        backend = "gb1-real"
+        backend = "gb1-legacy-alpha"
         lscape = _gb1_landscape(req.alpha, req.seed)
     else:
-        backend = "synthetic"
+        backend = "synthetic-legacy-alpha"
         lscape = _synthetic_landscape(
             req.wt, [s.position for s in req.sites], req.alpha, req.seed
         )

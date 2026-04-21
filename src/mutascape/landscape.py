@@ -1,22 +1,27 @@
 """Core fitness landscape class.
 
-Combines real single-site DMS data with structurally informed epistatic
-couplings to create synthetic combinatorial fitness landscapes. The landscape
-can evaluate arbitrary multi-mutant variants and sample random variants at
-specified mutation depths.
+Combines single-site effects, structural contact maps, optional epistatic
+couplings, a global nonlinearity, and optional noise to create synthetic
+combinatorial fitness landscapes. The landscape can evaluate arbitrary
+multi-mutant variants and sample random variants at specified mutation depths.
 
-The fitness function:
+The general fitness function is:
 
-    f(x) = sum_i h_i(x_i) + alpha * sum_{i<j} C_ij * J_ij(x_i, x_j) + noise
+    f(x) = g(sum_i g^-1(h_i(x_i))
+             + alpha * sum_{i<j} C_ij * J_ij(x_i, x_j)
+             + alpha_ho * H(x)
+             + noise)
 
-Where h_i are real DMS-measured single-site effects, J_ij are pairwise
-couplings from the chosen epistasis model, C_ij is the contact map, and
-alpha scales epistatic strength (alpha=0 recovers the additive landscape).
+Where h_i are single-site effects from DMS or a pLM scorer, J_ij are optional
+pairwise couplings from the chosen epistasis model, C_ij is the contact map,
+H is an optional structural NK-style higher-order term, and g is usually either
+the identity or a fitted thermodynamic sigmoid.
 
 This approach differs from SLIP (Thomas et al. 2022), which derives both h
 and J from Potts model fits to MSAs, and from NK landscapes (Sandhu et al.
 2025), which use abstract random interactions. mutascape grounds single-site
-effects in experimental data and epistatic topology in 3D structure.
+effects in experimental data where available and keeps structural priors
+explicit rather than implicit.
 """
 
 from collections.abc import Iterator
@@ -32,6 +37,7 @@ from numpy.typing import NDArray
 from mutascape.contacts import ContactMap
 from mutascape.epistasis import (
     AMINO_ACIDS,
+    ContactNKTensor,
     CouplingTensor,
     EpistasisModel,
 )
@@ -50,6 +56,31 @@ class Variant(NamedTuple):
     fitness: float
 
 
+def _pin_nk_wildtype(
+    tensor: ContactNKTensor, wild_type: dict[int, str]
+) -> ContactNKTensor:
+    """Shift each per-position NK function so f(all wildtype) = 0.
+
+    Needed at Landscape construction time because the wildtype is tracked on
+    the landscape rather than on the contact map. Keeps single-mutant
+    predictions consistent with DMS data when the higher-order component is
+    added on top of the additive h_i terms.
+    """
+    shifted: dict[int, NDArray[np.float64]] = {}
+    for pos, f in tensor.per_position_functions.items():
+        wt_idx = (
+            tensor.aa_index[wild_type[pos]],
+            *(tensor.aa_index[wild_type[n]] for n in tensor.neighbours_by_position[pos]),
+        )
+        shifted[pos] = f - float(f[wt_idx])
+    return ContactNKTensor(
+        per_position_functions=shifted,
+        neighbours_by_position=tensor.neighbours_by_position,
+        positions=tensor.positions,
+        aa_index=tensor.aa_index,
+    )
+
+
 @dataclass
 class Landscape:
     """Synthetic combinatorial protein fitness landscape.
@@ -65,8 +96,9 @@ class Landscape:
     couplings : CouplingTensor
         Pairwise epistatic couplings from the chosen model.
     alpha : float
-        Global epistatic strength multiplier. alpha=0 gives an additive
-        landscape; larger values increase ruggedness.
+        Multiplier for optional pairwise couplings. In the publication
+        reference configs `sigma=0`, so this is retained for API compatibility
+        but does not affect the headline landscape.
     noise_sigma : float
         Standard deviation of Gaussian measurement noise (0.0 = no noise).
     seed : int or None
@@ -82,6 +114,8 @@ class Landscape:
     seed: int | None = None
     wt_sequence: str | None = None
     nonlinearity: NonLinearity = field(default_factory=Identity)
+    higher_order: ContactNKTensor | None = None
+    alpha_ho: float = 0.0
     _rng: np.random.Generator = field(init=False, repr=False)
     _preimage_effects: dict[int, dict[str, float]] = field(init=False, repr=False)
 
@@ -90,6 +124,8 @@ class Landscape:
         if self.wt_sequence is not None:
             self._validate_wt_sequence()
         self._cache_preimages()
+        if self.higher_order is not None:
+            self.higher_order = _pin_nk_wildtype(self.higher_order, self.wild_type)
 
     def _cache_preimages(self) -> None:
         """Precompute g^{-1}(h_i) for every single-site effect.
@@ -234,7 +270,30 @@ class Landscape:
 
             epistatic += coupling
 
-        raw = additive_preimage + self.alpha * epistatic
+        # Higher-order (Contact-NK) contribution. Each position with structural
+        # neighbours contributes its wildtype-pinned NK function if any involved
+        # position is mutated. Summed with its own scale parameter so it composes
+        # cleanly with the additive + pairwise terms.
+        higher_order_contribution = 0.0
+        if self.higher_order is not None and self.alpha_ho != 0.0:
+            nk = self.higher_order
+            for pos in nk.positions:
+                neighbours = nk.neighbours_by_position.get(pos, ())
+                involved = (pos, *neighbours)
+                if not any(p in mutated_positions for p in involved):
+                    continue
+                aa_idx = nk.aa_index
+                idx = (
+                    aa_idx[mutations.get(pos, self.wild_type[pos])],
+                    *(aa_idx[mutations.get(n, self.wild_type[n])] for n in neighbours),
+                )
+                higher_order_contribution += float(nk.per_position_functions[pos][idx])
+
+        raw = (
+            additive_preimage
+            + self.alpha * epistatic
+            + self.alpha_ho * higher_order_contribution
+        )
 
         # Noise enters pre-nonlinearity (stability-scale noise).
         if self.noise_sigma > 0:

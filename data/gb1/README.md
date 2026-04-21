@@ -1,6 +1,6 @@
 # GB1 dataset (Wu et al. 2016)
 
-Small-site **complete combinatorial** DMS of the Streptococcus protein G domain B1 (GB1), used as the second protein in the mutascape validation study. Unlike the sparse random sampling of the GFP dataset, GB1 covers ~93% of the 20^4 possible variants across 4 sites, which lets us compute exact Walsh-Hadamard variance decompositions, local-optima counts, and accessible-path fractions on both real and synthetic landscapes.
+Small-site **complete combinatorial** DMS of the Streptococcus protein G domain B1 (GB1), used as a primary complete-combinatorial validation dataset in the mutascape study. GB1 covers ~93% of the 20^4 possible variants across 4 sites, which lets us compute exact Walsh-Hadamard variance decompositions, local-optima counts, and accessible-path fractions on both real and synthetic landscapes.
 
 ## Source
 
@@ -56,4 +56,4 @@ This reads the ProteinGym CSV from the path hard-coded near the top of the scrip
 
 ## Usage in validation
 
-The GB1 validation notebook is at `notebooks/validation/gb1_validation.ipynb`. It loads `gb1.csv` as the mutascape single-site DMS input, loads `gb1_combinatorial.csv` as the real multi-mutant reference via `load_gb1_combinatorial`, and uses `gb1_distances.npz` + `gb1_wt.fasta` to build the contact-map-derived epistasis topology.
+The frozen publication configuration is `gb1_headline` in `src/mutascape/validation/reference_configs.py`. It loads `gb1.csv` as the single-site DMS input, loads `gb1_combinatorial.csv` as the real multi-mutant reference via `load_gb1_combinatorial`, and uses `gb1_distances.npz` + `gb1_wt.fasta` for structural context. The older exploratory notebook at `notebooks/validation/gb1_validation.ipynb` remains useful as a workbench, but the scripted reference config is the canonical pipeline.

@@ -1,5 +1,7 @@
 # mutascape - Design Document
 
+> **Historical note (2026-04-21).** This design document captures the original alpha/pairwise-coupling concept. The current publication pipeline is narrower: DMS additive pre-fitness, fitted censored thermodynamic sigmoid, and Gaussian noise, with random pairwise couplings off by default (`sigma = 0`). Use `docs/project_status.md` and `src/mutascape/validation/reference_configs.py` as the canonical method spec.
+
 ## 1. Problem Statement
 
 Machine Learning Directed Evolution (MLDE) methods are typically benchmarked on
@@ -15,8 +17,10 @@ in protein biophysics. Without such benchmarks, we cannot systematically answer
 questions like "at what level of epistasis does method X outperform method Y?" or
 "does encoding choice matter more in rugged vs smooth landscapes?"
 
-mutascape addresses this by generating synthetic combinatorial fitness landscapes that
-start from real DMS data and add structurally informed pairwise epistatic interactions.
+mutascape originally addressed this by generating synthetic combinatorial fitness
+landscapes that start from real DMS data and add structurally informed pairwise
+epistatic interactions. The current validated default keeps the DMS and structure
+interfaces but does not rely on random pairwise couplings for the headline results.
 
 
 ## 2. Prior Work and Positioning
@@ -34,7 +38,7 @@ J_ij(a, b) that capture evolutionary covariation. They then introduce a "shift" 
 mutations from wild type at which the linear (additive) approximation breaks down.
 
 **Key strengths**: the Potts couplings reflect real evolutionary constraints; the
-epistatic horizon gives a single intuitive tunability knob.
+epistatic horizon gives a single intuitive tunability parameter.
 
 **Limitations for our purposes**: the single-site effects h_i come from the Potts model
 (evolutionary inference) rather than actual measured DMS fitness values. The epistatic
@@ -67,13 +71,16 @@ mutascape fills the gap between these approaches:
 | Epistatic topology          | MSA covariation | Random K neighbours | Structural contacts |
 | Biophysical grounding       | Evolutionary  | None         | Structural          |
 | Requires MSA                | Yes           | No           | No (uses structure) |
-| Tunability                  | K_epi         | K            | alpha, sigma, model |
+| Tunability                  | K_epi         | K            | noise_sigma, nonlinearity, optional couplings |
 | Sequence length             | Full protein  | Short (6)    | Full protein        |
 | Amino acid alphabet         | Full (20)     | Reduced (6)  | Full (20)           |
 
-The thesis narrative: SLIP asks "what epistasis does evolution encode?", Sandhu asks
-"what happens under abstract tuneable ruggedness?", mutascape asks "what epistasis
-does 3D structure predict?" Three complementary perspectives.
+The original thesis narrative was: SLIP asks "what epistasis does evolution encode?",
+Sandhu asks "what happens under abstract tuneable ruggedness?", and mutascape asks
+"what epistasis does 3D structure predict?" The current paper should be phrased more
+conservatively: mutascape asks whether DMS- and structure-grounded generators can
+produce reproducible benchmark landscapes with measurable similarity to real
+combinatorial landscapes.
 
 
 ## 3. Theoretical Background

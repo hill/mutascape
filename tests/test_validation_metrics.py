@@ -10,6 +10,7 @@ from mutascape.validation.metrics import (
     fitness_distance_correlation_from_tensor,
     local_optima_from_tensor,
     roughness_slope_ratio,
+    ssmula_attributes,
 )
 
 
@@ -127,3 +128,35 @@ def test_accessible_paths_on_reciprocal_sign_square_is_zero():
     # increases, so those contribute 1.0 each.
     # Mean over the 3 sources with differing > 0: (0 + 1 + 1) / 3.
     assert result["mean_accessible_fraction"] == pytest.approx(2.0 / 3.0)
+
+
+def test_ssmula_attributes_has_expected_keys():
+    tensor = np.array([[0.0, 1.0], [-1.0, 0.5]])
+    attrs = ssmula_attributes(tensor)
+    assert set(attrs) == {"frac_active", "frac_local_optima", "kurtosis", "kde_peak_count"}
+
+
+def test_ssmula_frac_active_counts_above_threshold():
+    # 2 of 4 cells are strictly > 0.
+    tensor = np.array([[0.0, 1.0], [-1.0, 0.5]])
+    assert ssmula_attributes(tensor)["frac_active"] == pytest.approx(0.5)
+    # Shift threshold to 0.75: only one cell qualifies.
+    assert ssmula_attributes(tensor, active_threshold=0.75)["frac_active"] == pytest.approx(0.25)
+
+
+def test_ssmula_frac_local_optima_normalised_by_tensor_size():
+    # XOR tensor has both corners (0,1) and (1,0) as strict peaks among
+    # Hamming-1 neighbours, giving 2 / 4 = 0.5.
+    tensor = np.array([[0.0, 1.0], [1.0, 0.0]])
+    attrs = ssmula_attributes(tensor)
+    # local_optima_from_tensor returns n_optima; this test protects the
+    # normalisation against a regression where we forget /n_variants.
+    expected = local_optima_from_tensor(tensor)["n_optima"] / tensor.size
+    assert attrs["frac_local_optima"] == pytest.approx(expected)
+
+
+def test_ssmula_handles_all_nan():
+    tensor = np.full((3, 3), np.nan)
+    attrs = ssmula_attributes(tensor)
+    for key in ("frac_active", "frac_local_optima", "kurtosis", "kde_peak_count"):
+        assert np.isnan(attrs[key])

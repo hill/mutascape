@@ -320,8 +320,8 @@ function renderAlphaNote() {
   const showsMeasured =
     state.mode.gb1 !== null && sitesMatchOlson(state.mode.gb1, sites);
   dom.alphaNote.textContent = showsMeasured
-    ? "α tunes predicted fitness. measured dots (Olson) are fixed."
-    : "α scales epistasis (0 = additive, higher = more rugged)";
+    ? "legacy α tunes predicted fitness. measured dots are fixed; paper configs use sigma=0 + noise."
+    : "legacy α scales random pairwise couplings; not the frozen paper pipeline";
 }
 
 function renderVariantPanel() {
@@ -482,7 +482,7 @@ function wireEvents() {
     state.seed = Math.floor(Math.random() * 1e9);
     state.activePath = null;
     rebuild();
-    toast("reseeded couplings");
+    toast("reseeded legacy couplings");
   });
 
   dom.resetView.addEventListener("click", () => {

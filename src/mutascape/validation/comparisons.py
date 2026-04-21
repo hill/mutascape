@@ -85,34 +85,6 @@ def fitness_wasserstein(
     return float(sp_stats.wasserstein_distance(r, s))
 
 
-def bootstrap_ci(
-    data: np.ndarray,
-    metric_fn,
-    n_boot: int = 1000,
-    alpha: float = 0.05,
-    seed: int = 42,
-) -> tuple[float, float, float]:
-    """Bootstrap confidence interval for a scalar metric.
-
-    Parameters
-    data : array of values to resample
-    metric_fn : callable that takes an array and returns a scalar
-    n_boot : number of bootstrap replicates
-    alpha : significance level (0.05 = 95% CI)
-    seed : random seed
-
-    Returns (point_estimate, lower_bound, upper_bound)
-    """
-    rng = np.random.default_rng(seed)
-    point = metric_fn(data)
-    boot_values = np.array(
-        [metric_fn(rng.choice(data, size=len(data), replace=True)) for _ in range(n_boot)]
-    )
-    lower = float(np.percentile(boot_values, 100 * alpha / 2))
-    upper = float(np.percentile(boot_values, 100 * (1 - alpha / 2)))
-    return float(point), lower, upper
-
-
 def composite_validation_score(
     real_metrics: dict,
     synth_metrics: dict,

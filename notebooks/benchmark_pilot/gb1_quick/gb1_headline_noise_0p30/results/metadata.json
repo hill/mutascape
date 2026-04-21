@@ -1,0 +1,28 @@
+{
+  "dataset": "gb1_headline_noise_0p30",
+  "timestamp": "2026-04-21T12:10:30.798491",
+  "config": {
+    "n_runs": 2,
+    "n_iterations": 4,
+    "initial_size": 12,
+    "batch_size": 5,
+    "random_seed": 42,
+    "output_dir": "notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p30/results",
+    "verbose": true,
+    "activity_mode": "scaled"
+  },
+  "combinations": [
+    {
+      "method": "Random",
+      "encoding": null
+    },
+    {
+      "method": "EvolvePro-RF",
+      "encoding": "onehot"
+    },
+    {
+      "method": "ALDE-UCB",
+      "encoding": "onehot"
+    }
+  ]
+}

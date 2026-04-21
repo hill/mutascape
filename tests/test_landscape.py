@@ -7,8 +7,8 @@ import pandas as pd
 import pytest
 
 from mutascape.contacts import ContactMap
-from mutascape.epistasis import RandomEpistasis
-from mutascape.landscape import Landscape, Variant
+from mutascape.epistasis import ContactNKEpistasis, RandomEpistasis
+from mutascape.landscape import Landscape, Variant, _pin_nk_wildtype
 from mutascape.mutant import Mutant
 
 
@@ -231,6 +231,66 @@ class TestLandscapeStats:
         """A landscape with alpha > 0 should have lower additive correlation."""
         stats = landscape.stats(n_samples=500, n_mutations=2)
         assert stats["additive_correlation"] < 1.0
+
+
+class TestLandscapeContactNK:
+    def test_alpha_ho_zero_matches_no_higher_order(self, landscape, small_contact_map):
+        nk = ContactNKEpistasis(sigma=0.3, seed=0).generate(small_contact_map)
+        with_nk = Landscape(
+            wild_type=landscape.wild_type,
+            single_site_effects=landscape.single_site_effects,
+            contact_map=landscape.contact_map,
+            couplings=landscape.couplings,
+            alpha=landscape.alpha,
+            seed=42,
+            higher_order=nk,
+            alpha_ho=0.0,  # disabled
+        )
+        mut = {10: "G", 20: "I"}
+        assert with_nk.evaluate(mut) == pytest.approx(landscape.evaluate(mut))
+
+    def test_wildtype_still_zero_with_nk(self, landscape, small_contact_map):
+        nk = ContactNKEpistasis(sigma=1.0, seed=0).generate(small_contact_map)
+        with_nk = Landscape(
+            wild_type=landscape.wild_type,
+            single_site_effects=landscape.single_site_effects,
+            contact_map=landscape.contact_map,
+            couplings=landscape.couplings,
+            alpha=landscape.alpha,
+            seed=42,
+            higher_order=nk,
+            alpha_ho=1.0,
+        )
+        assert with_nk.evaluate({}) == pytest.approx(0.0, abs=1e-12)
+
+    def test_nk_contribution_changes_double_mutant(self, landscape, small_contact_map):
+        nk = ContactNKEpistasis(sigma=1.0, seed=0).generate(small_contact_map)
+        with_nk = Landscape(
+            wild_type=landscape.wild_type,
+            single_site_effects=landscape.single_site_effects,
+            contact_map=landscape.contact_map,
+            couplings=landscape.couplings,
+            alpha=landscape.alpha,
+            seed=42,
+            higher_order=nk,
+            alpha_ho=1.0,
+        )
+        mut = {10: "G", 20: "I"}
+        # NK contribution at a double mutant is nonzero almost surely under a
+        # Gaussian draw; two samples should differ by more than float epsilon.
+        assert abs(with_nk.evaluate(mut) - landscape.evaluate(mut)) > 1e-6
+
+    def test_pin_nk_wildtype_zeros_all_wt_index(self, small_contact_map):
+        nk = ContactNKEpistasis(sigma=0.5, seed=0).generate(small_contact_map)
+        wt = {10: "A", 20: "L", 30: "K"}
+        pinned = _pin_nk_wildtype(nk, wt)
+        for pos, f in pinned.per_position_functions.items():
+            neighbours = pinned.neighbours_by_position[pos]
+            wt_idx = (
+                pinned.aa_index[wt[pos]],
+                *(pinned.aa_index[wt[n]] for n in neighbours),
+            )
+            assert f[wt_idx] == pytest.approx(0.0, abs=1e-12)
 
 
 # --- WT sequence, generate(), to_dataframe() ---

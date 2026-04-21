@@ -459,6 +459,65 @@ def fitness_distance_correlation_from_tensor(
     return float(r)
 
 
+def ssmula_attributes(
+    tensor: NDArray[np.float64],
+    active_threshold: float = 0.0,
+) -> dict[str, float]:
+    """Compute the SSMuLA navigability attributes for a fitness tensor.
+
+    Li et al. (Cell Systems 2025) identify six landscape attributes that
+    predict MLDE benefit. This returns a subset directly computable from a
+    fitness tensor:
+
+    - `frac_active`: fraction of variants with fitness > `active_threshold`
+      (defaults to 0 = WT fitness). Proxies SSMuLA's activity density.
+    - `frac_local_optima`: fraction of variants that are strict local maxima
+      on the Hamming-1 neighbourhood graph.
+    - `kurtosis`: Fisher kurtosis of the fitness distribution (peaked vs
+      flat-tailed). Positive = heavy tails.
+    - `kde_peak_count`: number of local maxima in a Gaussian KDE of the
+      fitness distribution, found via `scipy.signal.find_peaks`. Proxies
+      multi-modality of the fitness distribution.
+
+    Pass `active_threshold` explicitly for non-WT-referenced landscapes.
+    """
+    from scipy.signal import find_peaks
+    from scipy.stats import gaussian_kde
+
+    finite = tensor[np.isfinite(tensor)].ravel()
+    if finite.size == 0:
+        return {
+            "frac_active": float("nan"),
+            "frac_local_optima": float("nan"),
+            "kurtosis": float("nan"),
+            "kde_peak_count": float("nan"),
+        }
+
+    frac_active = float((finite > active_threshold).mean())
+
+    n_vars = int(np.prod(tensor.shape))
+    n_optima = local_optima_from_tensor(tensor)["n_optima"]
+    frac_local_optima = float(n_optima) / n_vars if n_vars else float("nan")
+
+    kurt = float(sp_stats.kurtosis(finite, fisher=True, bias=False))
+
+    if finite.size < 3 or np.std(finite) == 0:
+        kde_peaks = 0
+    else:
+        kde = gaussian_kde(finite)
+        grid = np.linspace(finite.min(), finite.max(), 512)
+        density = kde(grid)
+        peaks, _ = find_peaks(density)
+        kde_peaks = int(len(peaks))
+
+    return {
+        "frac_active": frac_active,
+        "frac_local_optima": frac_local_optima,
+        "kurtosis": kurt,
+        "kde_peak_count": float(kde_peaks),
+    }
+
+
 def compute_all_metrics(
     df: pd.DataFrame,
     single_site_effects: dict[int, dict[str, float]],

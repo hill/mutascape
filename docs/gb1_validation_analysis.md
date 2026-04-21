@@ -1,5 +1,7 @@
 # GB1 validation: analysis, methodology, next steps
 
+> **Historical note (2026-04-21).** This document is an alpha-era analysis kept for provenance. It predates the frozen publication pipeline in `src/mutascape/validation/reference_configs.py`, where GB1 uses `sigma = 0`, fitted censored thermodynamic nonlinearity, `floor_hard = -1.0`, and `noise_sigma = 0.3`. Treat the calibration advice below as superseded unless you are deliberately revisiting the old pairwise-coupling model.
+
 Companion to `notebooks/validation/gb1_validation.ipynb`. This document interprets the results, describes the `alpha`-calibration methodology, explains how to pick `alpha` when a complete combinatorial DMS is *not* available, and lays out concrete next steps.
 
 ## 1. Figure interpretation (gb1_validation_summary)
@@ -114,7 +116,7 @@ What the table shows is that, under the current mutascape model, those four metr
 
 ### Why they disagree: one dial, many targets
 
-mutascape's fitness function has one continuous knob for epistatic strength: $\alpha$. Real GB1's landscape has **many** independent epistatic properties -- pairwise coupling magnitudes, third-order interactions, distribution shape, local topology. In real GB1 these properties happen to have a specific joint pattern (moderate additive correlation *and* moderate sign epistasis *and* strong 3rd-order interactions, etc.). Under the mutascape model, pairwise couplings drawn from $\mathcal{N}(0, \sigma)$ tie these properties together: as $\alpha$ grows, additive correlation falls and sign epistasis rises *in lock-step*. The ratio at which they move is a property of the model, not of $\alpha$.
+mutascape's fitness function has one continuous parameter for epistatic strength: $\alpha$. Real GB1's landscape has **many** independent epistatic properties -- pairwise coupling magnitudes, third-order interactions, distribution shape, local topology. In real GB1 these properties happen to have a specific joint pattern (moderate additive correlation *and* moderate sign epistasis *and* strong 3rd-order interactions, etc.). Under the mutascape model, pairwise couplings drawn from $\mathcal{N}(0, \sigma)$ tie these properties together: as $\alpha$ grows, additive correlation falls and sign epistasis rises *in lock-step*. The ratio at which they move is a property of the model, not of $\alpha$.
 
 So when a single $\alpha$ can't hit both targets, it's not a calibration failure or a "strategy choice" -- it's the model telling you its built-in ratio between these two properties doesn't match real GB1's ratio. The gap is evidence that the **model class** (random pairwise couplings) is too restrictive for this landscape. More dials are needed: a non-linear global function, empirical pairwise couplings, explicit higher-order couplings. Section 5 lists these.
 

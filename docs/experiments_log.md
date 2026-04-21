@@ -2,6 +2,8 @@
 
 Chronological record of experiments, hypotheses, and findings. Prior experiments are summarised in `project_status.md`; this file captures the living trail of "what we tried, what we learned."
 
+Read this file chronologically: earlier recommendations can be superseded by later entries. For the current publication state, use `project_status.md`.
+
 Append new entries at the bottom. Keep each entry short: hypothesis, what was run, key numbers, takeaway. Link to the notebook cell / CSV that has the detail.
 
 ---
@@ -151,3 +153,206 @@ Joint-best thermo (α=1.5, scale=1.0, upside=3 prior) + CensoredSigmoid `floor_h
 2. TrpB (Johnston 2024) 4-site complete DMS — second combinatorial validation.
 3. Contact-clique higher-order couplings (Option 1 from the earlier discussion) — if alive-region ruggedness really does need structural interactions.
 4. Retry pLM with `esm2_t33_650M_UR50D` + masked-marginal scoring on GPU — only if the benchmarking use case isn't sufficient.
+
+---
+
+## 2026-04-20: Experiment 3 — `ContactNKEpistasis` ruggedness parameter
+
+**Reframe.** Today's session reframed mutascape's goal from "accurate digital twin of GB1" to "tunable benchmarking tool for MLDE methods (ALDE, EvolvePro)". The SSMuLA paper (Li et al., Cell Systems 2025) defines the navigability-attribute framework as the standard for this kind of benchmark.
+
+**Hypothesis.** A position-centric NK-style higher-order coupling layer informed by the contact map gives mutascape a single parameter (`sigma_nk`) that tunes ruggedness from smooth to highly rugged, without abandoning the structural prior (unlike classical NK where partners are random). Implementation: per-position random functions over (position + structural neighbours), pinned so f(all WT) = 0, added to the fitness function with scale `alpha_ho`.
+
+**Implementation.** `ContactNKEpistasis` + `ContactNKTensor` in `src/mutascape/epistasis.py`; `higher_order` and `alpha_ho` fields on `Landscape`; `ContactMap.neighbours(pos)` helper. Additional metric `ssmula_attributes(tensor)` computing the four scalars computable directly from a fitness tensor (`frac_active`, `frac_local_optima`, `kurtosis`, `kde_peak_count`). Test count 211 → 225.
+
+**Results (GB1, joint-best thermo + floor_hard=-1.0, sweep over sigma_nk):**
+
+| sigma_nk | n_optima | accessible | walsh_3 | walsh_4 | walsh_L1 | fitness_W1 |
+|---|---|---|---|---|---|---|
+| real | **182** | **0.317** | 0.308 | 0.077 | 0 | 0 |
+| 0.00 | 4 | 0.634 | 0.159 | 0.023 | 0.424 | 0.116 |
+| 0.10 | 5 | 0.661 | 0.148 | 0.032 | 0.461 | 0.159 |
+| 0.25 | 23 | 0.648 | 0.148 | 0.078 | 0.479 | 0.253 |
+| **0.50** | **144** | **0.405** | 0.183 | 0.182 | 0.631 | 0.515 |
+| 0.75 | 340 | **0.334** | 0.233 | 0.266 | 0.692 | 0.926 |
+| 1.00 | 565 | 0.238 | 0.278 | 0.322 | 0.688 | 1.461 |
+
+**Finding.** The parameter works. `n_optima` spans 4 → 565 monotonically with `sigma_nk ∈ [0, 1]`. At `sigma_nk = 0.5`, `n_optima = 144` (79% of real 182). At `sigma_nk = 0.75`, `accessible_frac = 0.334` is essentially real 0.317. Walsh order 4 goes from 0.023 (thermo alone) to 0.182 at sigma_nk=0.5 — real is 0.077 so we overshoot, but higher-order variance is being manufactured by the right mechanism.
+
+**Trade-off.** Distributional metrics degrade with `sigma_nk`: `walsh_L1` 0.42 → 0.63 at sigma_nk=0.5; `fitness_W1` 0.12 → 0.52. The ruggedness parameter and the distributional-match metrics are in tension — adding higher-order variance shifts mass away from the dead plateau that `floor_hard` was pinning.
+
+**Publication framing.** This parameter gives mutascape three complementary tuning axes for benchmarking:
+- `alpha` (pairwise epistatic strength) — low-order ruggedness
+- `noise_sigma` (measurement noise) — stochastic tie-breaking
+- `sigma_nk` (Contact-NK strength) — higher-order structured ruggedness
+
+Together these span the SSMuLA navigability-attribute space reported in Li et al. 2025, which is the paper-level defense for "mutascape as a benchmarking tool." Per-protein parameter choice is a per-experiment decision, not a flaw.
+
+**Failure of strict success criteria.** The plan's combined targets (`n_optima ∈ [100, 300]`, `walsh_L1 < 0.5`, `fitness_W1 < 0.2`) are not jointly achievable on GB1 with this single parameter. Report as a finding: the ruggedness-vs-distribution trade-off is real; the parameter is useful for spanning benchmark difficulty, not for reconstructing a specific real landscape.
+
+**Cleanup.** Removed dead code (`bootstrap_ci`, `cross_validate_alpha`, `fig_additive_decay`, `fig_sign_epistasis`, `_plot_real_line`); archived the pLM-direct script and the legacy GFP validation notebook to `_archive/` folders. Test count held at 225 after cleanup.
+
+---
+
+## 2026-04-20 (afternoon): TrpB4 cross-protein validation + two new visualisations
+
+**Goal.** Validate that the ContactNK ruggedness parameter generalises to a second protein (TrpB4, Johnston 2024) and add the two plot types the user asked for: parameter-trajectory and cross-protein overlay.
+
+**Data.** Downloaded from the SSMuLA Zenodo bundle (zenodo.org/records/13910506). TrpB4 measures growth-rate fitness at positions V183/F184/V227/S228 of engineered Tm9D8\* (Thermotoga maritima TrpB). 159,128 variants after filtering stop codons, fitness range [-0.572, +0.592] after re-centring to parent = 0. Singles range narrower than GB1 ([-0.421, +0.235] vs GB1's [-1.0, +2.9]). `data/trpb/prepare_trpb.py` mirrors `prepare_gb1.py`.
+
+**Structural surprise.** TrpB4's four active-site residues aren't all in pairwise 3D contact: 183-184 and 227-228 are each in contact (two adjacent pairs), but the 183/184 cluster sits 14-20 Å from the 227/228 cluster in the chain-A apo structure. All four functionally couple via the shared PLP cofactor, so real TrpB4 has huge higher-order structure (Walsh orders 3/4 hold ~39% of variance — same as GB1).
+
+**Two parallel sweeps.** To quantify the gap between "structural contacts" and "functional coupling":
+
+- **Structural (as-is):** Contact-NK uses the PDB contact graph. K=1 per position. Generates mostly pairwise variance; max `n_optima` reached = 110 at sigma_nk=1.0 (real 802).
+- **Active-site-augmented:** the four focal positions are force-connected into a 4-clique before building the NK tensor. K=3 per position. Generates full higher-order variance.
+
+**TrpB4 results (active-site-augmented, the one paper would report):**
+
+| sigma_nk | n_optima | accessible | walsh_3 | walsh_4 | walsh_L1 | fitness_W1 |
+|---|---|---|---|---|---|---|
+| real | **802** | **0.329** | 0.234 | 0.155 | — | — |
+| 0.0 | 6 | 0.535 | 0.136 | 0.051 | 0.404 | 0.072 |
+| 0.25 | 51 | 0.362 | 0.153 | 0.164 | 0.174 | 0.058 |
+| 0.5 | 314 | 0.160 | 0.149 | 0.378 | 0.445 | 0.058 |
+| **0.75** | **712** | 0.083 | 0.147 | 0.539 | 0.769 | 0.064 |
+| 1.0 | 1052 | 0.058 | 0.150 | 0.634 | 0.958 | 0.073 |
+
+At sigma_nk=0.75 the active-site Contact-NK lands within 11% of real TrpB4's `n_optima` count (712 vs 802). Walsh_L1 and fitness_W1 trade off with ruggedness as expected. Unlike GB1, TrpB's narrower fitness range keeps `fitness_W1` small across the whole sweep (~0.06).
+
+**Cross-protein take-away.** The Contact-NK parameter behaves qualitatively identically on both proteins: monotonic with sigma_nk, crosses real n_optima somewhere in [0.5, 0.8], trades off distributional fidelity. GB1 crosses at sigma_nk ≈ 0.55, TrpB at sigma_nk ≈ 0.8. Both proteins' SSMuLA `frac_local_optima` values fall inside the span of the mutascape sweep.
+
+**Methodological lesson for the paper.** Spatial contact maps don't always capture functional coupling. For active-site residues that interact via a shared ligand, mutascape supports overriding the distance matrix to force a focal clique. Flagged as a deliberate modelling choice, not a bug.
+
+**New visualisations.**
+- `fig_parameter_trajectory` (in `figures.py`): one subplot per metric, synth trajectory over sigma_nk with a dashed line at the real landscape's value. Shows immediately where the sweep crosses each target.
+- `fig_cross_protein_nk` (in `figures.py`): same subplot layout but overlays GB1 and TrpB synthetic curves plus their real reference lines.
+
+Outputs are under `notebooks/validation/output_cross_protein/` and the per-protein `output_gb1/` / `output_trpb/`.
+
+**Display fix.** Self-comparison columns on the "REAL" row (tensor_r, walsh_L1, fitness_W1) now show NaN instead of the misleading 0/1 values — they are trivially zero by definition and were confusing in the CSV outputs.
+
+---
+
+## 2026-04-20 (later afternoon): pivot to noise-based headline + two-scalar metric framing
+
+**Trigger.** "I feel we are overcomplicating this. Tell me what our goal is." The Contact-NK approach produced a paper story with too many parameters and a structural bias (K=3 tensors concentrate Walsh variance at order 4), and the implicit objective was a six-attribute SSMuLA coverage claim that nobody reports as a headline number.
+
+**Decision.** Two changes:
+
+1. Commit to two headline scalars: `walsh_L1` (Walsh spectrum L1 distance, structural match) and `fitness_W1` (Wasserstein-1 on fitness distribution, distributional match). Per-order Walsh vector and SSMuLA attributes stay as reported descriptive figures, not optimisation targets.
+2. Make `noise_sigma` the paper's primary ruggedness parameter. i.i.d. Gaussian noise per variant pre-nonlinearity, which distributes Walsh variance approximately uniformly across orders (vs Contact-NK's K+1 concentration). Already implemented in `Landscape` and `build_landscape`; no new mechanism code.
+
+Contact-NK demoted, not deleted. All classes, tests, and kwargs remain; defaults are inert. Kept as an experimental alternative in both validation notebooks.
+
+**Noise sweep results.**
+
+GB1 at `noise_sigma=0.3` (joint minimum of walsh_L1 + fitness_W1):
+
+| | walsh_1 | walsh_2 | walsh_3 | walsh_4 | walsh_L1 | fitness_W1 | n_optima |
+|---|---|---|---|---|---|---|---|
+| real | 0.186 | 0.429 | 0.308 | 0.077 | - | - | 182 |
+| synth | 0.385 | 0.396 | 0.155 | 0.064 | **0.399** | **0.123** | 11 |
+
+TrpB at `noise_sigma=0.3` (same parameter, same protein calibration path):
+
+| | walsh_1 | walsh_2 | walsh_3 | walsh_4 | walsh_L1 | fitness_W1 | n_optima |
+|---|---|---|---|---|---|---|---|
+| real | 0.255 | 0.356 | 0.234 | 0.155 | - | - | 802 |
+| synth | 0.407 | 0.374 | 0.115 | 0.104 | **0.339** | **0.035** | 27 |
+
+Both proteins share the same `noise_sigma` optimum, which is unplanned but convenient evidence for the parameter's cross-protein behaviour.
+
+**Success criteria from the pivot plan:**
+
+1. [PASS] GB1: walsh_L1 < 0.4 AND fitness_W1 < 0.15. (0.399, 0.123)
+2. [PASS] TrpB: walsh_L1 < 0.4 AND fitness_W1 < 0.20. (0.339, 0.035)
+3. [FAIL] Per-order Walsh within ±0.10 per order at best noise_sigma. Order-1 overshoots by ~0.15-0.20 on both proteins; order-3 undershoots by ~0.12-0.15. Orders 2 and 4 within tolerance.
+4. Criterion 4 (SSMuLA range coverage) not formally evaluated; qualitatively the noise sweep moves attributes in the expected direction (see `ssmula_coverage.png`).
+
+**Walsh order-composition bias (the paper's honest limitation section).** The pairwise-only anchor model has:
+- walsh_1 fixed by DMS singles (`h_i` terms),
+- walsh_2 populated by random couplings on contact pairs (`J_ij` terms),
+- walsh_3 and walsh_4 unreached by construction.
+
+Noise spreads variance uniformly across orders 1..L, which closes the order-4 gap and slightly narrows the order-3 gap but does not redistribute mass from order 1 to order 3. Real proteins have the mass distribution skewed toward orders 2-3; our synth has it stuck at orders 1-2. Contact-NK was the attempt to fix this and has the opposite bias (concentrates at order 4). A hybrid `noise + Contact-NK` parameter is on the shortlist for future work.
+
+**Why noise, not Contact-NK, for headline:**
+- Zero new user-facing kwargs; `noise_sigma` was already there.
+- Classical ruggedness mechanism from the NK/RMF literature; reviewers have seen it before.
+- Uniform Walsh distribution is the "null" bias; structural bias would need justification.
+- Order-4 overshoot of Contact-NK was the observed failure mode; noise doesn't reproduce it.
+
+**New files.**
+- `scripts/run_noise_sweep.py`: standalone, takes `--protein`, writes `{protein}_noise_sweep.csv` with full metric set.
+- `scripts/build_noise_figures.py`: reads the CSVs, writes `headline.png` (2x2 cross-protein), `walsh_spectrum_at_best_sigma.png` (per-protein), `ssmula_coverage.png` (cross-protein SSMuLA attributes).
+
+**Deleted outputs.** `output_cross_protein/cross_protein_nk.{png,pdf}` replaced by the new headline + coverage figure set.
+
+**Kept alive.** `composite_validation_score` stays because `alpha_sweep` and `thermo_sweep` still use it to pick optimal alpha. Its deletion was in the pivot plan but "verify zero call sites first" caught the issue; deleting would have required rewiring alpha calibration.
+
+---
+
+## 2026-04-20 (evening): MSA couplings assessment + surprise finding on random couplings
+
+**Setup.** Implemented `MSACouplingsEpistasis` as an optional drop-in for `RandomEpistasis`. Fetched UniProt homologs by Pfam family (PF01378 for GB1, PF00291 for TrpB), pairwise-aligned each to the WT sequence with Biopython, extracted the focal-position residues, and computed log-odds couplings J[i,j,a,b] = log p(a,b|i,j) - log p(a|i) - log p(b|j) with Laplace smoothing. This is a cheap heuristic DCA (not plmDCA); pydca was incompatible with our biopython version.
+
+**Sample sizes.**
+- GB1 PF01378: 44 UniProt hits, 43 usable after alignment (tiny family).
+- TrpB PF00291: 2000 UniProt hits, 1589 usable after alignment.
+
+**MSA couplings assessment at fixed noise_sigma=0.3:**
+
+GB1:
+
+| config | walsh_1 | walsh_2 | walsh_3 | walsh_4 | walsh_L1 | fitness_W1 | n_optima |
+|---|---|---|---|---|---|---|---|
+| REAL | 0.186 | 0.429 | 0.308 | 0.077 | | | 182 |
+| random(sigma=0.3) | 0.385 | 0.396 | 0.155 | 0.064 | 0.399 | 0.123 | 11 |
+| MSA scale=0.0 | 0.304 | 0.470 | 0.155 | 0.072 | **0.317** | **0.036** | 3 |
+| MSA scale=0.05 | 0.512 | 0.365 | 0.055 | 0.068 | 0.652 | 0.101 | 2 |
+| MSA scale=0.1 | 0.705 | 0.217 | 0.022 | 0.056 | 1.038 | 0.591 | 14 |
+
+TrpB:
+
+| config | walsh_1 | walsh_2 | walsh_3 | walsh_4 | walsh_L1 | fitness_W1 | n_optima |
+|---|---|---|---|---|---|---|---|
+| REAL | 0.255 | 0.356 | 0.234 | 0.155 | | | 802 |
+| random(sigma=0.3) | 0.407 | 0.374 | 0.115 | 0.104 | 0.339 | 0.035 | 27 |
+| MSA scale=0.0 | 0.242 | 0.410 | 0.201 | 0.148 | **0.107** | **0.028** | 23 |
+| MSA scale=0.1 | 0.326 | 0.404 | 0.149 | 0.120 | 0.239 | 0.026 | 10 |
+| MSA scale=0.2 | 0.407 | 0.375 | 0.117 | 0.101 | 0.340 | 0.055 | 14 |
+
+Observation 1: log-odds MSA couplings do not improve over random on either protein. At small scale they are barely different from zero (noisy), at larger scale they dominate and make the spectrum much worse. GB1 with only 43 sequences is hopelessly under-sampled for 20x20 coupling estimation; TrpB with 1589 is not much better than random either.
+
+**Observation 2 (the real finding).** The `MSA scale=0.0` row is the no-pairwise-couplings baseline: additive h_i from DMS + censored thermo sigmoid + Gaussian noise, with J_ij=0 everywhere. It produces the best `walsh_L1` and `fitness_W1` on both proteins, dramatically better than any random coupling scale.
+
+**Confirmed with a dedicated sigma sweep at fixed noise=0.3 on both proteins:** `walsh_L1` monotonically increases with `sigma` (the RandomEpistasis strength) on GB1 (0.317 at 0.0 up to 0.490 at 0.5) and TrpB (0.107 at 0.0 up to 0.418 at 0.5). Random pairwise couplings are actively hurting the Walsh spectrum match. The censored thermodynamic sigmoid applied to the additive preimage + i.i.d. noise already produces a spectrum that tracks real closely; random couplings just inject order-1/2 variance the real landscape does not have.
+
+**Headline numbers updated to sigma=0 (no random couplings) + noise_sigma=0.3:**
+
+| protein | walsh_L1 | fitness_W1 | walsh_1/2/3/4 vs real |
+|---|---|---|---|
+| GB1 | 0.317 | 0.036 | order-1/3 still off, orders 2/4 within 0.04 |
+| TrpB | **0.107** | 0.028 | all four orders within 0.06 of real |
+
+GB1 gap: walsh_L1 improved from 0.399 to 0.317 (-21%); fitness_W1 from 0.123 to 0.036 (-71%).
+TrpB gap: walsh_L1 improved from 0.339 to 0.107 (-68%); fitness_W1 from 0.035 to 0.028 (-20%).
+
+**Why the censored thermo sigmoid alone is sufficient.** The `floor_hard` threshold implements a biophysical fold/unfold boundary (Otwinowski-Plotkin two-state). When two deleterious mutations are summed additively below this floor, they saturate at the same output, which is *emergent higher-order epistasis* without explicit J_ij. This captures the real structural signal and matches more than half of real's variance at orders 3 and 4 on TrpB.
+
+**Implications for the paper.** The architectural story simplifies considerably: the core generative mechanism is *additive DMS preimage + censored thermodynamic sigmoid + Gaussian noise*, nothing else required for the two-scalar headline. Random pairwise `J_ij` becomes an optional ruggedness mechanism (for users who want specific coupling structure) but the default is now `sigma=0`. MSA couplings are an optional feature for users with high-quality plmDCA output; our log-odds from UniProt homologs did not help, but proper plmDCA with deeper MSAs might. Contact-NK remains an experimental alternative for explicit higher-order structure.
+
+**n_optima remains an open limitation.** Even at the new best config: GB1 has 3 optima vs real 182; TrpB has 23 vs real 802. The n_optima gap is downstream of missing higher-order structure that neither noise nor random couplings recover. Users who care about n_optima-matching benchmarks can increase noise_sigma (at the cost of walsh_L1) or add Contact-NK.
+
+**New/changed code today:**
+- `src/mutascape/epistasis.py`: `MSACouplingsEpistasis` class with `from_npz` and `from_msa_fasta` loaders.
+- `src/mutascape/validation/calibration.py`: `msa_couplings` kwarg on `build_landscape`.
+- `scripts/fetch_msa_couplings.py`: UniProt homolog fetch + pairwise alignment + log-odds coupling computation.
+- `scripts/assess_msa_couplings.py`: MSA scale sweep comparing to random baseline.
+- `scripts/pairwise_sigma_sweep.py`: the confirmatory sweep over RandomEpistasis sigma.
+- `scripts/run_noise_sweep.py`: updated to use pairwise sigma=0 as default.
+- `tests/test_epistasis.py`: 8 new tests for `MSACouplingsEpistasis`, all green.
+
+**Test count:** 225 -> 233 (+8 MSA tests).
+
+**Honesty note.** The MSA path as currently implemented (log-odds from pairwise-aligned UniProt homologs) is a cheap heuristic. Publication-grade MSA couplings would use plmDCA (pydca or equivalent) on a proper HMMER alignment. The infrastructure is in place via `MSACouplingsEpistasis.from_npz`; users can plug their own `.npz` with plmDCA-derived J.

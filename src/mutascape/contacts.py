@@ -84,6 +84,18 @@ class ContactMap:
         rows, cols = np.where(np.triu(self.matrix, k=1))
         return [(self.positions[r], self.positions[c]) for r, c in zip(rows, cols)]
 
+    def neighbours(self, position: int) -> tuple[int, ...]:
+        """Return positions in contact with `position`, ascending order.
+
+        Used by structural NK-style epistasis models to pick each position's
+        interaction partners from the 3D structure rather than at random.
+        """
+        if position not in self.positions:
+            raise ValueError(f"position {position} not in contact map")
+        idx = self.positions.index(position)
+        neighbour_indices = np.where(self.matrix[idx])[0]
+        return tuple(self.positions[i] for i in sorted(neighbour_indices))
+
     def submap(self, positions: Sequence[int]) -> "ContactMap":
         """Extract a sub-contact-map for a subset of positions.
 
@@ -211,7 +223,8 @@ class ContactMap:
         sequence alone (no MSA, no PDB download). The predicted
         structure is cached so subsequent calls are instant.
 
-        Requires the `structure` extra: ``uv sync --extra structure``
+        Requires network access to the public ESMFold API. The returned PDB is
+        cached locally for reuse.
 
         Parameters:
         sequence : str

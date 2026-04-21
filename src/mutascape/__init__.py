@@ -1,20 +1,16 @@
-"""mutascape - Synthetic combinatorial protein fitness landscapes with tuneable,
-structurally informed epistasis.
+"""Synthetic combinatorial protein fitness landscapes for MLDE/ALDE benchmarks.
 
-Built on real single-site DMS data with epistatic topology derived from
-3D protein structure.
+The publication reference pipeline is exposed through frozen validation configs:
 
->>> from mutascape import Landscape, ContactMap, Mutant, RandomEpistasis
->>> contacts = ContactMap.from_pdb("structure.pdb", threshold=8.0)
->>> landscape = Landscape.from_dms(
-...     dms_path="dms_data.csv",
-...     wt_sequence="MAEQLA...",
-...     contact_map=contacts,
-...     epistasis=RandomEpistasis(sigma=0.3, seed=42),
-...     alpha=1.0,
-... )
->>> landscape["A57G"]
->>> landscape[Mutant("A57G") + Mutant("V72L")]
+>>> from mutascape.validation.reference_configs import GB1_HEADLINE, evaluate_reference_config
+>>> result = evaluate_reference_config(GB1_HEADLINE)
+>>> result.walsh_l1
+
+Lower-level APIs still support custom landscapes from DMS, structure-derived
+contact maps, optional pairwise couplings, ESM2 single-site scoring, and fitted
+thermodynamic nonlinearities. Those features are useful for larger benchmark
+candidates, but the validated headline GB1/TrpB configs keep pairwise couplings
+off by setting ``sigma = 0``.
 """
 
 from mutascape.contacts import ContactMap
@@ -22,10 +18,10 @@ from mutascape.epistasis import (
     AMINO_ACIDS,
     CouplingTensor,
     EpistasisModel,
+    MSACouplingsEpistasis,
     RandomEpistasis,
     SignConsistentEpistasis,
 )
-from mutascape.interactive import morphing_landscape
 from mutascape.landscape import Landscape, Variant
 from mutascape.mutant import Mutant
 from mutascape.nonlinearity import Identity, NonLinearity, ThermodynamicSigmoid
@@ -37,6 +33,18 @@ from mutascape.plotting import (
 )
 from mutascape.scoring import ESM2Scorer, PLMScorer
 
+try:
+    from mutascape.interactive import morphing_landscape
+except ModuleNotFoundError as exc:
+    if exc.name != "plotly":
+        raise
+    _plotly_exc = exc
+
+    def morphing_landscape(*_args, **_kwargs):
+        raise ModuleNotFoundError(
+            "morphing_landscape requires the optional Plotly dependency."
+        ) from _plotly_exc
+
 __all__ = [
     "AMINO_ACIDS",
     "ContactMap",
@@ -45,6 +53,7 @@ __all__ = [
     "EpistasisModel",
     "Identity",
     "Landscape",
+    "MSACouplingsEpistasis",
     "Mutant",
     "NonLinearity",
     "PLMScorer",

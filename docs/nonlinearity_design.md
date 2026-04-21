@@ -1,10 +1,12 @@
 # Design: thermodynamic non-linearity layer
 
+> **Status note (2026-04-21).** The thermodynamic layer is now part of the frozen publication pipeline. The original validation plan at the end of this document is retained as historical context; the current GB1/TrpB reference results are in `docs/project_status.md`.
+
 Companion to the implementation in `src/mutascape/nonlinearity.py` and its integration into `Landscape`. This document states the mathematical model, the parameter identification procedure, and the API.
 
 ## Motivation
 
-See `docs/gb1_validation_analysis.md` for the empirical argument. In one line: under the current model a single scalar $\alpha$ controls all epistatic behaviour, but real landscapes such as GB1 have multiple near-independent epistatic properties that cannot be jointly satisfied by a single dial over random Gaussian pairwise couplings. Adding a global non-linearity introduces a second mechanism that contributes apparent higher-order epistasis, dense local optima, and path inaccessibility without requiring any additional data beyond what single-site DMS already provides.
+See `docs/gb1_validation_analysis.md` for the historical empirical argument. In one line: under the original pairwise model a single scalar $\alpha$ controlled all epistatic behaviour, but real landscapes such as GB1 have multiple near-independent epistatic properties that cannot be jointly satisfied by a single dial over random Gaussian pairwise couplings. Adding a global non-linearity introduces a second mechanism that contributes apparent higher-order epistasis and path inaccessibility without requiring any additional data beyond what single-site DMS already provides.
 
 ## Model
 
@@ -64,7 +66,9 @@ Identity non-linearity is the default and reproduces existing behaviour bit-for-
 - Existing calibration, metrics, and figures do not depend on the fitness function's internal structure; they consume only scalar fitness values. Nothing downstream changes.
 - Measurement noise is added pre-non-linearity so that noise has its natural (pre-sigmoid, stability-scale) statistics. This matches the biophysical picture in which noise is experimental and adds before the folding readout saturates. If this proves wrong empirically, we can flip noise to post-sigmoid with a single-line change.
 
-## Validation plan
+## Historical validation plan
+
+The following was the original validation plan. The unit tests and GB1/TrpB reruns are now complete; the realized headline model uses fitted censored nonlinearity plus `noise_sigma = 0.3`, with random pairwise couplings disabled.
 
 1. Unit-test: `Identity` landscape equals non-g landscape. `ThermodynamicSigmoid` forward/inverse round-trip to machine precision. Fit recovers a known $s$ on synthetic data.
 2. GB1 rerun: re-execute `notebooks/validation/gb1_validation.ipynb` with the sigmoid fit from the 76 GB1 singles. Expected changes (from `docs/gb1_validation_analysis.md`):

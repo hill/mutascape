@@ -7,6 +7,11 @@ import pandas as pd
 from Bio import SeqIO
 
 from mutascape import ContactMap, Landscape, RandomEpistasis, SignConsistentEpistasis
+from mutascape.epistasis import (
+    ContactNKEpistasis,
+    EpistasisModel,
+    MSACouplingsEpistasis,
+)
 from mutascape.nonlinearity import Identity, NonLinearity, ThermodynamicSigmoid
 
 from .comparisons import composite_validation_score
@@ -15,23 +20,55 @@ from .real_data import load_single_site_effects, sample_synthetic_data
 
 
 def _resolve_nonlinearity_arg(
-    nonlinearity, dms_csv: str | Path
+    nonlinearity,
+    dms_csv: str | Path,
+    *,
+    scale: float | None = None,
+    floor_hard: float | None = None,
+    combinatorial_upside: float = 1.0,
 ) -> NonLinearity:
     """Normalise the `nonlinearity` argument used throughout this module.
 
     Supports: None (Identity), a NonLinearity instance (used as-is), the string
     "fit" (MLE-fit ThermodynamicSigmoid from the DMS singles), or a float
     (ThermodynamicSigmoid with that scale; floor/ceiling auto-set from singles).
+    When fitting from singles, callers can override the fitted `scale`, inject
+    a `floor_hard` censoring threshold, and set `combinatorial_upside`.
     """
     if nonlinearity is None:
+        if scale is not None or floor_hard is not None or combinatorial_upside != 1.0:
+            raise ValueError(
+                "scale/floor_hard/combinatorial_upside require nonlinearity='fit' "
+                "or an explicit ThermodynamicSigmoid instance"
+            )
         return Identity()
     if isinstance(nonlinearity, NonLinearity):
+        if scale is not None or floor_hard is not None or combinatorial_upside != 1.0:
+            raise ValueError(
+                "scale/floor_hard/combinatorial_upside cannot be mixed with an "
+                "explicit nonlinearity instance"
+            )
         return nonlinearity
     if isinstance(nonlinearity, str):
         if nonlinearity == "fit":
-            return ThermodynamicSigmoid.fit_from_singles(load_single_site_effects(dms_csv))
+            effects = load_single_site_effects(dms_csv)
+            fitted = ThermodynamicSigmoid.fit_from_singles(
+                effects,
+                combinatorial_upside=combinatorial_upside,
+            )
+            return ThermodynamicSigmoid(
+                floor=fitted.floor,
+                ceiling=fitted.ceiling,
+                scale=fitted.scale if scale is None else float(scale),
+                floor_hard=floor_hard,
+            )
         raise ValueError(f"Unknown nonlinearity string {nonlinearity!r}")
     if isinstance(nonlinearity, int | float):
+        if floor_hard is not None or combinatorial_upside != 1.0 or scale is not None:
+            raise ValueError(
+                "Pass either nonlinearity=<float> or scale=..., not both; "
+                "floor_hard/combinatorial_upside require nonlinearity='fit'"
+            )
         # Auto-set floor/ceiling from singles, use user-supplied scale.
         effects = load_single_site_effects(dms_csv)
         fitted = ThermodynamicSigmoid.fit_from_singles(effects)
@@ -53,18 +90,37 @@ def build_landscape(
     epistasis_model: str = "random",
     threshold: float = 8.0,
     nonlinearity: NonLinearity | str | float | None = None,
+    scale: float | None = None,
+    floor_hard: float | None = None,
+    combinatorial_upside: float = 1.0,
     noise_sigma: float = 0.0,
+    sigma_nk: float = 0.0,
+    alpha_ho: float = 1.0,
+    max_neighbours: int | None = None,
+    msa_couplings: EpistasisModel | str | Path | None = None,
 ) -> Landscape:
     """Build a landscape from DMS data and a precomputed distance matrix.
 
     `nonlinearity` accepts None (default, Identity passthrough), a NonLinearity
     instance, "fit" (auto-fit a ThermodynamicSigmoid from the DMS singles), or
     a float (use that sigmoid scale, with floor/ceiling auto-set from singles).
+    When `nonlinearity="fit"`, `scale`, `floor_hard`, and
+    `combinatorial_upside` expose the paper-critical thermodynamic parameters
+    without requiring callers to build the sigmoid by hand.
 
     `noise_sigma` is the std dev of Gaussian measurement noise added to each
-    evaluated variant in pre-nonlinearity (stability-equivalent) units. 0.0
-    gives a deterministic landscape; values in the 0.1-0.5 range add a small
-    amount of per-variant stochasticity that mimics DMS assay noise.
+    evaluated variant in pre-nonlinearity (stability-equivalent) units.
+
+    `sigma_nk > 0` adds a `ContactNKEpistasis` higher-order component: each
+    position contributes a random function over itself plus its structural
+    neighbours (capped at `max_neighbours` if given). `alpha_ho` is the scale
+    scale parameter that multiplies the NK contribution in `Landscape.evaluate`; ignored
+    when `sigma_nk == 0`.
+
+    `msa_couplings`, when set, overrides `epistasis_model` and uses MSA-derived
+    pairwise couplings instead of random ones. Accepts an MSACouplingsEpistasis
+    instance, or a path to a .npz file (loaded via
+    `MSACouplingsEpistasis.from_npz`).
     """
     distances = np.load(distances_npz)
     contact_map = ContactMap.from_distance_matrix(
@@ -73,15 +129,26 @@ def build_landscape(
         threshold=threshold,
     )
 
-    if epistasis_model == "sign_consistent":
+    if msa_couplings is not None:
+        if isinstance(msa_couplings, EpistasisModel):
+            epistasis = msa_couplings
+        else:
+            epistasis = MSACouplingsEpistasis.from_npz(Path(msa_couplings))
+    elif epistasis_model == "sign_consistent":
         epistasis = SignConsistentEpistasis(sigma=sigma, seed=seed)
     else:
         epistasis = RandomEpistasis(sigma=sigma, seed=seed)
 
     wt_seq = str(next(SeqIO.parse(str(wt_fasta), "fasta")).seq)
-    nl = _resolve_nonlinearity_arg(nonlinearity, dms_csv)
+    nl = _resolve_nonlinearity_arg(
+        nonlinearity,
+        dms_csv,
+        scale=scale,
+        floor_hard=floor_hard,
+        combinatorial_upside=combinatorial_upside,
+    )
 
-    return Landscape.from_dms(
+    landscape = Landscape.from_dms(
         dms_path=dms_csv,
         contact_map=contact_map,
         epistasis=epistasis,
@@ -91,6 +158,29 @@ def build_landscape(
         wt_sequence=wt_seq,
         nonlinearity=nl,
     )
+
+    if sigma_nk > 0:
+        nk_model = ContactNKEpistasis(
+            sigma=sigma_nk, max_neighbours=max_neighbours, seed=seed,
+        )
+        nk_tensor = nk_model.generate(landscape.contact_map)
+        # Re-create the landscape so __post_init__ pins the wildtype; cheap
+        # since it only re-does the preimage cache.
+        landscape = Landscape(
+            wild_type=landscape.wild_type,
+            single_site_effects=landscape.single_site_effects,
+            contact_map=landscape.contact_map,
+            couplings=landscape.couplings,
+            alpha=landscape.alpha,
+            noise_sigma=landscape.noise_sigma,
+            seed=landscape.seed,
+            wt_sequence=landscape.wt_sequence,
+            nonlinearity=landscape.nonlinearity,
+            higher_order=nk_tensor,
+            alpha_ho=alpha_ho,
+        )
+
+    return landscape
 
 
 def alpha_sweep(
@@ -218,75 +308,3 @@ def refine_alpha(
         alphas=fine_alphas,
         **kwargs,
     )
-
-
-def cross_validate_alpha(
-    real_df: pd.DataFrame,
-    single_site_effects: dict[int, dict[str, float]],
-    build_fn,
-    alphas: list[float] | None = None,
-    n_folds: int = 5,
-    seed: int = 42,
-    depths: list[int] | None = None,
-    n_per_depth: int = 3000,
-) -> dict:
-    """Cross-validate alpha selection.
-
-    Splits real data into train/test, calibrates on train, evaluates on test.
-
-    Parameters
-    build_fn : callable(alpha) -> Landscape
-    """
-    if depths is None:
-        depths = list(range(2, 8))
-
-    rng = np.random.default_rng(seed)
-
-    best_alphas = []
-    test_scores = []
-
-    for fold in range(n_folds):
-        print(f"\nFold {fold + 1}/{n_folds}")
-
-        train_indices = []
-        test_indices = []
-        for d in depths:
-            depth_idx = real_df[real_df["depth"] == d].index.values
-            rng.shuffle(depth_idx)
-            split = int(0.7 * len(depth_idx))
-            train_indices.extend(depth_idx[:split])
-            test_indices.extend(depth_idx[split:])
-
-        train_df = real_df.loc[train_indices]
-        test_df = real_df.loc[test_indices]
-
-        train_metrics = compute_all_metrics(train_df, single_site_effects, depths)
-        test_metrics = compute_all_metrics(test_df, single_site_effects, depths)
-
-        sweep = alpha_sweep(
-            train_metrics,
-            single_site_effects,
-            build_fn,
-            alphas=alphas,
-            depths=depths,
-            n_per_depth=n_per_depth,
-        )
-        best_alpha = find_optimal_alpha(sweep)
-        best_alphas.append(best_alpha)
-
-        landscape = build_fn(best_alpha)
-        synth_df = sample_synthetic_data(landscape, depths, n_per_depth=n_per_depth)
-        synth_metrics = compute_all_metrics(synth_df, single_site_effects, depths)
-        test_score = composite_validation_score(test_metrics, synth_metrics)
-        test_scores.append(test_score)
-
-        print(f"  best_alpha={best_alpha:.2f}, test_score={test_score:.4f}")
-
-    return {
-        "best_alphas": best_alphas,
-        "test_scores": test_scores,
-        "mean_alpha": float(np.mean(best_alphas)),
-        "std_alpha": float(np.std(best_alphas)),
-        "mean_test_score": float(np.mean(test_scores)),
-        "std_test_score": float(np.std(test_scores)),
-    }

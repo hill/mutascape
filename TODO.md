@@ -1,20 +1,31 @@
 # Publication Roadmap
 
-## Critical
+## Frozen pipeline and validation
 
-- [ ] **Validation against real multi-mutant data** -- compare mutascape landscape statistics against GFP combinatorial data (Sarkisyan et al., 2016). Find alpha that matches real epistasis patterns. See `experiments/validation/`.
-- [ ] **Benchmarking study** -- run MLDE methods (from mutantopt) across alpha sweep, show how method performance degrades with increasing epistasis.
-- [ ] **Structural vs random contacts ablation** -- generate landscapes with random contacts (same density), show structural contacts produce more realistic distance-dependent epistasis.
+- [x] Freeze named reference configs for GB1 and TrpB in code
+- [x] Expose paper-critical nonlinearity parameters in the builder path (`sigma`, `noise_sigma`, `floor_hard`, `scale`, `combinatorial_upside`)
+- [x] Add regression tests for the reference configs
+- [x] Replace notebook-only figure generation with a scripted rebuild path
+- [x] Rerun GFP under the current headline pipeline
 
-## Important
+## Tool-paper write-up
 
-- [ ] **PottsEpistasis implementation** -- import couplings from inverse Potts model fits for direct comparison with SLIP (Thomas et al., 2022).
-- [ ] **Extended landscape characterisation** -- local optima count, fitness-distance correlation, neutral network connectivity as functions of alpha.
+- [x] Rewrite the paper around the thermo + censoring + noise story
+- [x] Remove placeholder figures / TODO blocks from the draft
+- [x] Align README and project docs with the frozen reference story
+- [x] Add manuscript explanation of Walsh-Hadamard spectra
+- [x] Label alpha-era docs/notebooks/web demo as historical or legacy
+- [ ] Tighten the discussion section after one more proofreading pass
 
-## Moderate
+## Benchmark paper next
 
-- [ ] **GB1 validation** -- second protein (Wu et al., 2016; 4-position combinatorial, ~150k variants) for generalisability.
+- [x] Run an initial smoke pilot benchmark on the frozen pipeline with 2-3 methods
+- [ ] Run a publication-grade benchmark with enough replicates for uncertainty estimates
+- [ ] Sweep `noise_sigma` before introducing additional ruggedness mechanisms
+- [ ] Add a hybrid `noise_sigma + sigma_nk` experiment only if it improves order-3 mismatch without ruining `fitness_W1`
 
-## Final
+## Longer-term research
 
-- [ ] **Write-up** -- paper figures, methods, results. Target: Protein Science or NeurIPS Datasets & Benchmarks.
+- [ ] Structural-vs-random contacts ablation under the frozen evaluation metrics
+- [ ] Potts / plmDCA couplings as a principled alternative to random pairwise `J_ij`
+- [ ] Stronger full-protein validation beyond the current GFP supplementary rerun

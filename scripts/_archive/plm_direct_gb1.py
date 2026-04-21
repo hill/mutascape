@@ -16,7 +16,6 @@ from itertools import product
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn.functional as F
 from Bio import SeqIO
@@ -105,7 +104,10 @@ def main() -> None:
             pct = 100.0 * start / len(variants)
             rate = (start + len(batch_seqs)) / max(elapsed, 1e-9)
             remaining = (len(variants) - start - len(batch_seqs)) / max(rate, 1e-9)
-            print(f"  {start}/{len(variants)} ({pct:.1f}%) {rate:.0f} v/s  ETA {remaining/60:.1f} min")
+            print(
+                f"  {start}/{len(variants)} ({pct:.1f}%) "
+                f"{rate:.0f} v/s  ETA {remaining/60:.1f} min"
+            )
 
     total_time = time.time() - t0
     print(f"\nscored {len(variants)} variants in {total_time/60:.1f} min")

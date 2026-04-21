@@ -260,3 +260,294 @@ class SignConsistentEpistasis(EpistasisModel):
             positions=contact_map.positions,
             aa_index=AA_INDEX,
         )
+
+
+@dataclass
+class MSACouplingsEpistasis(EpistasisModel):
+    """Pairwise couplings derived from MSA coevolution analysis.
+
+    Drop-in replacement for RandomEpistasis. Couplings come from a precomputed
+    tensor `J[i, j, a, b]` (typically plmDCA, EVcouplings, or log-odds from a
+    multiple sequence alignment) rather than Gaussian-random values. The
+    structural prior still applies: only contacting pairs (per contact_map)
+    keep their J; non-contact pairs are zeroed so the "structure-informed"
+    story is preserved.
+
+    Parameters
+    coupling_matrix : NDArray[float64]
+        Shape (L, L, 20, 20). J[i, j, a, b] is the coupling between amino acid
+        a at the i-th focal position and amino acid b at the j-th. Should be
+        symmetric on the position axes so that J[i, j] = J[j, i].T.
+    position_order : tuple[int, ...]
+        Ordered focal positions matching the first two axes of coupling_matrix.
+        Must be a superset of the contact_map positions passed to `generate`.
+    scale : float
+        Multiplier applied to coupling_matrix (default 1.0). Useful for
+        regularising the MSA signal so it lives on the same scale as the
+        additive h_i from DMS.
+    alphabet : str
+        20-letter AA alphabet; order must match the last two axes of
+        coupling_matrix. Default "ACDEFGHIKLMNPQRSTVWY".
+    restrict_to_contacts : bool
+        If True (default), only contacting pairs from the contact map get
+        non-zero couplings. If False, all precomputed MSA couplings are used
+        regardless of structural contact.
+    """
+
+    coupling_matrix: NDArray[np.float64]
+    position_order: tuple[int, ...]
+    scale: float = 1.0
+    alphabet: str = "ACDEFGHIKLMNPQRSTVWY"
+    restrict_to_contacts: bool = True
+
+    def __post_init__(self):
+        L = len(self.position_order)
+        K = len(self.alphabet)
+        expected = (L, L, K, K)
+        if self.coupling_matrix.shape != expected:
+            raise ValueError(
+                f"coupling_matrix shape {self.coupling_matrix.shape} does not "
+                f"match expected {expected} for {L} positions and {K}-letter alphabet"
+            )
+
+    def generate(
+        self,
+        contact_map: ContactMap,
+        single_site_effects: dict[int, dict[str, float]] | None = None,
+    ) -> CouplingTensor:
+        pos_to_idx = {p: i for i, p in enumerate(self.position_order)}
+        aa_remap = {aa: i for i, aa in enumerate(self.alphabet)}
+        mutascape_aa_order = AMINO_ACIDS
+
+        if self.restrict_to_contacts:
+            pairs = contact_map.contact_pairs()
+        else:
+            pairs = [
+                (a, b)
+                for a in contact_map.positions
+                for b in contact_map.positions
+                if a < b
+            ]
+
+        missing = [p for p in contact_map.positions if p not in pos_to_idx]
+        if missing:
+            raise ValueError(
+                f"coupling_matrix position_order is missing contact-map positions: {missing}"
+            )
+
+        reorder = np.array([aa_remap[a] for a in mutascape_aa_order])
+
+        couplings: dict[tuple[int, int], NDArray[np.float64]] = {}
+        for pos_i, pos_j in pairs:
+            i, j = pos_to_idx[pos_i], pos_to_idx[pos_j]
+            J = self.coupling_matrix[i, j] * self.scale
+            J = J[np.ix_(reorder, reorder)]
+            J_sym = (J + J.T) / 2.0
+            couplings[(pos_i, pos_j)] = J_sym
+
+        return CouplingTensor(
+            couplings=couplings,
+            positions=contact_map.positions,
+            aa_index=AA_INDEX,
+        )
+
+    @classmethod
+    def from_npz(
+        cls,
+        path,
+        scale: float = 1.0,
+        alphabet: str = "ACDEFGHIKLMNPQRSTVWY",
+        restrict_to_contacts: bool = True,
+    ) -> "MSACouplingsEpistasis":
+        """Load from an .npz with keys `coupling_matrix` (L,L,20,20 float) and
+        `positions` (L int)."""
+        data = np.load(path)
+        return cls(
+            coupling_matrix=data["coupling_matrix"].astype(np.float64),
+            position_order=tuple(int(p) for p in data["positions"]),
+            scale=scale,
+            alphabet=alphabet,
+            restrict_to_contacts=restrict_to_contacts,
+        )
+
+    @classmethod
+    def from_msa_fasta(
+        cls,
+        fasta_path,
+        positions: tuple[int, ...],
+        reference_id: str | None = None,
+        pseudocount: float = 0.5,
+        alphabet: str = "ACDEFGHIKLMNPQRSTVWY",
+        scale: float = 1.0,
+        restrict_to_contacts: bool = True,
+    ) -> "MSACouplingsEpistasis":
+        """Compute log-odds couplings J[i,j,a,b] = log p(a,b|i,j) - log p(a|i) - log p(b|j)
+        from an aligned FASTA MSA.
+
+        `positions` are indices into the alignment (0-based) that correspond to
+        the focal residues. If `reference_id` is given, positions are interpreted
+        as indices in that reference sequence (ungapped), which are then mapped
+        to alignment columns by skipping gaps.
+
+        Uses a Laplace-smoothed maximum likelihood estimator, not plmDCA. This
+        is a fast heuristic that captures coevolution signal without external
+        tools; use `from_npz` with a plmDCA-derived matrix for the full-fidelity
+        path.
+        """
+        from Bio import SeqIO
+
+        seqs = list(SeqIO.parse(str(fasta_path), "fasta"))
+        if not seqs:
+            raise ValueError(f"No sequences in {fasta_path}")
+
+        if reference_id is not None:
+            ref = next((s for s in seqs if s.id == reference_id), None)
+            if ref is None:
+                raise ValueError(f"reference_id {reference_id} not found in {fasta_path}")
+            ungapped_to_aligned = []
+            for col, c in enumerate(str(ref.seq)):
+                if c != "-":
+                    ungapped_to_aligned.append(col)
+            aligned_cols = tuple(ungapped_to_aligned[p] for p in positions)
+        else:
+            aligned_cols = tuple(positions)
+
+        aa_to_idx = {aa: i for i, aa in enumerate(alphabet)}
+        K = len(alphabet)
+        L = len(aligned_cols)
+
+        matrix = np.array([list(str(s.seq)) for s in seqs])
+        col_data = [matrix[:, c] for c in aligned_cols]
+
+        # Drop sequences that have a gap or non-standard AA at any focal column.
+        keep = np.ones(len(seqs), dtype=bool)
+        for col in col_data:
+            keep &= np.array([c in aa_to_idx for c in col])
+        n_kept = int(keep.sum())
+        if n_kept < 50:
+            raise ValueError(f"Too few MSA sequences ({n_kept}) for coupling estimation")
+
+        idx_cols = np.stack(
+            [np.array([aa_to_idx[c] for c in col[keep]]) for col in col_data]
+        )
+
+        J = np.zeros((L, L, K, K), dtype=np.float64)
+        marginals = np.zeros((L, K), dtype=np.float64)
+        for i in range(L):
+            counts = np.bincount(idx_cols[i], minlength=K).astype(np.float64) + pseudocount
+            marginals[i] = counts / counts.sum()
+
+        for i in range(L):
+            for j in range(L):
+                if i == j:
+                    continue
+                joint = np.zeros((K, K), dtype=np.float64) + pseudocount / K
+                np.add.at(joint, (idx_cols[i], idx_cols[j]), 1.0)
+                joint /= joint.sum()
+                lo = np.log(joint) - np.log(marginals[i])[:, None] - np.log(marginals[j])[None, :]
+                J[i, j] = lo
+
+        return cls(
+            coupling_matrix=J,
+            position_order=tuple(positions),
+            scale=scale,
+            alphabet=alphabet,
+            restrict_to_contacts=restrict_to_contacts,
+        )
+
+
+@dataclass(frozen=True)
+class ContactNKTensor:
+    """Per-position NK-style functions over (position + structural neighbours).
+
+    Each entry of `per_position_functions` is a random Gaussian tensor of shape
+    (20,) * (1 + K_i), where K_i is the number of structural neighbours of
+    position i under `neighbours_by_position`. The tensor is pinned so the
+    all-wildtype combination evaluates to 0, which keeps single-mutant
+    predictions consistent with DMS data when this component is added on top
+    of the additive `h_i` terms in `Landscape.evaluate`.
+
+    Attributes
+    per_position_functions : dict[int, NDArray[np.float64]]
+        Maps position -> random function tensor. The tensor's first axis is
+        the AA at `position` and remaining axes are AAs at the ordered
+        neighbours from `neighbours_by_position[position]`.
+    neighbours_by_position : dict[int, tuple[int, ...]]
+        Maps position -> ordered tuple of neighbour positions.
+    positions : tuple[int, ...]
+        All positions covered by the tensor.
+    aa_index : dict[str, int]
+        Maps single-letter amino acid codes to matrix indices.
+    """
+
+    per_position_functions: dict[int, NDArray[np.float64]]
+    neighbours_by_position: dict[int, tuple[int, ...]]
+    positions: tuple[int, ...]
+    aa_index: dict[str, int]
+
+
+@dataclass
+class ContactNKEpistasis(EpistasisModel):
+    """Position-centric NK-style couplings informed by the contact map.
+
+    Classic NK (Kauffman) defines each position's fitness contribution as a
+    random function over itself plus K random partner positions. Here the
+    partners are taken from the structural contact map, so the higher-order
+    epistasis is grounded in the same "structure determines topology" prior
+    as the existing pairwise model.
+
+    Each position i contributes a random Gaussian function f_i of the joint
+    amino-acid state at {i} ∪ N(i), where N(i) is the set of structural
+    neighbours (capped at `max_neighbours` closest contacts if specified).
+    The function is pinned so f_i(all wildtype) = 0, preserving the DMS
+    single-site identity when this model is combined with `h_i`.
+
+    Because f_i is drawn over the (1 + K_i)-tuple of AAs, it contributes
+    variance at every Walsh order from 1 through 1 + K_i. In practice the
+    low-order components are small compared to the explicit `h_i` and
+    `J_ij` already in the landscape, and the higher-order components are
+    what a pairwise-only model cannot reach.
+
+    Parameters
+    sigma : float
+        Standard deviation of the random NK functions. Controls higher-order
+        ruggedness strength. Typical values: 0.1-1.0.
+    max_neighbours : int or None
+        Cap the number of structural neighbours per position. None means
+        "use all contacts." Lower values keep compute bounded for large
+        proteins (per-position tensor size is 20^(1+K)).
+    seed : int or None
+        Random seed for reproducibility.
+    """
+
+    sigma: float = 0.3
+    max_neighbours: int | None = None
+    seed: int | None = None
+
+    def generate(
+        self,
+        contact_map: ContactMap,
+        single_site_effects: dict[int, dict[str, float]] | None = None,
+    ) -> ContactNKTensor:
+        rng = np.random.default_rng(self.seed)
+        n_aa = len(AMINO_ACIDS)
+
+        per_position: dict[int, NDArray[np.float64]] = {}
+        neighbours_by_pos: dict[int, tuple[int, ...]] = {}
+
+        for pos in contact_map.positions:
+            neighbours = contact_map.neighbours(pos)
+            if self.max_neighbours is not None and len(neighbours) > self.max_neighbours:
+                neighbours = neighbours[: self.max_neighbours]
+            neighbours_by_pos[pos] = neighbours
+
+            shape = (n_aa,) * (1 + len(neighbours))
+            f = rng.normal(0.0, self.sigma, size=shape)
+            per_position[pos] = f
+
+        return ContactNKTensor(
+            per_position_functions=per_position,
+            neighbours_by_position=neighbours_by_pos,
+            positions=contact_map.positions,
+            aa_index=AA_INDEX,
+        )

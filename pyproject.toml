@@ -1,7 +1,7 @@
 [project]
 name = "mutascape"
 version = "0.1.0"
-description = "Synthetic combinatorial protein fitness landscapes with tunable, structurally informed epistasis"
+description = "DMS- and structure-grounded synthetic combinatorial protein fitness landscapes for MLDE/ALDE benchmarking"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

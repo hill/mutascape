@@ -99,7 +99,7 @@ class ESM2Scorer(PLMScorer):
     ) -> None:
         if not _TORCH_AVAILABLE:
             raise ImportError(
-                "ESM2Scorer requires torch and fair-esm. Install with: uv sync --extra structure"
+                "ESM2Scorer requires torch and fair-esm. Install project dependencies with: uv sync"
             )
 
         if model_name not in _ESM2_MODELS:

@@ -10,6 +10,7 @@ from mutascape.validation.metrics import (
     fitness_distance_correlation_from_tensor,
     local_optima_from_tensor,
     roughness_slope_ratio,
+    sampled_neighbourhood_ruggedness,
     ssmula_attributes,
 )
 
@@ -60,10 +61,13 @@ def test_local_optima_single_peak():
     ])
     result = local_optima_from_tensor(tensor)
     assert result["n_optima"] == 1
+    assert result["peak_fraction"] == pytest.approx(1 / tensor.size)
     assert result["global_peak"] == (1, 1)
     assert result["peak_fitnesses"][0] == pytest.approx(2.0)
     # Basin of the single peak covers the whole tensor.
     assert sum(result["basin_sizes"]) == tensor.size
+    assert result["largest_basin_fraction"] == pytest.approx(1.0)
+    assert result["basin_entropy"] == pytest.approx(0.0)
 
 
 def test_local_optima_two_peaks():
@@ -134,6 +138,18 @@ def test_ssmula_attributes_has_expected_keys():
     tensor = np.array([[0.0, 1.0], [-1.0, 0.5]])
     attrs = ssmula_attributes(tensor)
     assert set(attrs) == {"frac_active", "frac_local_optima", "kurtosis", "kde_peak_count"}
+
+
+def test_sampled_neighbourhood_ruggedness_matches_exact_on_full_sample():
+    tensor = np.array([
+        [3.0, 1.0, 0.0],
+        [1.0, 0.5, 1.0],
+        [0.0, 1.0, 3.0],
+    ])
+    exact = local_optima_from_tensor(tensor)
+    sampled = sampled_neighbourhood_ruggedness(tensor, n_samples=None, seed=0)
+    assert sampled["local_optimum_rate"] == pytest.approx(exact["peak_fraction"])
+    assert sampled["n_sampled"] == pytest.approx(float(tensor.size))
 
 
 def test_ssmula_frac_active_counts_above_threshold():

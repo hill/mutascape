@@ -2,21 +2,21 @@
 
 Canonical papers behind the mutascape design, organised by topic. Each entry is one-line on what the paper shows and how it enters the project.
 
-## Thermodynamic / global epistasis
+## Global epistasis (saturating function)
 
-The theoretical foundation for wrapping the additive + pairwise fitness function in a saturating non-linearity. Central claim across this literature: most observed "higher-order epistasis" in protein DMS is not a genuine higher-order genetic interaction, but a by-product of an underlying approximately-additive stability model passed through a sigmoid-like mapping to fitness.
+The theoretical foundation for wrapping the additive + pairwise fitness function in a saturating global-epistasis function. Central claim across this literature: most observed "higher-order epistasis" in protein DMS is not a genuine higher-order genetic interaction, but a by-product of an underlying approximately-additive stability model passed through a sigmoid-like mapping to fitness.
 
 - **Tareen, A., Kooshkbaghi, M., Posfai, A., Ireland, W. T., McCandlish, D. M., & Kinney, J. B. (2022).** *MAVE-NN: learning genotype-phenotype maps from multiplex assays of variant effect.* **Genome Biology** 23:98. https://doi.org/10.1186/s13059-022-02661-7
-  - Useful rhetoric for the Mutascape model: DMS/MAVE readouts are indirect, nonlinear, and noisy. The paper's latent-phenotype framing supports separating the synthetic genotype-phenotype score from the thermodynamic/nonlinear response and explicit noise model.
+  - Useful rhetoric for the Mutascape model: DMS/MAVE readouts are indirect and noisy. The paper's latent-phenotype framing supports separating the synthetic genotype-phenotype score from the global-epistasis function and explicit noise model.
 
 - **Otwinowski, J. (2018).** *Biophysical Inference of Epistasis and the Effects of Mutations on Protein Stability and Function.* **Molecular Biology and Evolution** 35(10): 2345-2354. https://doi.org/10.1093/molbev/msy141
-  - Fits fitness = g(Sum DDG_i) jointly with per-position DDG_i on GB1 singles + doubles. Recovers a sigmoidal g and shows that it explains most pairwise epistasis. Our `ThermodynamicSigmoid` is directly modelled on this formulation.
+  - Fits fitness = g(Sum DDG_i) jointly with per-position DDG_i on GB1 singles + doubles. Recovers a sigmoidal g and shows that it explains most pairwise epistasis. Our `GlobalEpistasisSigmoid` is directly modelled on this formulation.
 
 - **Otwinowski, J., McCandlish, D. M., & Plotkin, J. B. (2018).** *Inferring the shape of global epistasis.* **PNAS** 115(32): E7550-E7558. https://doi.org/10.1073/pnas.1804015115
-  - Formalises "global epistasis": fitness = g(additive) where g is monotonic but otherwise unknown. Non-parametric (isotonic) fit from DMS data. Motivates the idea that a single scalar non-linearity can absorb a large fraction of observed high-order epistasis. We use a parametric sigmoid for simplicity; their isotonic approach is a natural future direction.
+  - Formalises "global epistasis": fitness = g(additive) where g is monotonic but otherwise unknown. Non-parametric (isotonic) fit from DMS data. Motivates the idea that a single scalar global-epistasis function can absorb a large fraction of observed high-order epistasis. We use a parametric sigmoid for simplicity; their isotonic approach is a natural future direction.
 
 - **Sailer, Z. R., & Harms, M. J. (2017).** *Detecting High-Order Epistasis in Nonlinear Genotype-Phenotype Maps.* **Genetics** 205(3): 1079-1088. https://doi.org/10.1534/genetics.116.195214
-  - Shows analytically that a non-linear transform of an additive landscape generates apparent higher-order Walsh variance. Quantifies how much of the order-3/4 Walsh variance in real DMS can be explained by a global non-linearity. This is the theoretical justification for why adding g to mutascape should raise its Walsh-3/4 fractions from zero without explicit higher-order couplings.
+  - Shows analytically that a global-epistasis function applied to an additive landscape generates apparent higher-order Walsh variance. Quantifies how much of the order-3/4 Walsh variance in real DMS can be explained by a global-epistasis function. This is the theoretical justification for why adding g to mutascape should raise its Walsh-3/4 fractions from zero without explicit higher-order couplings.
 
 - **Husain, K., & Murugan, A. (2020).** *Physical Constraints on Epistasis.* **Molecular Biology and Evolution** 37(10): 2865-2874. https://doi.org/10.1093/molbev/msaa124
   - Modern statistical-physics perspective: generic physical constraints (stability thresholds, binding cooperativity) produce generic epistatic patterns. Argues that the "shape" of global epistasis is predictable from biophysics, not ad hoc fitting.
@@ -24,13 +24,13 @@ The theoretical foundation for wrapping the additive + pairwise fitness function
 ## Protein-specific DMS validations
 
 - **Olson, C. A., Wu, N. C., & Sun, R. (2014).** *A Comprehensive Biophysical Description of Pairwise Epistasis throughout an Entire Protein Domain.* **Current Biology** 24(22): 2643-2651. https://doi.org/10.1016/j.cub.2014.09.072
-  - All pairwise doubles across 55 GB1 positions (~535k variants). Demonstrates that most apparent pairwise epistasis is stability-mediated and can be captured by a non-linear transform of an additive stability model. The companion dataset to Wu 2016 for benchmarking any future higher-order coupling work.
+  - All pairwise doubles across 55 GB1 positions (~535k variants). Demonstrates that most apparent pairwise epistasis is stability-mediated and can be captured by a global-epistasis function over an additive stability model. The companion dataset to Wu 2016 for benchmarking any future higher-order coupling work.
 
 - **Wu, N. C., Dai, L., Olson, C. A., Lloyd-Smith, J. O., & Sun, R. (2016).** *Adaptation in protein fitness landscapes is facilitated by indirect paths.* **eLife** 5:e16965. https://doi.org/10.7554/eLife.16965
   - The 4-position complete factorial GB1 DMS used in our validation notebook (`data/gb1/`).
 
 - **Nisthal, A., Wang, C. Y., Ary, M. L., & Mayo, S. L. (2019).** *Protein stability engineering insights revealed by domain-wide comprehensive mutagenesis.* **PNAS** 116(33): 16367-16377. https://doi.org/10.1073/pnas.1903888116
-  - Singles DDG measurements for GB1. Empirically grounds the claim that fitness in GB1 is stability-dominated and therefore well described by the thermodynamic non-linearity hypothesis. If GB1-specific validation of `ThermodynamicSigmoid` doesn't improve metrics, this is the reference to revisit for what physical variable IS driving fitness.
+  - Singles DDG measurements for GB1. Empirically grounds the claim that fitness in GB1 is stability-dominated and therefore well described by the global-epistasis function hypothesis. If GB1-specific validation of `GlobalEpistasisSigmoid` doesn't improve metrics, this is the reference to revisit for what physical variable IS driving fitness.
 
 - **Sarkisyan, K. S., et al. (2016).** *Local fitness landscape of the green fluorescent protein.* **Nature** 533: 397-401. https://doi.org/10.1038/nature17995
   - The sparse GFP full-protein multi-mutant dataset used as the supplementary generalization check. It is not a complete factorial landscape.
@@ -67,7 +67,7 @@ The theoretical foundation for wrapping the additive + pairwise fitness function
   - Direct experimental demonstration that stability thresholds generate epistasis. The empirical counterpart to Sailer & Harms 2017's theoretical result.
 
 - **Starr, T. N., & Thornton, J. W. (2016).** *Epistasis in protein evolution.* **Protein Science** 25(7): 1204-1218. https://doi.org/10.1002/pro.2897
-  - Review of epistasis mechanisms in protein evolution. Useful for framing the distinction between "specific" (pairwise contact) and "nonspecific" (global/thermodynamic) epistasis.
+  - Review of epistasis mechanisms in protein evolution. Useful for framing the distinction between specific pairwise-contact epistasis and nonspecific global epistasis.
 
 ## Synthetic landscape generators (prior art / positioning)
 

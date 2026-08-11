@@ -9,10 +9,7 @@ Models implemented:
 - RandomEpistasis: couplings drawn from N(0, sigma) for contacting pairs
 - SignConsistentEpistasis: coupling signs follow the linear-sum direction of
   the two single-site effects (amplifies whichever way the singles point)
-
-Planned:
-- PottsEpistasis: import couplings from inverse Potts model fits (cf. SLIP,
-  Thomas et al. 2022)
+- MSACouplingsEpistasis: imports pairwise couplings from an MSA-derived tensor
 
 References:
 - Thomas et al. (2022). Tuned Fitness Landscapes for Benchmarking Model-Guided
@@ -199,7 +196,7 @@ class SignConsistentEpistasis(EpistasisModel):
     Note: the simpler product rule sign(J) = sign(h_a) * sign(h_b) would
     instead *compensate* both-deleterious pairs (positive J added to a
     negative sum softens it). That compensation mechanism overlaps with the
-    saturating non-linearity in `mutascape.nonlinearity`; this amplification
+    saturating global-epistasis function in `mutascape.nonlinearity`; this amplification
     rule is the complementary "direct pairwise reinforcement" mechanism.
 
     Parameters
@@ -341,9 +338,7 @@ class MSACouplingsEpistasis(EpistasisModel):
         for pos_i, pos_j in pairs:
             i, j = pos_to_idx[pos_i], pos_to_idx[pos_j]
             J = self.coupling_matrix[i, j] * self.scale
-            J = J[np.ix_(reorder, reorder)]
-            J_sym = (J + J.T) / 2.0
-            couplings[(pos_i, pos_j)] = J_sym
+            couplings[(pos_i, pos_j)] = J[np.ix_(reorder, reorder)]
 
         return CouplingTensor(
             couplings=couplings,

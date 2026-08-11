@@ -270,6 +270,26 @@ class TestMSACouplingsEpistasis:
                 scaled.couplings[key], base.couplings[key] * 2.0, atol=1e-12,
             )
 
+    def test_generate_preserves_position_specific_pair_matrix(self, small_contact_map):
+        """MSA/Potts couplings are symmetric across positions, not AA labels."""
+        J = np.zeros((3, 3, 20, 20), dtype=np.float64)
+        idx_a = AMINO_ACIDS.index("A")
+        idx_c = AMINO_ACIDS.index("C")
+        J[0, 1, idx_a, idx_c] = 1.0
+        J[0, 1, idx_c, idx_a] = 9.0
+        J[1, 0] = J[0, 1].T
+
+        tensor = MSACouplingsEpistasis(
+            coupling_matrix=J,
+            position_order=(10, 20, 30),
+        ).generate(small_contact_map)
+
+        assert tensor.couplings[(10, 20)][idx_a, idx_c] == pytest.approx(1.0)
+        assert tensor.couplings[(10, 20)][idx_c, idx_a] == pytest.approx(9.0)
+        assert tensor.get_coupling(10, 20, "A", "C") == pytest.approx(1.0)
+        assert tensor.get_coupling(10, 20, "C", "A") == pytest.approx(9.0)
+        assert tensor.get_coupling(20, 10, "C", "A") == pytest.approx(1.0)
+
     def test_missing_position_raises(self, small_contact_map):
         J = np.zeros((2, 2, 20, 20))
         model = MSACouplingsEpistasis(

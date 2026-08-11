@@ -1,16 +1,22 @@
-"""Global (thermodynamic) non-linearity layer for the fitness function.
+"""Global-epistasis function layer for the fitness function.
 
 Applied as fitness = g(sum_i g^{-1}(h_i) + alpha * sum_{i<j} C_ij J_ij + noise),
 so that single-mutant predictions match observed DMS exactly (preimage
 cancels the outer g) while multi-mutant predictions stack in stability-
-equivalent units and pass through the saturating non-linearity. This
+equivalent units and pass through the global-epistasis function. This
 converts an additive + pairwise model into one whose apparent higher-
 order epistasis, local-optima density, and path inaccessibility match
 empirical protein landscapes far more closely.
 
+This is the "global epistasis" formulation of Otwinowski, McCandlish &
+Plotkin (2018, PNAS) and the parametric biophysical fit of Otwinowski
+(2018, MBE). Sailer & Harms (2017, Genetics) shows analytically why a
+global-epistasis function over an additive base produces apparent higher-
+order epistasis. The sigmoidal form is motivated by stability-limited
+fitness (two-state folding; Tokuriki & Tawfik 2009).
+
 See docs/nonlinearity_design.md for the model derivation and
-docs/references.md for the literature (Otwinowski 2018, Olson 2014,
-Sailer & Harms 2017, Nisthal 2019).
+docs/references.md for the broader literature.
 """
 
 from dataclasses import dataclass
@@ -28,7 +34,7 @@ class NonLinearity(Protocol):
     """A monotonic invertible map applied to raw fitness values."""
 
     def forward(self, z: NDArray[np.float64] | float) -> NDArray[np.float64] | float:
-        """Apply the non-linearity. Maps stability-space to fitness-space."""
+        """Apply the global-epistasis function. Maps stability-space to fitness-space."""
         ...
 
     def inverse(self, y: NDArray[np.float64] | float) -> NDArray[np.float64] | float:
@@ -38,7 +44,7 @@ class NonLinearity(Protocol):
 
 @dataclass(frozen=True)
 class Identity:
-    """Passthrough. Recovers the original pre-nonlinearity Landscape behaviour."""
+    """Passthrough. Recovers the original pre-readout Landscape behaviour."""
 
     def forward(self, z):
         return z
@@ -48,8 +54,12 @@ class Identity:
 
 
 @dataclass(frozen=True)
-class ThermodynamicSigmoid:
-    """Three-parameter logistic with WT pinned at fitness 0.
+class GlobalEpistasisSigmoid:
+    """Global-epistasis sigmoid: 3-parameter logistic with WT pinned at fitness 0.
+
+    Parametric form of the global-epistasis function from
+    Otwinowski, McCandlish & Plotkin (2018, PNAS) and Otwinowski (2018,
+    MBE). See module docstring for citations and motivation.
 
     g(z) = floor + (ceiling - floor) * sigmoid(z/scale + tau)
 
@@ -118,7 +128,7 @@ class ThermodynamicSigmoid:
         floor: float | None = None,
         ceiling: float | None = None,
         combinatorial_upside: float = 1.0,
-    ) -> "ThermodynamicSigmoid":
+    ) -> "GlobalEpistasisSigmoid":
         """Fit floor, ceiling, and scale from observed single-site fitness effects.
 
         Floor and ceiling are set to the observed range padded by `margin` of
@@ -143,7 +153,7 @@ class ThermodynamicSigmoid:
             effect. Typical range 1-5.
 
         Raises ValueError if the observed range does not straddle zero (WT),
-        in which case the thermodynamic parameterisation is ill-defined.
+        in which case the global-epistasis parameterisation is ill-defined.
         """
         values = np.array(
             [v for effects in single_site_effects.values() for v in effects.values()],
@@ -156,7 +166,7 @@ class ThermodynamicSigmoid:
         if not (lo < 0 < hi):
             raise ValueError(
                 f"Observed fitness range [{lo}, {hi}] does not straddle WT (0). "
-                "ThermodynamicSigmoid requires both positive and negative effects; "
+                "GlobalEpistasisSigmoid requires both positive and negative effects; "
                 "check that fitness is defined relative to WT."
             )
         span = hi - lo
@@ -198,13 +208,13 @@ def resolve(nonlinearity: NonLinearity | str | None, single_site_effects) -> Non
     """Normalise a user-supplied nonlinearity argument into a concrete instance.
 
     Accepts None (-> Identity), a NonLinearity instance (returned as-is), or
-    the literal string "fit" which triggers ThermodynamicSigmoid.fit_from_singles.
+    the literal string "fit" which triggers GlobalEpistasisSigmoid.fit_from_singles.
     """
     if nonlinearity is None:
         return Identity()
     if isinstance(nonlinearity, str):
         if nonlinearity == "fit":
-            return ThermodynamicSigmoid.fit_from_singles(single_site_effects)
+            return GlobalEpistasisSigmoid.fit_from_singles(single_site_effects)
         raise ValueError(
             f"Unknown nonlinearity string {nonlinearity!r}; use 'fit' or pass an instance"
         )

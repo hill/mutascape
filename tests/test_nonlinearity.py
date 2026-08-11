@@ -1,4 +1,4 @@
-"""Tests for the thermodynamic non-linearity layer and its Landscape integration."""
+"""Tests for the global-epistasis function layer and its Landscape integration."""
 
 import numpy as np
 import pandas as pd
@@ -7,7 +7,7 @@ import pytest
 from mutascape.contacts import ContactMap
 from mutascape.epistasis import RandomEpistasis
 from mutascape.landscape import Landscape
-from mutascape.nonlinearity import Identity, ThermodynamicSigmoid, resolve
+from mutascape.nonlinearity import Identity, GlobalEpistasisSigmoid, resolve
 
 
 class TestIdentity:
@@ -24,50 +24,50 @@ class TestIdentity:
         np.testing.assert_array_equal(g.inverse(x), x)
 
 
-class TestThermodynamicSigmoid:
+class TestGlobalEpistasisSigmoid:
     def test_wt_pinned_at_zero(self):
-        g = ThermodynamicSigmoid(floor=-1.0, ceiling=5.0, scale=1.2)
+        g = GlobalEpistasisSigmoid(floor=-1.0, ceiling=5.0, scale=1.2)
         assert g.forward(0.0) == pytest.approx(0.0, abs=1e-12)
 
     def test_asymptotes(self):
-        g = ThermodynamicSigmoid(floor=-1.2, ceiling=4.5, scale=0.8)
+        g = GlobalEpistasisSigmoid(floor=-1.2, ceiling=4.5, scale=0.8)
         assert g.forward(-1e6) == pytest.approx(g.floor, abs=1e-6)
         assert g.forward(1e6) == pytest.approx(g.ceiling, abs=1e-6)
 
     def test_monotone(self):
-        g = ThermodynamicSigmoid(floor=-1.0, ceiling=3.0, scale=1.0)
+        g = GlobalEpistasisSigmoid(floor=-1.0, ceiling=3.0, scale=1.0)
         xs = np.linspace(-10, 10, 201)
         ys = g.forward(xs)
         assert np.all(np.diff(ys) > 0)
 
     def test_round_trip_invertibility(self):
-        g = ThermodynamicSigmoid(floor=-1.1, ceiling=7.8, scale=1.5)
+        g = GlobalEpistasisSigmoid(floor=-1.1, ceiling=7.8, scale=1.5)
         xs = np.linspace(-6, 6, 50)
         ys = g.forward(xs)
         xs_back = g.inverse(ys)
         np.testing.assert_allclose(xs, xs_back, atol=1e-10)
 
     def test_inverse_zero_is_zero(self):
-        g = ThermodynamicSigmoid(floor=-1.5, ceiling=4.0, scale=2.0)
+        g = GlobalEpistasisSigmoid(floor=-1.5, ceiling=4.0, scale=2.0)
         assert g.inverse(0.0) == pytest.approx(0.0, abs=1e-12)
 
     def test_rejects_invalid_parameters(self):
         with pytest.raises(ValueError, match="ceiling"):
-            ThermodynamicSigmoid(floor=1.0, ceiling=0.5, scale=1.0)
+            GlobalEpistasisSigmoid(floor=1.0, ceiling=0.5, scale=1.0)
         with pytest.raises(ValueError, match="scale must be positive"):
-            ThermodynamicSigmoid(floor=-1.0, ceiling=2.0, scale=-0.1)
+            GlobalEpistasisSigmoid(floor=-1.0, ceiling=2.0, scale=-0.1)
         with pytest.raises(ValueError, match="WT fitness 0"):
             # WT=0 not in (floor, ceiling): both positive
-            ThermodynamicSigmoid(floor=0.5, ceiling=2.0, scale=1.0)
+            GlobalEpistasisSigmoid(floor=0.5, ceiling=2.0, scale=1.0)
 
     def test_floor_hard_none_preserves_smooth_behaviour(self):
-        g = ThermodynamicSigmoid(floor=-1.2, ceiling=3.0, scale=1.0, floor_hard=None)
-        ref = ThermodynamicSigmoid(floor=-1.2, ceiling=3.0, scale=1.0)
+        g = GlobalEpistasisSigmoid(floor=-1.2, ceiling=3.0, scale=1.0, floor_hard=None)
+        ref = GlobalEpistasisSigmoid(floor=-1.2, ceiling=3.0, scale=1.0)
         xs = np.linspace(-6, 6, 50)
         np.testing.assert_array_equal(g.forward(xs), ref.forward(xs))
 
     def test_floor_hard_clips_below_threshold(self):
-        g = ThermodynamicSigmoid(floor=-1.2, ceiling=3.0, scale=1.0, floor_hard=-0.5)
+        g = GlobalEpistasisSigmoid(floor=-1.2, ceiling=3.0, scale=1.0, floor_hard=-0.5)
         # Deep negative z would smooth to near the floor (-1.2), gets clipped to -0.5.
         assert g.forward(-1e6) == pytest.approx(-0.5, abs=1e-9)
         # WT (z=0) is above the hard floor, unaffected.
@@ -76,7 +76,7 @@ class TestThermodynamicSigmoid:
         assert g.forward(1e6) == pytest.approx(3.0, abs=1e-6)
 
     def test_floor_hard_clip_is_pointwise_on_arrays(self):
-        g = ThermodynamicSigmoid(floor=-1.2, ceiling=3.0, scale=1.0, floor_hard=-0.3)
+        g = GlobalEpistasisSigmoid(floor=-1.2, ceiling=3.0, scale=1.0, floor_hard=-0.3)
         xs = np.array([-10.0, -1.0, 0.0, 1.0, 10.0])
         out = g.forward(xs)
         # Every entry above or equal to the hard floor.
@@ -86,20 +86,20 @@ class TestThermodynamicSigmoid:
 
     def test_floor_hard_rejects_non_negative_values(self):
         with pytest.raises(ValueError, match="floor_hard"):
-            ThermodynamicSigmoid(floor=-1.0, ceiling=2.0, scale=1.0, floor_hard=0.0)
+            GlobalEpistasisSigmoid(floor=-1.0, ceiling=2.0, scale=1.0, floor_hard=0.0)
         with pytest.raises(ValueError, match="floor_hard"):
-            ThermodynamicSigmoid(floor=-1.0, ceiling=2.0, scale=1.0, floor_hard=0.5)
+            GlobalEpistasisSigmoid(floor=-1.0, ceiling=2.0, scale=1.0, floor_hard=0.5)
 
 
 class TestFitFromSingles:
     def test_recovers_known_scale(self):
         # Synthesize singles by pushing standard-normal ΔΔGs through a known g.
-        true = ThermodynamicSigmoid(floor=-2.0, ceiling=6.0, scale=1.3)
+        true = GlobalEpistasisSigmoid(floor=-2.0, ceiling=6.0, scale=1.3)
         rng = np.random.default_rng(0)
         deltag = rng.normal(0.0, 1.0, size=2000)
         observed = true.forward(deltag)
         effects = {1: {chr(65 + i): float(observed[i]) for i in range(len(observed))}}
-        fitted = ThermodynamicSigmoid.fit_from_singles(effects, margin=0.02)
+        fitted = GlobalEpistasisSigmoid.fit_from_singles(effects, margin=0.02)
         # Recovering an exact scale in the presence of finite data + margin
         # inflation is noisy; aim for order-of-magnitude agreement.
         assert 0.5 < fitted.scale < 2.5
@@ -109,11 +109,11 @@ class TestFitFromSingles:
     def test_rejects_range_not_straddling_wt(self):
         effects = {1: {"A": 0.5, "G": 1.2, "V": 0.8}}
         with pytest.raises(ValueError, match="straddle"):
-            ThermodynamicSigmoid.fit_from_singles(effects)
+            GlobalEpistasisSigmoid.fit_from_singles(effects)
 
     def test_rejects_empty_effects(self):
         with pytest.raises(ValueError, match="no values"):
-            ThermodynamicSigmoid.fit_from_singles({})
+            GlobalEpistasisSigmoid.fit_from_singles({})
 
 
 class TestResolve:
@@ -122,18 +122,18 @@ class TestResolve:
         assert isinstance(out, Identity)
 
     def test_passes_through_instance(self):
-        g = ThermodynamicSigmoid(floor=-1.0, ceiling=2.0, scale=1.0)
+        g = GlobalEpistasisSigmoid(floor=-1.0, ceiling=2.0, scale=1.0)
         out = resolve(g, {1: {"A": 0.1}})
         assert out is g
 
     def test_fit_string_triggers_fit(self):
         effects = {1: {"A": 0.3, "G": -0.1, "V": -0.5, "L": 0.2}}
         out = resolve("fit", effects)
-        assert isinstance(out, ThermodynamicSigmoid)
+        assert isinstance(out, GlobalEpistasisSigmoid)
 
     def test_unknown_string_raises(self):
         with pytest.raises(ValueError, match="Unknown nonlinearity"):
-            resolve("thermo", {1: {"A": 0.1, "G": -0.2}})
+            resolve("unknown", {1: {"A": 0.1, "G": -0.2}})
 
 
 @pytest.fixture
@@ -178,12 +178,12 @@ class TestLandscapeIntegration:
         assert ls.evaluate({}) == pytest.approx(0.0, abs=1e-12)
 
     def test_multi_mutants_depart_from_linear_sum(self, tiny_landscape_args):
-        # The thermodynamic non-linearity must produce a multi-mutant prediction
+        # The global-epistasis function must produce a multi-mutant prediction
         # that differs from naive sum-of-singles even when alpha = 0 (no pairwise).
         ls = Landscape.from_dms(
             **tiny_landscape_args,
             alpha=0.0,
-            nonlinearity=ThermodynamicSigmoid(floor=-1.0, ceiling=1.2, scale=0.5),
+            nonlinearity=GlobalEpistasisSigmoid(floor=-1.0, ceiling=1.2, scale=0.5),
         )
         muts = {10: "G", 20: "I", 30: "R"}
         actual = ls.evaluate(muts)

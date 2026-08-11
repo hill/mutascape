@@ -1,7 +1,0 @@
-method,encoding,final_best_mean,final_best_std,config,noise_sigma,dataset_dir,results_dir
-ALDE-UCB,onehot,0.10920223741193671,0.03472001585767829,gb1_headline,0.0,notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p00/dataset,notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p00/results
-EvolvePro-RF,onehot,0.12643771286199001,0.0,gb1_headline,0.0,notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p00/dataset,notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p00/results
-Random,none,0.02374202383722719,0.02657599685732797,gb1_headline,0.0,notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p00/dataset,notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p00/results
-ALDE-UCB,onehot,0.16340822204800998,0.0,gb1_headline,0.3,notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p30/dataset,notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p30/results
-EvolvePro-RF,onehot,0.0,0.0,gb1_headline,0.3,notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p30/dataset,notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p30/results
-Random,none,0.040226335766664734,0.03422932493024666,gb1_headline,0.3,notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p30/dataset,notebooks/benchmark_pilot/gb1_quick/gb1_headline_noise_0p30/results

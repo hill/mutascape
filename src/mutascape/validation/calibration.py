@@ -12,7 +12,7 @@ from mutascape.epistasis import (
     EpistasisModel,
     MSACouplingsEpistasis,
 )
-from mutascape.nonlinearity import Identity, NonLinearity, ThermodynamicSigmoid
+from mutascape.nonlinearity import Identity, NonLinearity, GlobalEpistasisSigmoid
 
 from .comparisons import composite_validation_score
 from .metrics import compute_all_metrics
@@ -30,8 +30,8 @@ def _resolve_nonlinearity_arg(
     """Normalise the `nonlinearity` argument used throughout this module.
 
     Supports: None (Identity), a NonLinearity instance (used as-is), the string
-    "fit" (MLE-fit ThermodynamicSigmoid from the DMS singles), or a float
-    (ThermodynamicSigmoid with that scale; floor/ceiling auto-set from singles).
+    "fit" (MLE-fit GlobalEpistasisSigmoid from the DMS singles), or a float
+    (GlobalEpistasisSigmoid with that scale; floor/ceiling auto-set from singles).
     When fitting from singles, callers can override the fitted `scale`, inject
     a `floor_hard` censoring threshold, and set `combinatorial_upside`.
     """
@@ -39,7 +39,7 @@ def _resolve_nonlinearity_arg(
         if scale is not None or floor_hard is not None or combinatorial_upside != 1.0:
             raise ValueError(
                 "scale/floor_hard/combinatorial_upside require nonlinearity='fit' "
-                "or an explicit ThermodynamicSigmoid instance"
+                "or an explicit GlobalEpistasisSigmoid instance"
             )
         return Identity()
     if isinstance(nonlinearity, NonLinearity):
@@ -52,11 +52,11 @@ def _resolve_nonlinearity_arg(
     if isinstance(nonlinearity, str):
         if nonlinearity == "fit":
             effects = load_single_site_effects(dms_csv)
-            fitted = ThermodynamicSigmoid.fit_from_singles(
+            fitted = GlobalEpistasisSigmoid.fit_from_singles(
                 effects,
                 combinatorial_upside=combinatorial_upside,
             )
-            return ThermodynamicSigmoid(
+            return GlobalEpistasisSigmoid(
                 floor=fitted.floor,
                 ceiling=fitted.ceiling,
                 scale=fitted.scale if scale is None else float(scale),
@@ -71,8 +71,8 @@ def _resolve_nonlinearity_arg(
             )
         # Auto-set floor/ceiling from singles, use user-supplied scale.
         effects = load_single_site_effects(dms_csv)
-        fitted = ThermodynamicSigmoid.fit_from_singles(effects)
-        return ThermodynamicSigmoid(
+        fitted = GlobalEpistasisSigmoid.fit_from_singles(effects)
+        return GlobalEpistasisSigmoid(
             floor=fitted.floor,
             ceiling=fitted.ceiling,
             scale=float(nonlinearity),
@@ -94,6 +94,12 @@ def build_landscape(
     floor_hard: float | None = None,
     combinatorial_upside: float = 1.0,
     noise_sigma: float = 0.0,
+    readout_texture_sigma: float = 0.0,
+    readout_texture_order: int = 0,
+    readout_texture_iid_fraction: float = 0.0,
+    readout_texture_floor: float | None = None,
+    readout_texture_floor_band: float = 1e-9,
+    readout_texture_seed: int | None = None,
     sigma_nk: float = 0.0,
     alpha_ho: float = 1.0,
     max_neighbours: int | None = None,
@@ -102,14 +108,14 @@ def build_landscape(
     """Build a landscape from DMS data and a precomputed distance matrix.
 
     `nonlinearity` accepts None (default, Identity passthrough), a NonLinearity
-    instance, "fit" (auto-fit a ThermodynamicSigmoid from the DMS singles), or
+    instance, "fit" (auto-fit a GlobalEpistasisSigmoid from the DMS singles), or
     a float (use that sigmoid scale, with floor/ceiling auto-set from singles).
     When `nonlinearity="fit"`, `scale`, `floor_hard`, and
-    `combinatorial_upside` expose the paper-critical thermodynamic parameters
+    `combinatorial_upside` expose the paper-critical global-epistasis parameters
     without requiring callers to build the sigmoid by hand.
 
     `noise_sigma` is the std dev of Gaussian measurement noise added to each
-    evaluated variant in pre-nonlinearity (stability-equivalent) units.
+    evaluated variant before the global-epistasis function, in stability-equivalent units.
 
     `sigma_nk > 0` adds a `ContactNKEpistasis` higher-order component: each
     position contributes a random function over itself plus its structural
@@ -155,6 +161,12 @@ def build_landscape(
         alpha=alpha,
         noise_sigma=noise_sigma,
         seed=seed,
+        readout_texture_sigma=readout_texture_sigma,
+        readout_texture_order=readout_texture_order,
+        readout_texture_iid_fraction=readout_texture_iid_fraction,
+        readout_texture_floor=readout_texture_floor,
+        readout_texture_floor_band=readout_texture_floor_band,
+        readout_texture_seed=readout_texture_seed,
         wt_sequence=wt_seq,
         nonlinearity=nl,
     )
@@ -174,6 +186,13 @@ def build_landscape(
             alpha=landscape.alpha,
             noise_sigma=landscape.noise_sigma,
             seed=landscape.seed,
+            deterministic_noise=landscape.deterministic_noise,
+            readout_texture_sigma=landscape.readout_texture_sigma,
+            readout_texture_order=landscape.readout_texture_order,
+            readout_texture_iid_fraction=landscape.readout_texture_iid_fraction,
+            readout_texture_floor=landscape.readout_texture_floor,
+            readout_texture_floor_band=landscape.readout_texture_floor_band,
+            readout_texture_seed=landscape.readout_texture_seed,
             wt_sequence=landscape.wt_sequence,
             nonlinearity=landscape.nonlinearity,
             higher_order=nk_tensor,
@@ -235,7 +254,7 @@ def find_optimal_alpha(sweep_df: pd.DataFrame) -> float:
     return float(sweep_df.loc[best_idx, "alpha"])
 
 
-def thermo_sweep(
+def global_epistasis_sweep(
     real_metrics: dict,
     single_site_effects: dict[int, dict[str, float]],
     build_fn,
@@ -244,13 +263,13 @@ def thermo_sweep(
     depths: list[int] | None = None,
     n_per_depth: int = 3000,
 ) -> pd.DataFrame:
-    """Joint 2D sweep over (alpha, sigmoid_scale) for thermodynamic non-linearity.
+    """Joint 2D sweep over (alpha, sigmoid_scale) for global-epistasis function.
 
     Parameters
     build_fn : callable(alpha, scale) -> Landscape
         Builds a landscape with the given alpha and sigmoid scale. The
         caller is responsible for setting floor/ceiling (usually via
-        ThermodynamicSigmoid.fit_from_singles once, then varying scale).
+        GlobalEpistasisSigmoid.fit_from_singles once, then varying scale).
 
     Returns DataFrame with columns: alpha, scale, composite_score, and
     per-depth additive_corr_d{d} / sign_epi_d{d} for d in depths.
@@ -279,7 +298,7 @@ def thermo_sweep(
     return pd.DataFrame(rows)
 
 
-def find_optimal_thermo(sweep_df: pd.DataFrame) -> tuple[float, float]:
+def find_optimal_global_epistasis(sweep_df: pd.DataFrame) -> tuple[float, float]:
     """Return (alpha, scale) with the lowest composite score."""
     best_idx = sweep_df["composite_score"].idxmin()
     row = sweep_df.loc[best_idx]

@@ -1,8 +1,8 @@
 """Run the current headline pipeline on sparse GFP multi-mutant data.
 
 This is the supplementary generalisation check for the paper: same core
-architecture as the GB1/TrpB headline configs (censored thermodynamic
-nonlinearity + sigma=0 + noise_sigma=0.3), evaluated on Sarkisyan et al.'s
+architecture as the GB1/TrpB headline configs (censored global-epistasis
+function + sigma=0 + noise_sigma=0.3), evaluated on Sarkisyan et al.'s
 full-protein sparse multi-mutant dataset where complete-space metrics such as
 Walsh decomposition are not tractable.
 

@@ -3,7 +3,7 @@
 Produces:
   - notebooks/validation/output_cross_protein/headline.png     (2x2 primary)
   - notebooks/validation/output_{gb1,trpb}/walsh_spectrum_at_best_sigma.png
-  - notebooks/validation/output_cross_protein/ssmula_coverage.png
+  - notebooks/validation/output_cross_protein/landscape_attributes.png
 
 Run: uv run python scripts/build_noise_figures.py
 """
@@ -25,20 +25,26 @@ OUT_GB1 = REPO_ROOT / "notebooks/validation/output_gb1"
 OUT_TRPB = REPO_ROOT / "notebooks/validation/output_trpb"
 
 HEADLINE_METRICS = ("walsh_L1", "fitness_W1")
-SSMULA_COLS = (
+ATTRIBUTE_COLS = (
     "ssmula_frac_active",
     "ssmula_frac_optima",
     "ssmula_kurtosis",
     "ssmula_kde_peaks",
     "n_optima",
+    "peak_fraction",
+    "largest_basin_fraction",
+    "basin_entropy",
     "accessible_frac",
 )
-SSMULA_LABELS = {
+ATTRIBUTE_LABELS = {
     "ssmula_frac_active": "frac_active",
     "ssmula_frac_optima": "frac_local_optima",
     "ssmula_kurtosis": "kurtosis",
     "ssmula_kde_peaks": "kde_peak_count",
     "n_optima": "n_local_optima",
+    "peak_fraction": "peak_fraction",
+    "largest_basin_fraction": "largest_basin_fraction",
+    "basin_entropy": "basin_entropy",
     "accessible_frac": "accessible_fraction",
 }
 
@@ -103,15 +109,15 @@ def fig_walsh_spectrum_at_best(df: pd.DataFrame, protein: str) -> plt.Figure:
     return fig
 
 
-def fig_ssmula_coverage(gb1: pd.DataFrame, trpb: pd.DataFrame) -> plt.Figure:
+def fig_landscape_attributes(gb1: pd.DataFrame, trpb: pd.DataFrame) -> plt.Figure:
     gb1_synth, gb1_real = _split(gb1)
     trpb_synth, trpb_real = _split(trpb)
-    n = len(SSMULA_COLS)
+    n = len(ATTRIBUTE_COLS)
     cols = 3
     rows = (n + cols - 1) // cols
     fig, axes = plt.subplots(rows, cols, figsize=(5 * cols, 3.3 * rows), squeeze=False)
     palette = sns.color_palette()
-    for i, col in enumerate(SSMULA_COLS):
+    for i, col in enumerate(ATTRIBUTE_COLS):
         r, c = divmod(i, cols)
         ax = axes[r][c]
         ax.plot(gb1_synth["noise_sigma"], gb1_synth[col], "o-",
@@ -123,13 +129,13 @@ def fig_ssmula_coverage(gb1: pd.DataFrame, trpb: pd.DataFrame) -> plt.Figure:
         ax.axhline(trpb_real[col], color=palette[1], linestyle="--",
                    linewidth=1, alpha=0.7, label="TrpB real")
         ax.set_xlabel("noise_sigma")
-        ax.set_ylabel(SSMULA_LABELS[col])
-        ax.set_title(SSMULA_LABELS[col])
+        ax.set_ylabel(ATTRIBUTE_LABELS[col])
+        ax.set_title(ATTRIBUTE_LABELS[col])
         ax.legend(fontsize=7, ncol=2)
     for j in range(n, rows * cols):
         axes[j // cols][j % cols].axis("off")
     fig.suptitle(
-        "SSMuLA attribute trajectories vs noise_sigma (real as dashed horizontals)",
+        "Landscape attribute trajectories vs noise_sigma (real as dashed horizontals)",
         y=1.00,
     )
     fig.tight_layout()
@@ -145,9 +151,14 @@ def main():
              "walsh_spectrum_at_best_sigma", OUT_GB1)
     save_fig(fig_walsh_spectrum_at_best(trpb, "TrpB"),
              "walsh_spectrum_at_best_sigma", OUT_TRPB)
-    save_fig(fig_ssmula_coverage(gb1, trpb), "ssmula_coverage", OUT_CROSS)
+    save_fig(fig_landscape_attributes(gb1, trpb), "landscape_attributes", OUT_CROSS)
 
-    for stale in ("cross_protein_nk.png", "cross_protein_nk.pdf"):
+    for stale in (
+        "cross_protein_nk.png",
+        "cross_protein_nk.pdf",
+        "ssmula_coverage.png",
+        "ssmula_coverage.pdf",
+    ):
         p = OUT_CROSS / stale
         if p.exists():
             p.unlink()

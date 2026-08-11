@@ -1,7 +1,7 @@
 """Core fitness landscape class.
 
 Combines single-site effects, structural contact maps, optional epistatic
-couplings, a global nonlinearity, and optional noise to create synthetic
+couplings, a global-epistasis function, and optional noise to create synthetic
 combinatorial fitness landscapes. The landscape can evaluate arbitrary
 multi-mutant variants and sample random variants at specified mutation depths.
 
@@ -15,7 +15,7 @@ The general fitness function is:
 Where h_i are single-site effects from DMS or a pLM scorer, J_ij are optional
 pairwise couplings from the chosen epistasis model, C_ij is the contact map,
 H is an optional structural NK-style higher-order term, and g is usually either
-the identity or a fitted thermodynamic sigmoid.
+the identity or a fitted global-epistasis function.
 
 This approach differs from SLIP (Thomas et al. 2022), which derives both h
 and J from Potts model fits to MSAs, and from NK landscapes (Sandhu et al.
@@ -24,6 +24,7 @@ effects in experimental data where available and keeps structural priors
 explicit rather than implicit.
 """
 
+import hashlib
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from itertools import combinations, product
@@ -46,6 +47,70 @@ from mutascape.nonlinearity import Identity, NonLinearity
 from mutascape.nonlinearity import resolve as _resolve_nonlinearity
 from mutascape.scoring import PLMScorer
 from mutascape.validation.metrics import local_optima_from_tensor
+
+
+def _impute_missing_single_sites(
+    single_site_effects: dict[int, dict[str, float]],
+    strategy: str = "position_mean",
+) -> dict[int, dict[str, float]]:
+    """Fill in (pos, aa) entries the DMS did not measure.
+
+    A synthetic combinatorial landscape must produce a value for every
+    variant it is asked to evaluate. Defaulting unmeasured (pos, aa) effects
+    to 0 silently injects neutral mutations into multi-mutant predictions,
+    which biases the synthetic landscape toward additive behaviour and
+    distorts the candidate-pool fitness distribution.
+
+    Strategies:
+      - "position_mean": each missing AA at position i gets the mean of the
+        measured non-WT effects at position i. WT stays anchored at 0.
+        Assumes AAs at a position are roughly exchangeable a priori, which
+        is the right baseline given only DMS information.
+      - "raise": raise ValueError listing the missing entries.
+
+    Returns a NEW dict with every (pos, aa) for the 20-letter alphabet
+    populated at each position. Input is not mutated.
+    """
+    if strategy not in {"position_mean", "raise"}:
+        raise ValueError(f"unknown missing_aa_prior strategy: {strategy!r}")
+
+    out: dict[int, dict[str, float]] = {}
+    n_imputed = 0
+    for pos, effects in single_site_effects.items():
+        complete = dict(effects)  # copy
+        measured_aas = set(effects.keys())
+        missing = [aa for aa in AMINO_ACIDS if aa not in measured_aas]
+        if not missing:
+            out[pos] = complete
+            continue
+        if strategy == "raise":
+            raise ValueError(
+                f"position {pos} missing single-site effects for AAs: "
+                f"{','.join(missing)} (and missing_aa_prior='raise')"
+            )
+        # position_mean strategy
+        non_wt = [(aa, eff) for aa, eff in effects.items() if eff != 0.0]
+        if non_wt:
+            prior = float(np.mean([eff for _, eff in non_wt]))
+        else:
+            # only WT measured at this position; no useful prior, fall back to 0
+            prior = 0.0
+        for aa in missing:
+            complete[aa] = prior
+            n_imputed += 1
+        out[pos] = complete
+
+    if n_imputed:
+        import warnings
+
+        warnings.warn(
+            f"Mutascape: imputed {n_imputed} unmeasured (pos, aa) single-site "
+            f"effects using strategy={strategy!r}. The synthetic landscape now "
+            f"produces a value for every variant; no silent 0 fallback remains.",
+            stacklevel=2,
+        )
+
+    return out
 
 
 class Variant(NamedTuple):
@@ -103,6 +168,15 @@ class Landscape:
         Standard deviation of Gaussian measurement noise (0.0 = no noise).
     seed : int or None
         Random seed for noise and sampling.
+    deterministic_noise : bool
+        If True, the noise term is a reproducible function of genotype and
+        seed. This makes the landscape a stable oracle: repeated queries for
+        the same variant return the same value. If False, each query draws a
+        fresh observation-noise sample from the landscape RNG.
+    readout_texture_sigma : float
+        Standard deviation of an optional post-readout texture term.
+        This term is useful for breaking censored low-fitness plateaus into a
+        stable neutral network without changing the latent biophysical score.
     """
 
     wild_type: dict[int, str]
@@ -112,6 +186,13 @@ class Landscape:
     alpha: float = 1.0
     noise_sigma: float = 0.0
     seed: int | None = None
+    deterministic_noise: bool = True
+    readout_texture_sigma: float = 0.0
+    readout_texture_order: int = 0
+    readout_texture_iid_fraction: float = 0.0
+    readout_texture_floor: float | None = None
+    readout_texture_floor_band: float = 1e-9
+    readout_texture_seed: int | None = None
     wt_sequence: str | None = None
     nonlinearity: NonLinearity = field(default_factory=Identity)
     higher_order: ContactNKTensor | None = None
@@ -130,10 +211,10 @@ class Landscape:
     def _cache_preimages(self) -> None:
         """Precompute g^{-1}(h_i) for every single-site effect.
 
-        Under the thermodynamic-non-linearity model the additive component of
+        Under the global-epistasis function model the additive component of
         fitness is summed in stability-equivalent units (the preimage) and then
         passed through g. Caching the preimages keeps per-evaluation cost equal
-        to the Identity-nonlinearity case.
+        to the identity-readout case.
         """
         self._preimage_effects = {
             pos: {aa: float(self.nonlinearity.inverse(v)) for aa, v in effects.items()}
@@ -231,34 +312,35 @@ class Landscape:
         >>> landscape.evaluate({57: "G", 72: "V"})
         0.42
         """
+        active_mutations = {
+            int(pos): aa
+            for pos, aa in mutations.items()
+            if self.wild_type.get(int(pos)) != aa
+        }
+
         # Additive component summed in preimage (stability-equivalent) space
-        # so that the non-linearity g wraps the whole fitness function.
+        # so that the global-epistasis function g wraps the whole fitness function.
         additive_preimage = 0.0
-        for pos, aa in mutations.items():
+        for pos, aa in active_mutations.items():
             effects = self._preimage_effects.get(pos, {})
             additive_preimage += effects.get(aa, 0.0)
 
-        # Epistatic component: pairwise couplings between all position pairs
-        # where at least one position is mutated
+        # Epistatic component: pairwise couplings between true non-WT positions.
+        # Pairs with only one non-WT position cancel under the WT baseline
+        # correction below, so iterating over mutant pairs is equivalent and
+        # keeps full WT-context dictionaries canonical.
         epistatic = 0.0
-        all_positions = set(self.wild_type.keys())
-        mutated_positions = set(mutations.keys())
+        mutated_positions = set(active_mutations.keys())
 
-        for pos_i, pos_j in combinations(sorted(all_positions), 2):
-            # Skip if neither position is mutated (no epistatic contribution)
-            if pos_i not in mutated_positions and pos_j not in mutated_positions:
+        for pos_i, pos_j in combinations(sorted(mutated_positions), 2):
+            if pos_i not in self.wild_type or pos_j not in self.wild_type:
                 continue
 
-            # Get the amino acid at each position (mutant or wild type)
-            aa_i = mutations.get(pos_i, self.wild_type[pos_i])
-            aa_j = mutations.get(pos_j, self.wild_type[pos_j])
+            aa_i = active_mutations[pos_i]
+            aa_j = active_mutations[pos_j]
 
-            # Skip if either is wild type at that position (coupling is relative
-            # to wt-wt baseline which is 0 by definition)
             wt_i = self.wild_type[pos_i]
             wt_j = self.wild_type[pos_j]
-            if aa_i == wt_i and aa_j == wt_j:
-                continue
 
             coupling = self.couplings.get_coupling(pos_i, pos_j, aa_i, aa_j)
 
@@ -284,8 +366,11 @@ class Landscape:
                     continue
                 aa_idx = nk.aa_index
                 idx = (
-                    aa_idx[mutations.get(pos, self.wild_type[pos])],
-                    *(aa_idx[mutations.get(n, self.wild_type[n])] for n in neighbours),
+                    aa_idx[active_mutations.get(pos, self.wild_type[pos])],
+                    *(
+                        aa_idx[active_mutations.get(n, self.wild_type[n])]
+                        for n in neighbours
+                    ),
                 )
                 higher_order_contribution += float(nk.per_position_functions[pos][idx])
 
@@ -295,11 +380,75 @@ class Landscape:
             + self.alpha_ho * higher_order_contribution
         )
 
-        # Noise enters pre-nonlinearity (stability-scale noise).
+        # Noise enters before the global-epistasis function. By default it
+        # is pinned to genotype so complete-landscape metrics and MLDE oracles
+        # see a stable node value rather than a fresh draw on every query.
         if self.noise_sigma > 0:
-            raw += self._rng.normal(0, self.noise_sigma)
+            raw += self._noise_for_mutations(active_mutations)
 
-        return float(self.nonlinearity.forward(raw))
+        fitness = float(self.nonlinearity.forward(raw))
+        if self.readout_texture_sigma > 0 and self._readout_texture_applies(fitness):
+            fitness += self.readout_texture_sigma * self._readout_texture_value(
+                active_mutations
+            )
+
+        return fitness
+
+    def _noise_for_mutations(self, mutations: dict[int, str]) -> float:
+        """Return the observation-noise term for a genotype."""
+        if not self.deterministic_noise:
+            return float(self._rng.normal(0, self.noise_sigma))
+
+        label = ";".join(f"{int(pos)}:{aa}" for pos, aa in sorted(mutations.items()))
+        payload = f"{self.seed!r}|{label}".encode()
+        digest = hashlib.blake2b(payload, digest_size=16).digest()
+        noise_seed = int.from_bytes(digest[:8], byteorder="little", signed=False)
+        rng = np.random.default_rng(noise_seed)
+        return float(rng.normal(0, self.noise_sigma))
+
+    def _readout_texture_applies(self, fitness: float) -> bool:
+        """Whether the post-readout texture should perturb this variant."""
+        floor = self.readout_texture_floor
+        if floor is None:
+            floor = getattr(self.nonlinearity, "floor_hard", None)
+        if floor is None:
+            return True
+        return fitness <= float(floor) + self.readout_texture_floor_band
+
+    def _readout_texture_value(self, mutations: dict[int, str]) -> float:
+        """Stable high-order readout texture for censored neutral networks."""
+        states = tuple((int(pos), aa) for pos, aa in sorted(mutations.items()))
+        texture_seed = self.seed if self.readout_texture_seed is None else self.readout_texture_seed
+        iid = self._hash_normal(("readout-iid", states), texture_seed)
+
+        order = int(self.readout_texture_order)
+        if order <= 0:
+            return iid
+
+        if len(states) < order:
+            ordered = 0.0
+        else:
+            vals = [
+                self._hash_normal(("readout-order", combo), texture_seed)
+                for combo in combinations(states, order)
+            ]
+            ordered = float(np.sum(vals) / np.sqrt(len(vals)))
+
+        mix = min(max(float(self.readout_texture_iid_fraction), 0.0), 1.0)
+        if mix == 0.0:
+            return ordered
+        denom = np.sqrt((1.0 - mix) ** 2 + mix**2)
+        if denom == 0.0:
+            return 0.0
+        return ((1.0 - mix) * ordered + mix * iid) / denom
+
+    @staticmethod
+    def _hash_normal(key: object, seed: int | None) -> float:
+        payload = f"{seed!r}|{key!r}".encode()
+        digest = hashlib.blake2b(payload, digest_size=16).digest()
+        normal_seed = int.from_bytes(digest[:8], byteorder="little", signed=False)
+        rng = np.random.default_rng(normal_seed)
+        return float(rng.normal())
 
     def evaluate_batch(self, variants: list[dict[int, str]]) -> NDArray[np.float64]:
         """Evaluate fitness for a batch of variants.
@@ -654,6 +803,12 @@ class Landscape:
         alpha: float = 1.0,
         noise_sigma: float = 0.0,
         seed: int | None = None,
+        readout_texture_sigma: float = 0.0,
+        readout_texture_order: int = 0,
+        readout_texture_iid_fraction: float = 0.0,
+        readout_texture_floor: float | None = None,
+        readout_texture_floor_band: float = 1e-9,
+        readout_texture_seed: int | None = None,
         nonlinearity: NonLinearity | str | None = None,
     ) -> "Landscape":
         """Build a landscape from pLM-predicted single-site effects.
@@ -702,6 +857,12 @@ class Landscape:
             alpha=alpha,
             noise_sigma=noise_sigma,
             seed=seed,
+            readout_texture_sigma=readout_texture_sigma,
+            readout_texture_order=readout_texture_order,
+            readout_texture_iid_fraction=readout_texture_iid_fraction,
+            readout_texture_floor=readout_texture_floor,
+            readout_texture_floor_band=readout_texture_floor_band,
+            readout_texture_seed=readout_texture_seed,
             wt_sequence=sequence,
             nonlinearity=nl,
         )
@@ -715,6 +876,12 @@ class Landscape:
         alpha: float = 1.0,
         noise_sigma: float = 0.0,
         seed: int | None = None,
+        readout_texture_sigma: float = 0.0,
+        readout_texture_order: int = 0,
+        readout_texture_iid_fraction: float = 0.0,
+        readout_texture_floor: float | None = None,
+        readout_texture_floor_band: float = 1e-9,
+        readout_texture_seed: int | None = None,
         wt_fasta: str | Path | None = None,
         wt_sequence: str | None = None,
         scorer: PLMScorer | None = None,
@@ -723,6 +890,7 @@ class Landscape:
         mutant_col: str = "mutant",
         fitness_col: str = "fitness",
         nonlinearity: NonLinearity | str | None = None,
+        missing_aa_prior: str = "position_mean",
     ) -> "Landscape":
         """Construct a landscape from a DMS CSV file and structural data.
 
@@ -803,6 +971,18 @@ class Landscape:
                     wild_type[pos] = wt_sequence[pos - 1]
                     single_site_effects[pos] = effects
 
+        # Synthetic single-site imputation. For every position with at least
+        # one measured AA, fill in every (pos, aa) pair the DMS did not measure
+        # with a position-mean prior over the measured non-WT AAs. The WT
+        # residue stays anchored at 0 by construction. The point: a synthetic
+        # combinatorial landscape must produce a value for every variant it
+        # is asked to evaluate, and silently defaulting unmeasured (pos, aa)
+        # entries to 0 is wrong (it injects neutral mutations where the
+        # synthetic model should predict something).
+        single_site_effects = _impute_missing_single_sites(
+            single_site_effects, strategy=missing_aa_prior,
+        )
+
         # Restrict contact map to positions with effects
         all_effect_positions = sorted(wild_type.keys())
         available_positions = [p for p in all_effect_positions if p in set(contact_map.positions)]
@@ -832,6 +1012,12 @@ class Landscape:
             alpha=alpha,
             noise_sigma=noise_sigma,
             seed=seed,
+            readout_texture_sigma=readout_texture_sigma,
+            readout_texture_order=readout_texture_order,
+            readout_texture_iid_fraction=readout_texture_iid_fraction,
+            readout_texture_floor=readout_texture_floor,
+            readout_texture_floor_band=readout_texture_floor_band,
+            readout_texture_seed=readout_texture_seed,
             nonlinearity=nl,
             wt_sequence=wt_sequence,
         )

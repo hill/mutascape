@@ -1,6 +1,6 @@
 # mutascape - Design Document
 
-> **Historical note (2026-04-21).** This design document captures the original alpha/pairwise-coupling concept. The current publication pipeline is narrower: DMS additive pre-fitness, fitted censored thermodynamic sigmoid, and Gaussian noise, with random pairwise couplings off by default (`sigma = 0`). Use `docs/project_status.md` and `src/mutascape/validation/reference_configs.py` as the canonical method spec.
+> **Historical note (2026-04-21).** This design document captures the original alpha/pairwise-coupling concept. The current publication pipeline is narrower: DMS additive pre-fitness, fitted censored global-epistasis function, and Gaussian noise, with random pairwise couplings off by default (`sigma = 0`). Use `docs/project_status.md` and `src/mutascape/validation/reference_configs.py` as the canonical method spec.
 
 ## 1. Problem Statement
 
@@ -71,7 +71,7 @@ mutascape fills the gap between these approaches:
 | Epistatic topology          | MSA covariation | Random K neighbours | Structural contacts |
 | Biophysical grounding       | Evolutionary  | None         | Structural          |
 | Requires MSA                | Yes           | No           | No (uses structure) |
-| Tunability                  | K_epi         | K            | noise_sigma, nonlinearity, optional couplings |
+| Tunability                  | K_epi         | K            | noise_sigma, global-epistasis function, optional couplings |
 | Sequence length             | Full protein  | Short (6)    | Full protein        |
 | Amino acid alphabet         | Full (20)     | Reduced (6)  | Full (20)           |
 

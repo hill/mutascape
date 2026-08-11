@@ -1,6 +1,6 @@
 # Project status
 
-Checkpoint summary as of 2026-04-21. For the chronological experiment trail see `experiments_log.md`; for theoretical background see `design.md`; for the thermodynamic-layer math see `nonlinearity_design.md`; for the deeper GB1-specific analysis see `gb1_validation_analysis.md`; for citations and paper context see `references.md`.
+Checkpoint summary as of 2026-04-26. For theoretical background see `design.md`. For the global-epistasis function math see `nonlinearity_design.md`. For citations and paper context see `references.md`.
 
 ## Goal
 
@@ -8,17 +8,18 @@ Produce a **synthetic combinatorial protein fitness-landscape generator for benc
 
 - Mutascape is a **benchmark-generation tool**, not a digital twin of one protein.
 - The headline metrics are `walsh_L1` and `fitness_W1`.
-- Per-order Walsh composition, `n_optima`, and SSMuLA-style descriptive attributes are secondary diagnostics.
+- Per-order Walsh composition, `n_optima`, and landscape-attribute diagnostics are secondary diagnostics.
 
 ## Current headline method
 
 The validated reference pipeline is:
 
 1. Additive single-site effects from DMS.
-2. A fitted thermodynamic sigmoid with optional censoring via `floor_hard`.
-3. Gaussian noise with `noise_sigma` as the primary ruggedness parameter.
+2. A fitted global-epistasis function with optional censoring via `floor_hard`.
+3. Gaussian noise with `noise_sigma` as the primary latent ruggedness parameter.
+4. A tiny censored readout texture that breaks exact low-fitness plateaus into stable local topology.
 
-Important consequence: **pairwise random couplings are off by default**. On both GB1 and TrpB, setting `sigma > 0` worsened the headline validation metrics. The best current default is therefore `sigma = 0`, fitted censored nonlinearity, and `noise_sigma = 0.3`.
+Important consequence: **pairwise random couplings are off by default**. On both GB1 and TrpB, setting `sigma > 0` worsened the headline validation metrics. The best current default is therefore `sigma = 0`, a fitted censored global-epistasis function, `noise_sigma = 0.3`, and a small floor-gated readout texture.
 
 The publication-critical parameter sets are frozen in `src/mutascape/validation/reference_configs.py`.
 
@@ -26,8 +27,8 @@ The publication-critical parameter sets are frozen in `src/mutascape/validation/
 
 The current code still supports structure- and pLM-assisted construction for larger proteins, but that support is separate from the frozen headline validation.
 
-- Structural priors enter through `ContactMap`: load PDB/mmCIF files with `from_pdb`, load prepared distance matrices with `from_distance_matrix`, or predict a structure from sequence with `from_sequence` via ESMFold.
-- AlphaFold/ColabFold structures are supported when saved as local PDB/mmCIF files and passed to `ContactMap.from_pdb`; there is no built-in AlphaFold runner.
+- Structural priors enter through `ContactMap`. Load PDB/mmCIF files with `from_pdb`, load prepared distance matrices with `from_distance_matrix`, or predict a structure from sequence with `from_sequence` via ESMFold.
+- AlphaFold/ColabFold structures are supported when saved as local PDB/mmCIF files and passed to `ContactMap.from_pdb`. There is no built-in AlphaFold runner.
 - ESM2 masked-marginal scoring is available through `ESM2Scorer` and can fill unscreened single-site effects when DMS is incomplete.
 - These routes are enabled workflows for larger benchmark candidates, not yet headline evidence that large-protein landscapes are quantitatively matched.
 
@@ -41,13 +42,16 @@ The current code still supports structure- and pLM-assisted construction for lar
 - `scale = 1.0`
 - `floor_hard = -1.0`
 - `combinatorial_upside = 3.0`
+- `readout_texture_sigma = 0.005`
+- `readout_texture_order = 3`
+- `readout_texture_iid_fraction = 0.3`
 
 Headline metrics:
 
 - `walsh_L1 = 0.317`
 - `fitness_W1 = 0.036`
 - real `n_optima = 182`
-- synthetic `n_optima = 3`
+- synthetic `n_optima = 200`
 
 Order-wise Walsh fractions at the frozen setting:
 
@@ -62,13 +66,15 @@ Order-wise Walsh fractions at the frozen setting:
 - `scale = 0.553` (fit from singles)
 - `floor_hard = singles_min ~= -0.421`
 - `combinatorial_upside = 3.0`
+- `readout_texture_sigma = 0.003`
+- `readout_texture_order = 4`
 
 Headline metrics:
 
-- `walsh_L1 = 0.107`
-- `fitness_W1 = 0.028`
+- `walsh_L1 = 0.105`
+- `fitness_W1 = 0.027`
 - real `n_optima = 802`
-- synthetic `n_optima = 23`
+- synthetic `n_optima = 843`
 
 Order-wise Walsh fractions at the frozen setting:
 
@@ -81,26 +87,26 @@ The sparse full-protein GFP rerun is now complete under the same headline archit
 
 - `alpha = 1.5`
 - `sigma = 0.0`
-- fitted censored thermodynamic sigmoid
+- fitted censored global-epistasis function
 - `floor_hard = singles_min`
 - `noise_sigma = 0.3`
 
 What it shows:
 
-- The synthetic landscape reproduces the *qualitative* depth trends: additive correlation decreases, sign epistasis increases, and deviation magnitudes broaden with mutation depth.
+- The synthetic landscape reproduces the *qualitative* depth trends. Additive correlation decreases, sign epistasis increases, and deviation magnitudes broaden with mutation depth.
 - It remains too smooth to serve as a headline validation result.
 
 Representative values:
 
-- depth 2 additive correlation: real `0.900`, synthetic `0.936`
-- depth 7 additive correlation: real `0.419`, synthetic `0.795`
+- depth 2 additive correlation, real `0.900`, synthetic `0.936`
+- depth 7 additive correlation, real `0.419`, synthetic `0.795`
 - roughness-to-slope ratio: real `0.951`, synthetic `0.605`
 
 Interpretation: GFP is useful supplementary evidence for generalization, but the paper should stay centered on GB1 + TrpB.
 
 ## What is working
 
-- **The core package is real and tested.** DMS ingestion, contact maps, nonlinearity, validation metrics, and figure generation are implemented.
+- **The core package is real and tested.** DMS ingestion, contact maps, global-epistasis functions, validation metrics, and figure generation are implemented.
 - **The reference pipeline is frozen in code.** Named builders now exist for the publication configs.
 - **Regression protection is in place.** `tests/test_reference_configs.py` checks the GB1 and TrpB headline metrics against tolerance bands.
 - **Notebook dependence is reduced.** `scripts/rebuild_reference_outputs.py` rebuilds the paper figures from prepared data.
@@ -119,15 +125,15 @@ Raw spatial contacts and functional coupling are not identical. The project now 
 
 - only override the structural contact graph when an independent mechanistic justification exists, such as a shared ligand/cofactor or an annotated active-site mechanism
 
-This keeps TrpB defensible while preventing arbitrary hand-tuning.
+This keeps TrpB justified while preventing arbitrary hand-tuning.
 
 ## Recommended next steps
 
 1. Run a small MLDE / ALDE pilot on the frozen pipeline with 2-3 methods and a `noise_sigma` sweep.
-2. Keep `noise_sigma` as the first ruggedness dial; only add `sigma_nk` if it fixes the order-3 mismatch without damaging `fitness_W1`.
+2. Keep `noise_sigma` as the first ruggedness dial. Only add `sigma_nk` if it fixes the order-3 mismatch without damaging `fitness_W1`.
 3. Tighten the paper discussion after one more pass over wording and figure density.
 
-An initial GB1 quick pilot now exists via `scripts/run_mutantopt_pilot.py`; it exports compact benchmark datasets and writes results under `notebooks/benchmark_pilot/`.
+An initial GB1 quick pilot now exists via `scripts/run_mutantopt_pilot.py`. It exports compact benchmark datasets and writes results under `notebooks/benchmark_pilot/`.
 
 ## Reproducibility hooks
 
@@ -139,7 +145,7 @@ An initial GB1 quick pilot now exists via `scripts/run_mutantopt_pilot.py`; it e
 
 ## Status flags
 
-- [ready] nonlinearity module + censored thermodynamic fit
+- [ready] global-epistasis function module + censored fit
 - [ready] GB1 reference config and figure outputs
 - [ready] TrpB reference config and figure outputs
 - [ready] GFP supplementary rerun under the current pipeline

@@ -1,14 +1,26 @@
 """Tests for the landscape module."""
 
+import warnings
 from itertools import islice
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from mutascape.contacts import ContactMap
-from mutascape.epistasis import ContactNKEpistasis, RandomEpistasis
-from mutascape.landscape import Landscape, Variant, _pin_nk_wildtype
+from mutascape.epistasis import (
+    AMINO_ACIDS,
+    ContactNKEpistasis,
+    MSACouplingsEpistasis,
+    RandomEpistasis,
+)
+from mutascape.landscape import (
+    Landscape,
+    Variant,
+    _impute_missing_single_sites,
+    _pin_nk_wildtype,
+)
 from mutascape.mutant import Mutant
 
 
@@ -158,6 +170,86 @@ class TestLandscapeEvaluation:
         results = landscape.evaluate_batch(variants)
         assert results.shape == (3,)
         assert results[0] == pytest.approx(landscape.evaluate({10: "G"}))
+
+    def test_noise_is_genotype_stable_by_default(self, landscape):
+        noisy = Landscape(
+            wild_type=landscape.wild_type,
+            single_site_effects=landscape.single_site_effects,
+            contact_map=landscape.contact_map,
+            couplings=landscape.couplings,
+            alpha=1.0,
+            noise_sigma=0.25,
+            seed=123,
+        )
+        first = noisy.evaluate({10: "G", 20: "I"})
+        second = noisy.evaluate({10: "G", 20: "I"})
+        assert second == pytest.approx(first)
+
+    def test_full_wildtype_context_matches_sparse_mutations_with_noise(self, landscape):
+        noisy = Landscape(
+            wild_type=landscape.wild_type,
+            single_site_effects=landscape.single_site_effects,
+            contact_map=landscape.contact_map,
+            couplings=landscape.couplings,
+            alpha=1.0,
+            noise_sigma=0.25,
+            seed=123,
+        )
+        sparse = {10: "G"}
+        full_context = {10: "G", 20: "L", 30: "K"}
+        assert noisy.evaluate(full_context) == pytest.approx(noisy.evaluate(sparse))
+
+    def test_stochastic_noise_mode_draws_per_query(self, landscape):
+        noisy = Landscape(
+            wild_type=landscape.wild_type,
+            single_site_effects=landscape.single_site_effects,
+            contact_map=landscape.contact_map,
+            couplings=landscape.couplings,
+            alpha=1.0,
+            noise_sigma=0.25,
+            seed=123,
+            deterministic_noise=False,
+        )
+        first = noisy.evaluate({10: "G", 20: "I"})
+        second = noisy.evaluate({10: "G", 20: "I"})
+        assert second != pytest.approx(first)
+
+    def test_readout_texture_is_genotype_stable(self, landscape):
+        textured = Landscape(
+            wild_type=landscape.wild_type,
+            single_site_effects=landscape.single_site_effects,
+            contact_map=landscape.contact_map,
+            couplings=landscape.couplings,
+            alpha=1.0,
+            seed=123,
+            readout_texture_sigma=0.1,
+            readout_texture_order=0,
+        )
+        first = textured.evaluate({10: "G", 20: "I"})
+        second = textured.evaluate({10: "G", 20: "I"})
+        assert second == pytest.approx(first)
+
+    def test_readout_texture_floor_gate_skips_high_fitness(self, landscape):
+        base = Landscape(
+            wild_type=landscape.wild_type,
+            single_site_effects=landscape.single_site_effects,
+            contact_map=landscape.contact_map,
+            couplings=landscape.couplings,
+            alpha=0.0,
+            seed=123,
+        )
+        textured = Landscape(
+            wild_type=landscape.wild_type,
+            single_site_effects=landscape.single_site_effects,
+            contact_map=landscape.contact_map,
+            couplings=landscape.couplings,
+            alpha=0.0,
+            seed=123,
+            readout_texture_sigma=0.1,
+            readout_texture_order=0,
+            readout_texture_floor=-1.0,
+        )
+        assert textured.evaluate({10: "G"}) == pytest.approx(base.evaluate({10: "G"}))
 
 
 class TestLandscapeSampling:
@@ -528,3 +620,201 @@ class TestLocalOptima:
         result = landscape.local_optima(positions=subset)
         assert result["positions"] == subset
         assert result["tensor"].ndim == 2
+
+
+class TestImputeMissingSingleSites:
+    """Synthetic single-site imputation. Replaces silent 0-default at evaluate
+    time with explicit per-position fill at landscape construction time."""
+
+    @pytest.fixture
+    def partial_effects(self):
+        """3-position dict where each position has WT + 2 measured AAs of the 19
+        non-WT alphabet. 17 missing AAs per position = 51 missing total."""
+        return {
+            10: {"A": 0.0, "G": 0.6, "V": -0.3},   # A is wt
+            20: {"L": 0.0, "I": 0.2, "F": -0.5},   # L is wt
+            30: {"K": 0.0, "R": 0.1, "E": -0.2},   # K is wt
+        }
+
+    def test_position_mean_fills_all_20_aas(self, partial_effects):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            out = _impute_missing_single_sites(partial_effects, strategy="position_mean")
+        for pos in (10, 20, 30):
+            assert set(out[pos].keys()) == set(AMINO_ACIDS)
+
+    def test_position_mean_value_is_mean_of_non_wt_measured(self, partial_effects):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            out = _impute_missing_single_sites(partial_effects, strategy="position_mean")
+        # Position 10: non-WT measured are G=+0.6 and V=-0.3; mean = +0.15
+        for aa in AMINO_ACIDS:
+            if aa not in {"A", "G", "V"}:
+                assert out[10][aa] == pytest.approx(0.15)
+
+    def test_wt_entry_preserved_at_zero(self, partial_effects):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            out = _impute_missing_single_sites(partial_effects, strategy="position_mean")
+        assert out[10]["A"] == 0.0
+        assert out[20]["L"] == 0.0
+        assert out[30]["K"] == 0.0
+
+    def test_measured_entries_preserved(self, partial_effects):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            out = _impute_missing_single_sites(partial_effects, strategy="position_mean")
+        # Measured effects must be byte-identical
+        for pos, effects in partial_effects.items():
+            for aa, val in effects.items():
+                assert out[pos][aa] == val
+
+    def test_no_op_when_already_full(self):
+        full = {
+            10: {aa: 0.1 if aa != "A" else 0.0 for aa in AMINO_ACIDS},
+        }
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # imputation should NOT warn here
+            out = _impute_missing_single_sites(full, strategy="position_mean")
+        assert out[10] == full[10]
+
+    def test_position_with_only_wt_falls_back_to_zero(self):
+        """The one documented fallback case: position with only WT measured has
+        no useful prior, missing AAs all default to 0."""
+        wt_only = {10: {"A": 0.0}}
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            out = _impute_missing_single_sites(wt_only, strategy="position_mean")
+        assert out[10]["A"] == 0.0
+        for aa in AMINO_ACIDS:
+            if aa != "A":
+                assert out[10][aa] == 0.0
+
+    def test_raise_strategy_lists_missing_aas(self, partial_effects):
+        with pytest.raises(ValueError, match="missing single-site effects"):
+            _impute_missing_single_sites(partial_effects, strategy="raise")
+
+    def test_unknown_strategy_raises(self, partial_effects):
+        with pytest.raises(ValueError, match="unknown missing_aa_prior strategy"):
+            _impute_missing_single_sites(partial_effects, strategy="bogus")
+
+    def test_warning_includes_imputed_count(self, partial_effects):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            _impute_missing_single_sites(partial_effects, strategy="position_mean")
+        msgs = [str(w.message) for w in caught if "imputed" in str(w.message)]
+        assert msgs, "expected a warning about imputed entries"
+        # 17 missing per position × 3 positions = 51 imputed
+        assert "51" in msgs[0]
+
+    def test_input_dict_not_mutated(self, partial_effects):
+        snapshot = {pos: dict(effects) for pos, effects in partial_effects.items()}
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            _impute_missing_single_sites(partial_effects, strategy="position_mean")
+        assert partial_effects == snapshot
+
+
+class TestFromDmsImputation:
+    """Landscape.from_dms threads missing_aa_prior through the imputation."""
+
+    def test_default_strategy_fills_all_20_aas(self, landscape):
+        """The dms_csv fixture has only 2 measured AAs per position (G/V at 10,
+        I/F at 20, R/E at 30). Default missing_aa_prior='position_mean' should
+        give every position 20 AAs after construction."""
+        for pos in landscape.positions:
+            assert set(landscape.single_site_effects[pos].keys()) == set(AMINO_ACIDS)
+
+    def test_raise_strategy_raises_on_partial_dms(self, small_contact_map, dms_csv):
+        with pytest.raises(ValueError, match="missing single-site effects"):
+            Landscape.from_dms(
+                dms_path=dms_csv,
+                contact_map=small_contact_map,
+                epistasis=RandomEpistasis(sigma=0.0, seed=42),
+                alpha=1.0,
+                seed=42,
+                missing_aa_prior="raise",
+            )
+
+    def test_imputed_single_mutant_evaluates_to_position_mean(self, landscape):
+        """A single-mutant for an unmeasured AA at position 10 (e.g., A->R)
+        evaluates to the same fitness as the position-mean prior under
+        identity readout (the default in this fixture). Measured AAs
+        keep their DMS value exactly."""
+        # Measured AAs preserved
+        assert landscape.evaluate({10: "G"}) == pytest.approx(0.5)
+        # Position 10 measured non-WT: G=0.5, V=-0.3 → mean = 0.1
+        # Unmeasured AA (e.g., R) should evaluate to that mean
+        assert landscape.evaluate({10: "R"}) == pytest.approx(0.1, abs=1e-9)
+
+
+class TestFromDmsWithMSACouplings:
+    """Landscape.from_dms accepts MSACouplingsEpistasis directly or as a path."""
+
+    @pytest.fixture
+    def msa_coupling_npz(self, tmp_path):
+        """Tiny (3, 3, 20, 20) MSA-Potts coupling tensor saved as npz.
+        Use the contact map's positions ([10, 20, 30]) for the position_order."""
+        rng = np.random.default_rng(0)
+        J = rng.normal(0.0, 0.5, (3, 3, 20, 20)).astype(np.float64)
+        # Symmetrise so J[i,j] = J[j,i].T (matches MSA construction)
+        for i in range(3):
+            for j in range(i + 1, 3):
+                sym = 0.5 * (J[i, j] + J[j, i].T)
+                J[i, j] = sym
+                J[j, i] = sym.T
+        npz = tmp_path / "test_msa_couplings.npz"
+        np.savez(
+            npz,
+            coupling_matrix=J,
+            positions=np.array([10, 20, 30], dtype=np.int64),
+        )
+        return npz
+
+    def test_from_dms_accepts_msa_couplings_epistasis(self, small_contact_map, dms_csv, msa_coupling_npz):
+        """Landscape.from_dms accepts MSACouplingsEpistasis as the `epistasis`
+        arg (the path-loading wrapper lives in build_landscape, not here)."""
+        eps = MSACouplingsEpistasis.from_npz(msa_coupling_npz, scale=1.0)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            lc = Landscape.from_dms(
+                dms_path=dms_csv,
+                contact_map=small_contact_map,
+                epistasis=eps,
+                alpha=1.5,
+                seed=42,
+            )
+        # Couplings should be populated for the contact pairs (10,20) and (20,30)
+        assert lc.couplings.n_pairs == 2
+
+    def test_calibration_build_landscape_threads_msa_path(self, dms_csv, msa_coupling_npz, tmp_path):
+        """The path-loading wrapper in build_landscape forwards to MSACouplingsEpistasis.from_npz."""
+        from mutascape.validation.calibration import build_landscape
+
+        # WT fasta with the right residues at positions 10/20/30 (1-based)
+        seq = list("M" * 30)
+        seq[9] = "A"   # pos 10
+        seq[19] = "L"  # pos 20
+        seq[29] = "K"  # pos 30
+        wt_fasta = tmp_path / "wt.fasta"
+        wt_fasta.write_text(">wt\n" + "".join(seq) + "\n")
+
+        distances_npz = tmp_path / "distances.npz"
+        np.savez(
+            distances_npz,
+            distances=np.array([[0.0, 6.0, 15.0], [6.0, 0.0, 7.0], [15.0, 7.0, 0.0]]),
+            positions=np.array([10, 20, 30]),
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            lc = build_landscape(
+                dms_csv=dms_csv,
+                distances_npz=distances_npz,
+                wt_fasta=wt_fasta,
+                alpha=1.5,
+                sigma=0.0,
+                seed=42,
+                msa_couplings=msa_coupling_npz,
+            )
+        # MSACouplingsEpistasis (loaded from path) was used; non-zero couplings expected
+        assert lc.couplings.n_pairs == 2

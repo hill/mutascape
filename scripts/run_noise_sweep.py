@@ -1,7 +1,7 @@
 """Noise-sigma sweep: vary i.i.d. Gaussian noise, measure walsh_L1 + fitness_W1
-plus SSMuLA attributes, per protein.
+plus topology and distribution attributes, per protein.
 
-The headline calibration path (additive + pairwise contacts + censored thermo
+The headline calibration path (additive + pairwise contacts + censored global epistasis
 sigmoid) is fixed; only `noise_sigma` varies. Produces the CSV that feeds the
 paper's primary figure.
 
@@ -77,6 +77,9 @@ def _eval_noise(noise_sigma, cfg, g, real_tensor, real_walsh, alphabets):
         "walsh_L1": walsh_l1_distance(real_walsh, w),
         "fitness_W1": fitness_wasserstein(real_tensor, t),
         "n_optima": o["n_optima"],
+        "peak_fraction": o["peak_fraction"],
+        "largest_basin_fraction": o["largest_basin_fraction"],
+        "basin_entropy": o["basin_entropy"],
         "accessible_frac": p["mean_accessible_fraction"],
         "ssmula_frac_active": ss["frac_active"],
         "ssmula_frac_optima": ss["frac_local_optima"],
@@ -103,6 +106,9 @@ def _real_row(real_tensor, real_walsh, seed: int):
         "walsh_L1": float("nan"),
         "fitness_W1": float("nan"),
         "n_optima": o["n_optima"],
+        "peak_fraction": o["peak_fraction"],
+        "largest_basin_fraction": o["largest_basin_fraction"],
+        "basin_entropy": o["basin_entropy"],
         "accessible_frac": p["mean_accessible_fraction"],
         "ssmula_frac_active": ss["frac_active"],
         "ssmula_frac_optima": ss["frac_local_optima"],

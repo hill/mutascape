@@ -1,12 +1,14 @@
-# Design: thermodynamic non-linearity layer
+# Design: global-epistasis function layer
 
-> **Status note (2026-04-21).** The thermodynamic layer is now part of the frozen publication pipeline. The original validation plan at the end of this document is retained as historical context; the current GB1/TrpB reference results are in `docs/project_status.md`.
+> **Status note (2026-04-21).** The global-epistasis function is now part of the frozen publication pipeline. The original validation plan at the end of this document is retained as historical context. The current GB1/TrpB reference results are in `docs/project_status.md`.
+
+This is the parametric global-epistasis function of Otwinowski (2018, MBE) and Otwinowski, McCandlish & Plotkin (2018, PNAS). Sailer & Harms (2017, Genetics) provides the theoretical motivation that a single $g$ over an additive base produces apparent higher-order epistasis. Tokuriki & Tawfik (2009) motivates the sigmoidal form via stability-limited fitness.
 
 Companion to the implementation in `src/mutascape/nonlinearity.py` and its integration into `Landscape`. This document states the mathematical model, the parameter identification procedure, and the API.
 
 ## Motivation
 
-See `docs/gb1_validation_analysis.md` for the historical empirical argument. In one line: under the original pairwise model a single scalar $\alpha$ controlled all epistatic behaviour, but real landscapes such as GB1 have multiple near-independent epistatic properties that cannot be jointly satisfied by a single dial over random Gaussian pairwise couplings. Adding a global non-linearity introduces a second mechanism that contributes apparent higher-order epistasis and path inaccessibility without requiring any additional data beyond what single-site DMS already provides.
+Under the original pairwise model a single scalar $\alpha$ controlled all epistatic behaviour, but real landscapes such as GB1 have multiple near-independent epistatic properties that cannot be jointly satisfied by a single dial over random Gaussian pairwise couplings. Adding a global-epistasis function introduces a second mechanism that contributes apparent higher-order epistasis and path inaccessibility without requiring any additional data beyond what single-site DMS already provides.
 
 ## Model
 
@@ -14,7 +16,7 @@ The extended fitness function is
 
 $$f(x) = g\!\Big(\underbrace{\sum_i \tilde{h}_i(x_i)}_{\text{preimage-additive}} + \alpha \sum_{i<j} C_{ij}\,J_{ij}(x_i, x_j) + \varepsilon\Big)$$
 
-where $\tilde{h}_i(x_i) = g^{-1}(h_i(x_i))$ is the preimage of the observed single-site effect under the non-linearity $g$. Taking the preimage ensures that a single mutant's predicted fitness matches the DMS observation exactly:
+where $\tilde{h}_i(x_i) = g^{-1}(h_i(x_i))$ is the preimage of the observed single-site effect under the global-epistasis function $g$. Taking the preimage makes a single mutant's predicted fitness match the DMS observation exactly:
 
 $$f(\text{single mutation at } i \text{ to } a) = g(g^{-1}(h_i(a))) = h_i(a).$$
 
@@ -26,7 +28,7 @@ We use a 3-parameter logistic with floor $F$, ceiling $C$, and scale $s$:
 
 $$g(z) = F + (C - F)\,\sigma\!\Big(\tfrac{z}{s} + \tau\Big), \qquad \sigma(u) = \tfrac{1}{1 + e^{-u}}$$
 
-The shift $\tau$ is **not free**: we pin $g(0) = 0$ (wild-type fitness is zero by mutascape convention), which gives
+The shift $\tau$ is **not free**. We pin $g(0) = 0$ (wild-type fitness is zero by mutascape convention), which gives
 
 $$\tau = \mathrm{logit}\!\Big(\tfrac{-F}{C - F}\Big).$$
 
@@ -40,7 +42,7 @@ Three parameters total ($F, C, s$), one of which is pinned and two of which are 
 
 Given a set of observed single-site fitness effects $\{h_i(a)\}$ (either from DMS or a pLM):
 
-1. **Floor and ceiling**: set from the empirical range with a small margin to keep observed values strictly interior (otherwise $g^{-1}$ diverges):
+1. **Floor and ceiling** come from the empirical range with a small margin to keep observed values strictly interior (otherwise $g^{-1}$ diverges):
    $F = \min(h) - m\,(\max(h) - \min(h))$, $C = \max(h) + m\,(\max(h) - \min(h))$.
    Default $m = 0.05$.
 
@@ -50,28 +52,28 @@ Given a set of observed single-site fitness effects $\{h_i(a)\}$ (either from DM
 
    where $\phi$ is the standard normal density and the Jacobian term comes from the change of variables. Minimised with `scipy.optimize.minimize_scalar` over a bounded interval.
 
-The Gaussian prior on $g^{-1}(h)$ is convention, not physics: we are declaring that implicit stability effects look standard-normal. Different priors (Laplace for sparse effects, heavy-tailed for lethal-dominated proteins) can be swapped in without changing the API.
+The Gaussian prior on $g^{-1}(h)$ is convention, not physics. We are declaring that implicit stability effects look standard-normal. Different priors (Laplace for sparse effects, heavy-tailed for lethal-dominated proteins) can be swapped in without changing the API.
 
 ## Integration with `Landscape`
 
 - New optional field `nonlinearity: NonLinearity = Identity()`.
 - `__post_init__` precomputes `self._preimage[pos][aa] = g.inverse(h_i(a))` once, so per-evaluation cost is unchanged.
 - `evaluate` / `evaluate_batch` sum preimages, add pairwise, add noise, then return `g(raw)`.
-- `from_dms` and `from_plm` accept `nonlinearity` as `None` (use Identity), a constructed `NonLinearity` instance, or the literal string `"fit"` which triggers `ThermodynamicSigmoid.fit_from_singles` on the DMS data automatically.
+- `from_dms` and `from_plm` accept `nonlinearity` as `None` (use Identity), a constructed `NonLinearity` instance, or the literal string `"fit"` which triggers `GlobalEpistasisSigmoid.fit_from_singles` on the DMS data automatically.
 
-Identity non-linearity is the default and reproduces existing behaviour bit-for-bit.
+The identity global-epistasis function is the default and reproduces existing behaviour bit-for-bit.
 
 ## Backwards compatibility and noise
 
-- Existing calibration, metrics, and figures do not depend on the fitness function's internal structure; they consume only scalar fitness values. Nothing downstream changes.
-- Measurement noise is added pre-non-linearity so that noise has its natural (pre-sigmoid, stability-scale) statistics. This matches the biophysical picture in which noise is experimental and adds before the folding readout saturates. If this proves wrong empirically, we can flip noise to post-sigmoid with a single-line change.
+- Existing calibration, metrics, and figures do not depend on the fitness function's internal structure. They consume only scalar fitness values. Nothing downstream changes.
+- Measurement noise is added before the global-epistasis function so that noise has its natural (pre-sigmoid, stability-scale) statistics. This matches the biophysical picture in which noise is experimental and adds before the folding readout saturates. If this proves wrong empirically, we can flip noise to after the sigmoid with a single-line change.
 
 ## Historical validation plan
 
-The following was the original validation plan. The unit tests and GB1/TrpB reruns are now complete; the realized headline model uses fitted censored nonlinearity plus `noise_sigma = 0.3`, with random pairwise couplings disabled.
+The following was the original validation plan. The unit tests and GB1/TrpB reruns are now complete. The realized headline model uses a fitted censored global-epistasis function plus `noise_sigma = 0.3`, with random pairwise couplings disabled.
 
-1. Unit-test: `Identity` landscape equals non-g landscape. `ThermodynamicSigmoid` forward/inverse round-trip to machine precision. Fit recovers a known $s$ on synthetic data.
-2. GB1 rerun: re-execute `notebooks/validation/gb1_validation.ipynb` with the sigmoid fit from the 76 GB1 singles. Expected changes (from `docs/gb1_validation_analysis.md`):
+1. Unit-test: `Identity` landscape equals non-g landscape. `GlobalEpistasisSigmoid` forward/inverse round-trip to machine precision. Fit recovers a known $s$ on synthetic data.
+2. GB1 rerun: re-execute `notebooks/validation/gb1_validation.ipynb` with the sigmoid fit from the 76 GB1 singles. Expected changes:
    - Additive correlation at depth 2 drops from 0.89 toward 0.70 or below.
    - Walsh order-3 fraction rises from ~0 to at least 0.10.
    - Walsh order-4 fraction rises to at least 0.02.
@@ -82,6 +84,6 @@ The following was the original validation plan. The unit tests and GB1/TrpB reru
 
 ## Future extensions
 
-- **Isotonic $g$** (Otwinowski 2018 non-parametric). Drop-in replacement for `ThermodynamicSigmoid` using a monotonic spline fitted from singles. Better when the true $g$ is not sigmoidal.
-- **Joint $g + J_{ij}$ fit from a small multi-mutant panel.** When the user has a modest number of doubles (Option B in `gb1_validation_analysis.md`), jointly optimise $g$ parameters and $J_{ij}$ values instead of sampling $J$ from a prior.
+- **Isotonic $g$** (Otwinowski 2018 non-parametric). Drop-in replacement for `GlobalEpistasisSigmoid` using a monotonic spline fitted from singles. Better when the true $g$ is not sigmoidal.
+- **Joint $g + J_{ij}$ fit from a small multi-mutant panel.** When the user has a modest number of doubles, jointly optimise $g$ parameters and $J_{ij}$ values instead of sampling $J$ from a prior.
 - **pLM-informed prior.** If singles are from a pLM rather than DMS, the implicit ΔΔG prior may differ from standard-normal. Allow the prior distribution to be specified at fit time.

@@ -281,18 +281,44 @@ def local_optima_from_tensor(
     A local optimum is a cell whose fitness is strictly greater than all of
     its single-mutation (Hamming-1) neighbours. Returns a dict with:
         n_optima : number of local optima
+        peak_fraction : n_optima / number of finite tensor cells
         peak_indices : list of argmax indices, sorted by fitness descending
         peak_fitnesses : corresponding fitness values
         global_peak : index of the single global optimum
         basin_sizes : list of basin sizes (count of cells that reach each peak
             via greedy single-step ascent)
+        largest_basin_fraction : fraction of cells flowing to the largest
+            greedy-ascent basin
+        basin_entropy : Shannon entropy of greedy-ascent basin probabilities,
+            normalised to [0, 1] when at least two basins exist
+
+    Raw `n_optima` is meaningful on a fixed complete factorial space. For
+    comparisons across proteins or alphabet sizes, use `peak_fraction` and the
+    basin summaries instead.
     """
-    tensor = np.where(np.isnan(tensor), np.nanmin(tensor) - 1e6, tensor)
+    finite_mask = np.isfinite(tensor)
+    n_finite = int(finite_mask.sum())
+    if n_finite == 0:
+        return {
+            "n_optima": 0,
+            "peak_fraction": float("nan"),
+            "peak_indices": [],
+            "peak_fitnesses": [],
+            "global_peak": None,
+            "basin_sizes": [],
+            "largest_basin_fraction": float("nan"),
+            "basin_entropy": float("nan"),
+            "n_variants": 0,
+        }
+
+    tensor = np.where(finite_mask, tensor, float(np.nanmin(tensor) - 1e6))
     shape = tensor.shape
     is_peak = np.zeros(shape, dtype=bool)
     for idx in np.ndindex(*shape):
+        if not finite_mask[idx]:
+            continue
         f = tensor[idx]
-        if all(tensor[n] < f for n in _neighbours_of(idx, shape)):
+        if all((not finite_mask[n]) or tensor[n] < f for n in _neighbours_of(idx, shape)):
             is_peak[idx] = True
 
     peak_coords = list(zip(*np.where(is_peak)))
@@ -319,17 +345,194 @@ def local_optima_from_tensor(
 
     basin_counts = [0] * len(peak_coords)
     for idx in np.ndindex(*shape):
+        if not finite_mask[idx]:
+            continue
         final = ascend(idx)
         if final in peak_id:
             basin_counts[peak_id[final]] += 1
 
+    if basin_counts and n_finite:
+        basin_counts_arr = np.array(basin_counts, dtype=np.float64)
+        largest_basin_fraction = float(basin_counts_arr.max() / n_finite)
+        assigned_total = float(basin_counts_arr.sum())
+        basin_probs = basin_counts_arr / assigned_total if assigned_total > 0 else basin_counts_arr
+        nonzero = basin_probs[basin_probs > 0]
+        raw_entropy = float(-(nonzero * np.log(nonzero)).sum())
+        basin_entropy = (
+            raw_entropy / float(np.log(len(nonzero))) if len(nonzero) > 1 else 0.0
+        )
+    else:
+        largest_basin_fraction = float("nan")
+        basin_entropy = float("nan")
+
     return {
         "n_optima": len(peak_coords),
+        "peak_fraction": len(peak_coords) / n_finite,
         "peak_indices": peak_coords,
         "peak_fitnesses": peak_fitnesses,
         "global_peak": peak_coords[0] if peak_coords else None,
         "basin_sizes": basin_counts,
+        "largest_basin_fraction": largest_basin_fraction,
+        "basin_entropy": basin_entropy,
+        "n_variants": n_finite,
     }
+
+
+def sampled_neighbourhood_ruggedness(
+    tensor: NDArray[np.float64],
+    n_samples: int | None = 5000,
+    seed: int = 42,
+) -> dict[str, float]:
+    """Estimate local ruggedness from sampled Hamming-1 neighbourhoods.
+
+    This is a topology-aware metric that still works when exact peak counting
+    is too expensive. It samples tensor cells and evaluates all of their
+    single-mutation neighbours, returning:
+
+    - `local_optimum_rate`: fraction of sampled cells that are strict local
+      maxima within their full Hamming-1 neighbourhood.
+    - `mean_uphill_fraction`: mean fraction of neighbours fitter than the
+      source. Lower values mean stronger local trapping.
+    - `mean_best_step`: mean fitness gain of the best available single-step
+      move, clipped at zero.
+    """
+    finite = np.argwhere(np.isfinite(tensor))
+    if finite.size == 0:
+        return {
+            "local_optimum_rate": float("nan"),
+            "mean_uphill_fraction": float("nan"),
+            "mean_best_step": float("nan"),
+            "n_sampled": 0.0,
+        }
+
+    rng = np.random.default_rng(seed)
+    if n_samples is None or n_samples >= len(finite):
+        sampled = finite
+    else:
+        sampled = finite[rng.choice(len(finite), size=n_samples, replace=False)]
+
+    n_local = 0
+    uphill_fracs = []
+    best_steps = []
+    shape = tensor.shape
+    for raw_idx in sampled:
+        idx = tuple(int(x) for x in raw_idx)
+        f = float(tensor[idx])
+        neighbours = [
+            float(tensor[n])
+            for n in _neighbours_of(idx, shape)
+            if np.isfinite(tensor[n])
+        ]
+        if not neighbours:
+            continue
+        gains = np.array(neighbours, dtype=np.float64) - f
+        uphill = gains > 0
+        if not np.any(uphill):
+            n_local += 1
+        uphill_fracs.append(float(uphill.mean()))
+        best_steps.append(float(max(0.0, gains.max())))
+
+    n_counted = len(uphill_fracs)
+    return {
+        "local_optimum_rate": n_local / n_counted if n_counted else float("nan"),
+        "mean_uphill_fraction": float(np.mean(uphill_fracs)) if n_counted else float("nan"),
+        "mean_best_step": float(np.mean(best_steps)) if n_counted else float("nan"),
+        "n_sampled": float(n_counted),
+    }
+
+
+def sampled_landscape_neighbourhoods(
+    landscape,
+    n_samples: int = 256,
+    n_mutations: int | tuple[int, int] = (1, 5),
+    max_neighbours: int | None = 5000,
+    seed: int = 42,
+) -> dict[str, float]:
+    """Estimate optima and uphill-move structure on a full mutascape oracle.
+
+    Exact `N_optima` requires enumerating the full Cartesian product and is only
+    feasible for small complete factorial libraries. This function samples
+    source variants from a live landscape, evaluates their Hamming-1
+    neighbourhoods, and reports scale-free topology diagnostics:
+
+    - `local_optimum_rate`: sampled analogue of `peak_fraction`.
+    - `mean_uphill_fraction`: how much of the local neighbourhood is uphill.
+    - `mean_best_step`: average best single-step improvement.
+    - `mean_neighbour_count`: average number of neighbours considered.
+
+    When a neighbourhood is too large, neighbours are subsampled uniformly.
+    """
+    rng = np.random.default_rng(seed)
+    variants = [
+        dict(v.mutations)
+        for v in landscape.generate(n_mutations=n_mutations, n=n_samples, seed=seed)
+    ]
+    positions = tuple(int(p) for p in landscape.positions)
+
+    n_local = 0
+    uphill_fracs = []
+    best_steps = []
+    neighbour_counts = []
+
+    for mutations in variants:
+        fitness = float(landscape.evaluate(mutations))
+        neighbours = _landscape_neighbours(landscape, mutations, positions)
+        if max_neighbours is not None and len(neighbours) > max_neighbours:
+            pick = rng.choice(len(neighbours), size=max_neighbours, replace=False)
+            neighbours = [neighbours[int(i)] for i in pick]
+        if not neighbours:
+            continue
+
+        neighbour_fitness = landscape.evaluate_batch(neighbours)
+        gains = neighbour_fitness - fitness
+        uphill = gains > 0
+        if not np.any(uphill):
+            n_local += 1
+        uphill_fracs.append(float(uphill.mean()))
+        best_steps.append(float(max(0.0, gains.max())))
+        neighbour_counts.append(float(len(neighbours)))
+
+    n_counted = len(uphill_fracs)
+    return {
+        "local_optimum_rate": n_local / n_counted if n_counted else float("nan"),
+        "mean_uphill_fraction": float(np.mean(uphill_fracs)) if n_counted else float("nan"),
+        "mean_best_step": float(np.mean(best_steps)) if n_counted else float("nan"),
+        "mean_neighbour_count": (
+            float(np.mean(neighbour_counts)) if n_counted else float("nan")
+        ),
+        "n_sampled": float(n_counted),
+    }
+
+
+def _landscape_neighbours(landscape, mutations: dict[int, str], positions: tuple[int, ...]):
+    """Construct Hamming-1 neighbours for a mutascape genotype."""
+    neighbours = []
+    mutated = set(mutations)
+
+    for pos in positions:
+        wt = landscape.wild_type[pos]
+        allowed = sorted(set(landscape.single_site_effects.get(pos, {})) | {wt})
+        if pos in mutated:
+            # Revert this mutation to WT.
+            reverted = dict(mutations)
+            del reverted[pos]
+            neighbours.append(reverted)
+
+            # Change this residue to another non-WT amino acid at the same site.
+            for aa in allowed:
+                if aa != wt and aa != mutations[pos]:
+                    changed = dict(mutations)
+                    changed[pos] = aa
+                    neighbours.append(changed)
+        else:
+            # Add one mutation at an unmutated site.
+            for aa in allowed:
+                if aa != wt:
+                    added = dict(mutations)
+                    added[pos] = aa
+                    neighbours.append(added)
+
+    return neighbours
 
 
 def accessible_paths(
@@ -495,9 +698,8 @@ def ssmula_attributes(
 
     frac_active = float((finite > active_threshold).mean())
 
-    n_vars = int(np.prod(tensor.shape))
-    n_optima = local_optima_from_tensor(tensor)["n_optima"]
-    frac_local_optima = float(n_optima) / n_vars if n_vars else float("nan")
+    optima = local_optima_from_tensor(tensor)
+    frac_local_optima = float(optima["peak_fraction"])
 
     kurt = float(sp_stats.kurtosis(finite, fisher=True, bias=False))
 

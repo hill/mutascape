@@ -1,7 +1,9 @@
 """Prepare GB1 dataset for mutascape.
 
 Source data
-    DMS CSV: M000597_Protein_MLDE/.../DMS_ProteinGym_substitutions/SPG1_STRSG_Wu_2016.csv
+    DMS CSV: SPG1_STRSG_Wu_2016.csv from the ProteinGym substitutions release
+    (https://proteingym.org, CC-BY-4.0). Point PROTEINGYM_DMS_DIR at your local
+    copy of DMS_ProteinGym_substitutions/, or edit DEFAULT_PROTEINGYM_DIR below.
     4-position complete combinatorial DMS (Wu et al. 2016). 149,360 variants
     over positions V39/D40/G41/V54 in the 56-residue GB1 (IgG-binding domain).
     ProteinGym uses full Streptococcus G precursor numbering (448 residues), so
@@ -33,6 +35,7 @@ Outputs
     gb1_distances.npz: pairwise C-beta distance matrix over all domain positions
 """
 
+import os
 import re
 import urllib.request
 from pathlib import Path
@@ -43,11 +46,13 @@ import pandas as pd
 from mutascape import ContactMap
 
 OUTPUT_DIR = Path(__file__).resolve().parent
-PROTEINGYM_CSV = (
-    Path.home()
-    / "Uni/research-project/M000597_Protein_MLDE/local-data/protein_gym/"
-    "DMS_ProteinGym_substitutions/SPG1_STRSG_Wu_2016.csv"
-)
+
+# Local copy of the ProteinGym DMS_ProteinGym_substitutions/ directory. Override
+# with the PROTEINGYM_DMS_DIR environment variable; the default assumes a sibling
+# `proteingym` checkout next to this repository.
+DEFAULT_PROTEINGYM_DIR = Path.home() / "proteingym" / "DMS_ProteinGym_substitutions"
+PROTEINGYM_DIR = Path(os.environ.get("PROTEINGYM_DMS_DIR", DEFAULT_PROTEINGYM_DIR))
+PROTEINGYM_CSV = PROTEINGYM_DIR / "SPG1_STRSG_Wu_2016.csv"
 
 # ProteinGym uses full Streptococcus G precursor numbering. The GB1 IgG-binding
 # domain is residues 227-282 in that numbering, i.e. positions 1-56 after the

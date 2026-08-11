@@ -8,7 +8,7 @@ The publication reference pipeline is exposed through frozen validation configs:
 
 Lower-level APIs still support custom landscapes from DMS, structure-derived
 contact maps, optional pairwise couplings, ESM2 single-site scoring, and fitted
-thermodynamic nonlinearities. Those features are useful for larger benchmark
+global-epistasis functions. Those features are useful for larger benchmark
 candidates, but the validated headline GB1/TrpB configs keep pairwise couplings
 off by setting ``sigma = 0``.
 """
@@ -24,7 +24,7 @@ from mutascape.epistasis import (
 )
 from mutascape.landscape import Landscape, Variant
 from mutascape.mutant import Mutant
-from mutascape.nonlinearity import Identity, NonLinearity, ThermodynamicSigmoid
+from mutascape.nonlinearity import Identity, NonLinearity, GlobalEpistasisSigmoid
 from mutascape.plotting import (
     plot_alpha_sweep,
     plot_contact_map,
@@ -51,6 +51,7 @@ __all__ = [
     "CouplingTensor",
     "ESM2Scorer",
     "EpistasisModel",
+    "GlobalEpistasisSigmoid",
     "Identity",
     "Landscape",
     "MSACouplingsEpistasis",
@@ -59,7 +60,6 @@ __all__ = [
     "PLMScorer",
     "RandomEpistasis",
     "SignConsistentEpistasis",
-    "ThermodynamicSigmoid",
     "Variant",
     "morphing_landscape",
     "plot_alpha_sweep",

@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from mutascape.nonlinearity import ThermodynamicSigmoid
+from mutascape.nonlinearity import GlobalEpistasisSigmoid
 from mutascape.validation.calibration import build_landscape
 from mutascape.validation.comparisons import fitness_wasserstein
 from mutascape.validation.fourier import (
@@ -57,12 +57,12 @@ PROTEIN_CONFIG = {
 
 def _fit_g(cfg):
     singles = load_single_site_effects(cfg["dms_csv"])
-    base = ThermodynamicSigmoid.fit_from_singles(singles, combinatorial_upside=cfg["upside"])
+    base = GlobalEpistasisSigmoid.fit_from_singles(singles, combinatorial_upside=cfg["upside"])
     scale = base.scale if cfg["scale_override"] is None else float(cfg["scale_override"])
     fh = cfg["floor_hard"]
     if fh is None:
         fh = float(min(v for p in singles.values() for v in p.values()))
-    return ThermodynamicSigmoid(floor=base.floor, ceiling=base.ceiling, scale=scale, floor_hard=fh)
+    return GlobalEpistasisSigmoid(floor=base.floor, ceiling=base.ceiling, scale=scale, floor_hard=fh)
 
 
 def _real(cfg):

@@ -14,7 +14,7 @@ from pathlib import Path
 import pandas as pd
 
 from mutascape.epistasis import MSACouplingsEpistasis
-from mutascape.nonlinearity import ThermodynamicSigmoid
+from mutascape.nonlinearity import GlobalEpistasisSigmoid
 from mutascape.validation.calibration import build_landscape
 from mutascape.validation.comparisons import fitness_wasserstein
 from mutascape.validation.fourier import (
@@ -77,11 +77,11 @@ NOISE_SIGMA = 0.3  # headline fixed value
 
 def _fit_censored_sigmoid(dms_csv, upside, scale_override, floor_hard):
     singles = load_single_site_effects(dms_csv)
-    base = ThermodynamicSigmoid.fit_from_singles(singles, combinatorial_upside=upside)
+    base = GlobalEpistasisSigmoid.fit_from_singles(singles, combinatorial_upside=upside)
     scale = base.scale if scale_override is None else float(scale_override)
     if floor_hard is None:
         floor_hard = float(min(v for pos in singles.values() for v in pos.values()))
-    return ThermodynamicSigmoid(
+    return GlobalEpistasisSigmoid(
         floor=base.floor, ceiling=base.ceiling, scale=scale, floor_hard=floor_hard,
     )
 

@@ -6,7 +6,7 @@
 
 Synthetic combinatorially complete protein fitness landscapes with tuneable, structurally informed epistasis.
 
-Real single-site DMS effects, 3D structural contacts, and a swappable pairwise epistasis model, all wrapped behind a `Landscape` oracle that you can index with `Mutant` objects to get fitness for any multi-mutant. Tune ruggedness with one knob (`alpha`); pick the epistasis story you want (random, sign-consistent, MSA-derived). Wrap the latent score in a thermodynamic non-linearity and Gaussian noise when you want a more realistic readout.
+Real single-site DMS effects, 3D structural contacts, and a swappable pairwise epistasis model, all wrapped behind a `Landscape` oracle that you can index with `Mutant` objects to get fitness for any multi-mutant. Tune ruggedness with a single parameter (`alpha`), then pick the epistasis story you want (random, sign-consistent, MSA-derived). Wrap the latent score in a global-epistasis function and Gaussian noise when you want a more realistic readout.
 
 ## Installation
 
@@ -121,7 +121,7 @@ landscape.stats(n_samples=5000, n_mutations=3)
 
 ## Tuning ruggedness
 
-`alpha` is a global multiplier on the pairwise term. `alpha=0` recovers the purely additive landscape; raising it progressively introduces sign epistasis and local optima.
+`alpha` is a global multiplier on the pairwise term. `alpha=0` recovers the purely additive landscape. Raising it progressively introduces sign epistasis and local optima.
 
 ```python
 smooth   = Landscape.from_dms(..., epistasis=RandomEpistasis(sigma=0.3, seed=42), alpha=0.0)
@@ -148,12 +148,12 @@ msa = Landscape.from_dms(
 )
 ```
 
-Add a global non-linearity and measurement noise on top of the latent score:
+Add a global-epistasis function, genotype-stable measurement noise, and an optional censored readout texture on top of the latent score:
 
 ```python
-from mutascape import ThermodynamicSigmoid
+from mutascape import GlobalEpistasisSigmoid
 
-nonlin = ThermodynamicSigmoid.fit_from_singles(
+nonlin = GlobalEpistasisSigmoid.fit_from_singles(
     landscape.single_site_effects,
     combinatorial_upside=2.0,
 )
@@ -163,6 +163,8 @@ landscape = Landscape.from_dms(
     epistasis=RandomEpistasis(sigma=0.3, seed=42),
     nonlinearity=nonlin,
     noise_sigma=0.15,
+    readout_texture_sigma=0.005,   # tiny post-readout texture on the floor
+    readout_texture_order=3,
     seed=42,
 )
 ```
@@ -181,7 +183,7 @@ gb1["V39A"]
 trpb[Mutant("V183A") + Mutant("F184I")]
 ```
 
-At the shared default `noise_sigma=0.3` and `sigma=0`, these reach `walsh_L1=0.317` / `fitness_W1=0.036` on GB1 and `walsh_L1=0.107` / `fitness_W1=0.028` on TrpB, against the complete factorial real data.
+At the shared default `noise_sigma=0.3` and `sigma=0`, with a tiny censored readout texture, these reach `walsh_L1=0.317` / `fitness_W1=0.036` / `n_optima=200` on GB1 and `walsh_L1=0.105` / `fitness_W1=0.027` / `n_optima=843` on TrpB, against real `n_optima=182` and `802`.
 
 ## Reproducing the published outputs
 
@@ -196,14 +198,12 @@ The rebuild script regenerates the GB1 / TrpB sweep CSVs and the headline figure
 ## Known limitations
 
 - GB1 still shows an order-1 / order-3 Walsh mismatch.
-- The current default pipeline under-generates local optima on both GB1 and TrpB.
-- Sparse full-protein GFP remains smoother than the real landscape under the same default settings; the structural pairwise term (`alpha > 0`), MSA-derived couplings, and Contact-NK higher-order terms are the supported routes for closing this gap.
+- The censored readout texture is calibrated on complete combinatorial references. For unvalidated proteins, treat it as a tunable topology parameter rather than a universal default.
+- Sparse full-protein GFP remains smoother than the real landscape under the same default settings. The structural pairwise term (`alpha > 0`), MSA-derived couplings, and Contact-NK higher-order terms are the supported routes for closing this gap.
 - Functional-contact overrides should only be used when a ligand/cofactor or annotated active-site mechanism justifies them.
 
 ## Docs
 
 - [Project status](docs/project_status.md)
-- [Experiment log](docs/experiments_log.md), chronological history (older entries are superseded by project status)
-- [Thermodynamic nonlinearity design](docs/nonlinearity_design.md), current mechanism with historical validation notes
-- [GB1 validation analysis](docs/gb1_validation_analysis.md), historical alpha-era analysis
+- [Global-epistasis function design](docs/nonlinearity_design.md), current mechanism with historical validation notes
 - [Design document](docs/design.md), historical design background

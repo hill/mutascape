@@ -10,7 +10,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.figure import Figure
 
-from mutascape.nonlinearity import ThermodynamicSigmoid
+from mutascape.nonlinearity import GlobalEpistasisSigmoid
 
 REAL_STYLE = dict(color="black", linewidth=2, markersize=6)
 SYNTH_COLOR = sns.color_palette()[0]
@@ -281,7 +281,7 @@ def fig_validation_summary(
 
 
 def fig_sigmoid_curves(
-    sigmoids_by_label: dict[str, ThermodynamicSigmoid],
+    sigmoids_by_label: dict[str, GlobalEpistasisSigmoid],
     observed_singles: np.ndarray,
     z_range: tuple[float, float] | None = None,
 ) -> Figure:
@@ -316,7 +316,7 @@ def fig_sigmoid_curves(
     ax.axvline(0.0, color="grey", linewidth=0.5, linestyle="--")
     ax.set_xlabel(r"pre-image $z = g^{-1}(f)$")
     ax.set_ylabel("fitness $f$")
-    ax.set_title("Fitted thermodynamic non-linearities")
+    ax.set_title("Fitted global-epistasis functions")
     ax.legend(fontsize=9, loc="lower right")
     fig.tight_layout()
     return fig
@@ -474,7 +474,7 @@ def fig_parameter_trajectory(
     for j in range(n, rows * cols):
         axes[j // cols][j % cols].axis("off")
 
-    fig.suptitle(f"Ruggedness parameter trajectory — {protein_name}", y=1.02)
+    fig.suptitle(f"Ruggedness parameter trajectory: {protein_name}", y=1.02)
     fig.tight_layout()
     return fig
 

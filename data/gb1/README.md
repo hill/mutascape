@@ -5,8 +5,7 @@ Small-site **complete combinatorial** DMS of the Streptococcus protein G domain 
 ## Source
 
 - **Publication**: Wu, N. C., Dai, L., Olson, C. A., Lloyd-Smith, J. O., & Sun, R. (2016). *Adaptation in protein fitness landscapes is facilitated by indirect paths.* eLife 5:e16965. [https://doi.org/10.7554/eLife.16965](https://doi.org/10.7554/eLife.16965)
-- **ProteinGym identifier**: `SPG1_STRSG_Wu_2016`
-- **Local source CSV**: `/Users/tomhill/Uni/research-project/M000597_Protein_MLDE/local-data/protein_gym/DMS_ProteinGym_substitutions/SPG1_STRSG_Wu_2016.csv` (from the ProteinGym v1.x substitutions release)
+- **ProteinGym identifier**: `SPG1_STRSG_Wu_2016` (ProteinGym substitutions release, [proteingym.org](https://proteingym.org), CC-BY-4.0). The single-site CSV is the source for `gb1.csv`.
 - **Structure (PDB)**: [2QMT](https://www.rcsb.org/structure/2QMT) - 1.05 A X-ray structure of the GB1 monomer. Chosen over 2GI9 (GB1/Fc complex) for a cleaner single-chain contact map. Downloaded from `https://files.rcsb.org/download/2QMT.pdb` by the preparation script.
 
 ## Experiment design
@@ -52,7 +51,7 @@ ProteinGym numbers residues using the full 448-residue Streptococcus G precursor
 uv run python data/gb1/prepare_gb1.py
 ```
 
-This reads the ProteinGym CSV from the path hard-coded near the top of the script (the local `M000597_Protein_MLDE` checkout), downloads 2QMT if not already present, and rewrites all output files. No other inputs required.
+Set `PROTEINGYM_DMS_DIR` (or edit the path near the top of the script) to point at your local copy of the ProteinGym substitutions release, then run the command above. It reads `SPG1_STRSG_Wu_2016.csv`, downloads 2QMT if not already present, and rewrites all output files. No other inputs required.
 
 ## Usage in validation
 

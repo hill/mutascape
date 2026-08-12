@@ -4,11 +4,25 @@
   "type": "module",
   "scripts": {
     "dev": "bun serve.ts --watch",
-    "build": "bun build src/main.ts --outdir dist --target browser --minify",
-    "typecheck": "tsc --noEmit"
+    "build": "bun build src/main.tsx --outdir dist --target browser --minify",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@cloudflare/kumo": "^2.8.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "@tanstack/react-router": "^1.170.25",
+    "echarts": "^6.0.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   },
   "devDependencies": {
-    "typescript": "^5.5.0",
-    "@types/bun": "latest"
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/bun": "latest",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "happy-dom": "^18.0.1",
+    "typescript": "^5.9.2"
   }
 }

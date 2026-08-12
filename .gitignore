@@ -57,6 +57,7 @@ data/trpb/trpb4_raw.csv
 data/trpb/trpb4_scaled.csv
 
 # Web (Bun / TS viz at /web/)
+.mutascape/
 web/node_modules/
 web/dist/
 web/bun.lock

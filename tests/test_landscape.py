@@ -572,6 +572,78 @@ class TestToDataframe:
             assert "?" not in label
 
 
+class TestIterSampleBatches:
+    def test_weighted_depth_counts_and_batch_bound(self, landscape_seq):
+        batches = list(
+            landscape_seq.iter_sample_batches(
+                n_variants=11,
+                depth_weights={1: 1.0, 2: 2.0},
+                seed=17,
+                batch_size=4,
+            )
+        )
+        combined = pd.concat(batches, ignore_index=True)
+
+        assert [len(batch) for batch in batches] == [4, 4, 3]
+        assert combined["n_mutations"].value_counts().to_dict() == {2: 7, 1: 4}
+        assert combined["variant"].is_unique
+        assert set(combined.columns) == {
+            "sequence",
+            "variant",
+            "fitness",
+            "n_mutations",
+        }
+
+    def test_reproducible_across_batch_sizes(self, landscape_seq):
+        kwargs = {"n_variants": 20, "depth_weights": {1: 1, 2: 1}, "seed": 9}
+        small = pd.concat(
+            landscape_seq.iter_sample_batches(**kwargs, batch_size=3),
+            ignore_index=True,
+        )
+        large = pd.concat(
+            landscape_seq.iter_sample_batches(**kwargs, batch_size=50),
+            ignore_index=True,
+        )
+
+        pd.testing.assert_frame_equal(small, large)
+
+    def test_rejects_depth_allocation_larger_than_space(self, landscape_seq):
+        with pytest.raises(ValueError, match="finite genotype space"):
+            list(
+                landscape_seq.iter_sample_batches(
+                    n_variants=2,
+                    depth_weights={0: 1},
+                    seed=1,
+                )
+            )
+
+    def test_redistributes_weight_from_exhausted_depths(self, landscape_seq):
+        combined = pd.concat(
+            landscape_seq.iter_sample_batches(
+                n_variants=200,
+                depth_weights={0: 1, 1: 1, 2: 1},
+                seed=4,
+            ),
+            ignore_index=True,
+        )
+
+        assert combined["n_mutations"].value_counts().to_dict() == {
+            2: 142,
+            1: 57,
+            0: 1,
+        }
+
+    def test_requires_positive_weights(self, landscape_seq):
+        with pytest.raises(ValueError, match="positive weight"):
+            list(
+                landscape_seq.iter_sample_batches(
+                    n_variants=10,
+                    depth_weights={1: 0, 2: 0},
+                    seed=1,
+                )
+            )
+
+
 class TestLocalOptima:
     def test_returns_expected_keys(self, landscape):
         result = landscape.local_optima()

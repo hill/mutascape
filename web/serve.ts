@@ -15,7 +15,7 @@ const CONTENT_TYPES: Record<string, string> = {
 
 async function build() {
   const result = await Bun.build({
-    entrypoints: ["src/main.ts"],
+    entrypoints: ["src/main.tsx"],
     outdir: DIST,
     target: "browser",
     sourcemap: "inline",
@@ -66,7 +66,15 @@ const server = Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
     let path = decodeURIComponent(url.pathname);
-    if (path === "/") path = "/index.html";
+    if (["/", "/landscapes", "/leaderboards"].includes(path) || path.startsWith("/landscapes/")) {
+      path = "/index.html";
+    }
+
+    if (path === "/assets/logo.png") {
+      return new Response(Bun.file("../docs/logo_ai_image.png"), {
+        headers: { "content-type": "image/png" },
+      });
+    }
 
     if (path.startsWith("/dist/")) {
       const r = await serveFrom(".", path);

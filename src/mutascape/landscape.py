@@ -25,7 +25,8 @@ explicit rather than implicit.
 """
 
 import hashlib
-from collections.abc import Iterator
+import math
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from itertools import combinations, product
 from pathlib import Path
@@ -119,6 +120,46 @@ class Variant(NamedTuple):
     mutations: Mutant
     sequence: str
     fitness: float
+
+
+def _allocate_weighted_counts(
+    total: int,
+    weights: Mapping[int, float],
+    capacities: Mapping[int, int],
+) -> dict[int, int]:
+    """Allocate an integer total by weight without exceeding depth capacities."""
+    if total > sum(capacities[depth] for depth in weights):
+        raise ValueError("sample plan exceeds the finite genotype space")
+    counts = {depth: 0 for depth in weights}
+    active = set(weights)
+    remaining = total
+    while remaining:
+        weight_sum = sum(weights[depth] for depth in active)
+        exact = {depth: remaining * weights[depth] / weight_sum for depth in active}
+        allocated = {depth: math.floor(value) for depth, value in exact.items()}
+        remainder = remaining - sum(allocated.values())
+        order = sorted(
+            active,
+            key=lambda depth: (-(exact[depth] - allocated[depth]), depth),
+        )
+        for depth in order[:remainder]:
+            allocated[depth] += 1
+
+        capped = {
+            depth
+            for depth in active
+            if allocated[depth] > capacities[depth] - counts[depth]
+        }
+        if not capped:
+            for depth, value in allocated.items():
+                counts[depth] += value
+            break
+        for depth in capped:
+            available = capacities[depth] - counts[depth]
+            counts[depth] += available
+            remaining -= available
+            active.remove(depth)
+    return counts
 
 
 def _pin_nk_wildtype(tensor: ContactNKTensor, wild_type: dict[int, str]) -> ContactNKTensor:
@@ -670,6 +711,139 @@ class Landscape:
                 break
 
         return pd.DataFrame(rows)
+
+    def iter_sample_batches(
+        self,
+        n_variants: int,
+        depth_weights: Mapping[int, float],
+        seed: int,
+        batch_size: int = 4096,
+    ) -> Iterator[pd.DataFrame]:
+        """Yield a weighted, unique sample in bounded DataFrame batches.
+
+        ``depth_weights`` assigns a relative share to each mutation depth.
+        Shares are converted to exact integer counts with largest-remainder
+        allocation. Each selected genotype appears once across all batches.
+
+        Parameters
+        ----------
+        n_variants : int
+            Total variants to sample.
+        depth_weights : Mapping[int, float]
+            Relative sampling weights keyed by mutation depth.
+        seed : int
+            Seed for genotype sampling.
+        batch_size : int, default 4096
+            Maximum rows yielded in one batch.
+
+        Yields
+        ------
+        pandas.DataFrame
+            Columns are ``sequence``, ``variant``, ``fitness``, and
+            ``n_mutations``.
+        """
+        if self.wt_sequence is None:
+            raise ValueError(
+                "wt_sequence is not set. Pass wt_fasta to Landscape.from_dms() "
+                "or set wt_sequence directly."
+            )
+        if n_variants < 1:
+            raise ValueError(f"n_variants must be positive, got {n_variants}")
+        if batch_size < 1:
+            raise ValueError(f"batch_size must be positive, got {batch_size}")
+
+        weights: dict[int, float] = {}
+        for raw_depth, raw_weight in depth_weights.items():
+            depth = int(raw_depth)
+            weight = float(raw_weight)
+            if depth < 0 or depth > self.n_positions:
+                raise ValueError(
+                    f"mutation depth {depth} must be in [0, {self.n_positions}]"
+                )
+            if not np.isfinite(weight) or weight < 0:
+                raise ValueError(f"weight for depth {depth} must be finite and non-negative")
+            if weight > 0:
+                weights[depth] = weights.get(depth, 0.0) + weight
+        if not weights:
+            raise ValueError("depth_weights must contain at least one positive weight")
+
+        spaces = {depth: self._depth_space_size(depth) for depth in weights}
+        allocations = _allocate_weighted_counts(n_variants, weights, spaces)
+
+        rng = np.random.default_rng(seed)
+        pending: list[dict[int, str]] = []
+        pending_depths: list[int] = []
+        seen: set[tuple[tuple[int, str], ...]] = set()
+
+        def make_batch() -> pd.DataFrame:
+            fitness = self.evaluate_batch(pending)
+            rows = []
+            for mutations, depth, value in zip(pending, pending_depths, fitness):
+                mutant = Mutant.from_dict(mutations, self.wild_type)
+                rows.append(
+                    {
+                        "sequence": self.mutant_sequence(mutant),
+                        "variant": mutant.label,
+                        "fitness": float(value),
+                        "n_mutations": depth,
+                    }
+                )
+            pending.clear()
+            pending_depths.clear()
+            return pd.DataFrame.from_records(
+                rows,
+                columns=("sequence", "variant", "fitness", "n_mutations"),
+            )
+
+        for depth, target in sorted(allocations.items()):
+            accepted = 0
+            while accepted < target:
+                mutation = self._draw_mutation_at_depth(depth, rng)
+                key = tuple(sorted(mutation.items()))
+                if key in seen:
+                    continue
+                seen.add(key)
+                pending.append(mutation)
+                pending_depths.append(depth)
+                accepted += 1
+                if len(pending) >= batch_size:
+                    yield make_batch()
+
+        if pending:
+            yield make_batch()
+
+    def _depth_space_size(self, depth: int) -> int:
+        """Return the number of distinct genotypes at one mutation depth."""
+        if depth == 0:
+            return 1
+        counts = [
+            len([aa for aa in self.single_site_effects[pos] if aa != self.wild_type[pos]])
+            for pos in self.positions
+        ]
+        total = 0
+        for position_indices in combinations(range(self.n_positions), depth):
+            total += math.prod(counts[index] for index in position_indices)
+        return total
+
+    def _draw_mutation_at_depth(
+        self,
+        depth: int,
+        rng: np.random.Generator,
+    ) -> dict[int, str]:
+        """Draw one genotype uniformly within a fixed mutation depth."""
+        if depth == 0:
+            return {}
+        chosen = rng.choice(self.positions, size=depth, replace=False)
+        mutation: dict[int, str] = {}
+        for raw_position in chosen:
+            position = int(raw_position)
+            alternatives = [
+                aa
+                for aa in self.single_site_effects[position]
+                if aa != self.wild_type[position]
+            ]
+            mutation[position] = str(rng.choice(alternatives))
+        return mutation
 
     def local_optima(
         self,

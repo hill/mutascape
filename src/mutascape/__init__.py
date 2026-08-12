@@ -13,6 +13,7 @@ candidates, but the validated headline GB1/TrpB configs keep pairwise couplings
 off by setting ``sigma = 0``.
 """
 
+from mutascape.completion import CompletedLandscape, LandscapePrior, PosteriorLandscape
 from mutascape.contacts import ContactMap
 from mutascape.epistasis import (
     AMINO_ACIDS,
@@ -49,16 +50,19 @@ except ModuleNotFoundError as exc:
 __all__ = [
     "AMINO_ACIDS",
     "ContactMap",
+    "CompletedLandscape",
     "CouplingTensor",
     "ESM2Scorer",
     "EpistasisModel",
     "GlobalEpistasisSigmoid",
     "Identity",
     "Landscape",
+    "LandscapePrior",
     "MSACouplingsEpistasis",
     "Mutant",
     "NonLinearity",
     "PLMScorer",
+    "PosteriorLandscape",
     "RandomEpistasis",
     "SignConsistentEpistasis",
     "Variant",

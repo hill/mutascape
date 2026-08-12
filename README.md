@@ -6,7 +6,7 @@
 
 Synthetic combinatorially complete protein fitness landscapes with tuneable, structurally informed epistasis.
 
-Real single-site DMS effects, 3D structural contacts, and a swappable pairwise epistasis model, all wrapped behind a `Landscape` oracle that you can index with `Mutant` objects to get fitness for any multi-mutant. Tune ruggedness with a single parameter (`alpha`), then pick the epistasis story you want (random, sign-consistent, MSA-derived). Wrap the latent score in a global-epistasis function and Gaussian noise when you want a more realistic readout.
+Mutascape combines single-site DMS effects, structural contacts, and a swappable pairwise epistasis model. A `Landscape` oracle returns fitness for any `Mutant` combination. Tune ruggedness with `alpha`, then choose random, sign-consistent, or MSA-derived epistasis. Add global epistasis and Gaussian noise for a more realistic readout.
 
 ## Installation
 
@@ -39,6 +39,53 @@ landscape["A29H"]
 landscape[Mutant("A29H") + Mutant("R60D")]
 landscape[Mutant("A29H") + Mutant("R60D") + Mutant("K93T")]
 ```
+
+## Posterior whole-protein completion
+
+The research API learns interaction priors from complete empirical landscapes. It then conditions a whole-protein oracle on WT, singles, and optional doubles.
+
+```python
+from mutascape import LandscapePrior, PosteriorLandscape
+from mutascape.benchmarks import (
+    iter_protein_holdouts,
+    load_combingym_landscapes,
+    mutation_order_split,
+)
+
+datasets = load_combingym_landscapes(".mutascape/benchmark-data/combingym")
+fold = next(fold for fold in iter_protein_holdouts(datasets) if fold.protein == "GB1")
+prior = LandscapePrior.fit(list(fold.train), max_order=3)
+
+target = next(dataset for dataset in fold.test if dataset.name == "GB1_binding")
+split = mutation_order_split(target.variants, max_train_depth=1)
+posterior = PosteriorLandscape.condition(
+    target.wild_type_sequence,
+    split.train,
+    prior,
+)
+
+# One seed defines one stable whole-protein oracle.
+oracle = posterior.sample(seed=42)
+fitness = oracle.evaluate({39: "A", 40: "W", 54: "F"})
+
+# An ensemble exposes uncertainty in the unmeasured combination.
+summary = posterior.predict(
+    [{39: "A", 40: "W", 54: "F"}],
+    n_samples=100,
+    seed=42,
+)
+```
+
+Fetch the pinned benchmark sources and run grouped evaluation with these commands.
+
+```bash
+just benchmark-data
+just benchmark-completion \
+  --ssmula-root .mutascape/benchmark-data/ssmula \
+  --combingym-root .mutascape/benchmark-data/combingym
+```
+
+See [the benchmark protocol](docs/benchmark_protocol.md) for splits, metrics, and current pilot status.
 
 ## Loading landscapes
 
@@ -198,7 +245,7 @@ The rebuild script regenerates the GB1 / TrpB sweep CSVs and the headline figure
 ## Known limitations
 
 - GB1 still shows an order-1 / order-3 Walsh mismatch.
-- The censored readout texture is calibrated on complete combinatorial references. For unvalidated proteins, treat it as a tunable topology parameter rather than a universal default.
+- Complete combinatorial references calibrate the censored readout texture. For unvalidated proteins, treat it as a tunable topology parameter rather than a universal default.
 - Sparse full-protein GFP remains smoother than the real landscape under the same default settings. The structural pairwise term (`alpha > 0`), MSA-derived couplings, and Contact-NK higher-order terms are the supported routes for closing this gap.
 - Functional-contact overrides should only be used when a ligand/cofactor or annotated active-site mechanism justifies them.
 

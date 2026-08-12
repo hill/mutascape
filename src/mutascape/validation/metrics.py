@@ -358,9 +358,7 @@ def local_optima_from_tensor(
         basin_probs = basin_counts_arr / assigned_total if assigned_total > 0 else basin_counts_arr
         nonzero = basin_probs[basin_probs > 0]
         raw_entropy = float(-(nonzero * np.log(nonzero)).sum())
-        basin_entropy = (
-            raw_entropy / float(np.log(len(nonzero))) if len(nonzero) > 1 else 0.0
-        )
+        basin_entropy = raw_entropy / float(np.log(len(nonzero))) if len(nonzero) > 1 else 0.0
     else:
         largest_basin_fraction = float("nan")
         basin_entropy = float("nan")
@@ -419,9 +417,7 @@ def sampled_neighbourhood_ruggedness(
         idx = tuple(int(x) for x in raw_idx)
         f = float(tensor[idx])
         neighbours = [
-            float(tensor[n])
-            for n in _neighbours_of(idx, shape)
-            if np.isfinite(tensor[n])
+            float(tensor[n]) for n in _neighbours_of(idx, shape) if np.isfinite(tensor[n])
         ]
         if not neighbours:
             continue
@@ -497,9 +493,7 @@ def sampled_landscape_neighbourhoods(
         "local_optimum_rate": n_local / n_counted if n_counted else float("nan"),
         "mean_uphill_fraction": float(np.mean(uphill_fracs)) if n_counted else float("nan"),
         "mean_best_step": float(np.mean(best_steps)) if n_counted else float("nan"),
-        "mean_neighbour_count": (
-            float(np.mean(neighbour_counts)) if n_counted else float("nan")
-        ),
+        "mean_neighbour_count": (float(np.mean(neighbour_counts)) if n_counted else float("nan")),
         "n_sampled": float(n_counted),
     }
 
@@ -610,11 +604,13 @@ def accessible_paths(
             idx = [0] * L
             for d, v in zip(others, bg):
                 idx[d] = v
+
             def cell(x1, x2, base=idx, i=i, j=j):
                 base = list(base)
                 base[i] = int(x1)
                 base[j] = int(x2)
                 return float(tensor[tuple(base)])
+
             f_aa = cell(a1, a2)
             f_ab = cell(a1, b2)
             f_ba = cell(b1, a2)

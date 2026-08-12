@@ -192,13 +192,9 @@ def variance_fraction_comparison(
         "real": real,
         "synth": synth,
         "abs_diff_per_order": per_order_abs_diff,
-        "max_abs_diff": (
-            max(per_order_abs_diff.values()) if per_order_abs_diff else 0.0
-        ),
+        "max_abs_diff": (max(per_order_abs_diff.values()) if per_order_abs_diff else 0.0),
         "mean_abs_diff": (
-            float(np.mean(list(per_order_abs_diff.values())))
-            if per_order_abs_diff
-            else 0.0
+            float(np.mean(list(per_order_abs_diff.values()))) if per_order_abs_diff else 0.0
         ),
         "l1_abs_diff": float(sum(per_order_abs_diff.values())),
     }
@@ -296,9 +292,7 @@ def walsh_signed_effects(
         for d in range(L):
             if d not in S:
                 broadcast_factor *= tensor.shape[d]
-        vals = np.atleast_1d(np.squeeze(effects[S])).ravel() * np.sqrt(
-            broadcast_factor
-        )
+        vals = np.atleast_1d(np.squeeze(effects[S])).ravel() * np.sqrt(broadcast_factor)
         coeff_parts.append(vals)
         order_parts.append(np.full(vals.size, len(S), dtype=np.int64))
 
@@ -375,9 +369,7 @@ def binary_cube_spectrum(
     return coeffs, fracs
 
 
-def truncate_fractions(
-    fracs: dict[int, float], max_order: int | None
-) -> dict[int, float]:
+def truncate_fractions(fracs: dict[int, float], max_order: int | None) -> dict[int, float]:
     """Keep orders 1..max_order and renormalise to sum 1.
 
     The high-order tail of a Walsh spectrum estimated from noisy measurements is
@@ -415,12 +407,8 @@ def binary_cube_spectral_metrics(
     real_t = truncate_fractions(real_fracs, max_order)
     synth_t = truncate_fractions(synth_fracs, max_order)
     return {
-        "cos_order2": spectral_cosine(
-            real_coeffs[orders == 2], synth_coeffs[orders == 2]
-        ),
-        "cos_ge2": spectral_cosine(
-            real_coeffs[orders >= 2], synth_coeffs[orders >= 2]
-        ),
+        "cos_order2": spectral_cosine(real_coeffs[orders == 2], synth_coeffs[orders == 2]),
+        "cos_ge2": spectral_cosine(real_coeffs[orders >= 2], synth_coeffs[orders >= 2]),
         "order_w1": order_wasserstein(real_t, synth_t),
         "walsh_l1": walsh_l1_distance(real_t, synth_t),
     }
@@ -446,11 +434,13 @@ def proteingym_to_mutations_df(
         for pos, (wt, mut) in parsed.items():
             wt_aa.setdefault(pos, wt)
             mutations[pos] = mut
-        rows.append({
-            "mutations": mutations,
-            "fitness": float(row["fitness"]),
-            "depth": int(row["depth"]),
-        })
+        rows.append(
+            {
+                "mutations": mutations,
+                "fitness": float(row["fitness"]),
+                "depth": int(row["depth"]),
+            }
+        )
     df = pd.DataFrame(rows)
     # Filter to variants strictly within the requested positions
     pos_set = set(positions)

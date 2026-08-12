@@ -208,9 +208,7 @@ class TestContactNKEpistasis:
     def test_different_seeds_differ(self, small_contact_map):
         t1 = ContactNKEpistasis(sigma=0.3, seed=1).generate(small_contact_map)
         t2 = ContactNKEpistasis(sigma=0.3, seed=2).generate(small_contact_map)
-        assert not np.array_equal(
-            t1.per_position_functions[10], t2.per_position_functions[10]
-        )
+        assert not np.array_equal(t1.per_position_functions[10], t2.per_position_functions[10])
 
     def test_aa_index_matches_standard(self, small_contact_map):
         tensor = ContactNKEpistasis(sigma=0.3, seed=0).generate(small_contact_map)
@@ -241,7 +239,8 @@ class TestMSACouplingsEpistasis:
     def test_generate_restricts_to_contacts(self, small_contact_map):
         J = self._mock_matrix()
         model = MSACouplingsEpistasis(
-            coupling_matrix=J, position_order=(10, 20, 30),
+            coupling_matrix=J,
+            position_order=(10, 20, 30),
         )
         tensor = model.generate(small_contact_map)
         # (10, 30) is NOT in contact in the fixture; should be absent.
@@ -260,14 +259,19 @@ class TestMSACouplingsEpistasis:
     def test_scale_multiplies_couplings(self, small_contact_map):
         J = self._mock_matrix()
         base = MSACouplingsEpistasis(
-            coupling_matrix=J, position_order=(10, 20, 30),
+            coupling_matrix=J,
+            position_order=(10, 20, 30),
         ).generate(small_contact_map)
         scaled = MSACouplingsEpistasis(
-            coupling_matrix=J, position_order=(10, 20, 30), scale=2.0,
+            coupling_matrix=J,
+            position_order=(10, 20, 30),
+            scale=2.0,
         ).generate(small_contact_map)
         for key in base.couplings:
             np.testing.assert_allclose(
-                scaled.couplings[key], base.couplings[key] * 2.0, atol=1e-12,
+                scaled.couplings[key],
+                base.couplings[key] * 2.0,
+                atol=1e-12,
             )
 
     def test_generate_preserves_position_specific_pair_matrix(self, small_contact_map):
@@ -293,7 +297,8 @@ class TestMSACouplingsEpistasis:
     def test_missing_position_raises(self, small_contact_map):
         J = np.zeros((2, 2, 20, 20))
         model = MSACouplingsEpistasis(
-            coupling_matrix=J, position_order=(10, 20),
+            coupling_matrix=J,
+            position_order=(10, 20),
         )
         with pytest.raises(ValueError, match="missing"):
             model.generate(small_contact_map)
@@ -320,7 +325,9 @@ class TestMSACouplingsEpistasis:
         ).generate(small_contact_map)
         for key in canon.couplings:
             np.testing.assert_allclose(
-                canon.couplings[key], rev.couplings[key], atol=1e-12,
+                canon.couplings[key],
+                rev.couplings[key],
+                atol=1e-12,
             )
 
     def test_from_npz_roundtrip(self, tmp_path, small_contact_map):
@@ -352,7 +359,9 @@ class TestMSACouplingsEpistasis:
         SeqIO.write(seqs, str(path), "fasta")
 
         model = MSACouplingsEpistasis.from_msa_fasta(
-            path, positions=(0, 1, 2), restrict_to_contacts=False,
+            path,
+            positions=(0, 1, 2),
+            restrict_to_contacts=False,
         )
         # Pairs (0,1), (0,2), (1,2) relative magnitudes.
         abs_01 = np.abs(model.coupling_matrix[0, 1]).mean()

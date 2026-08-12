@@ -121,9 +121,7 @@ class Variant(NamedTuple):
     fitness: float
 
 
-def _pin_nk_wildtype(
-    tensor: ContactNKTensor, wild_type: dict[int, str]
-) -> ContactNKTensor:
+def _pin_nk_wildtype(tensor: ContactNKTensor, wild_type: dict[int, str]) -> ContactNKTensor:
     """Shift each per-position NK function so f(all wildtype) = 0.
 
     Needed at Landscape construction time because the wildtype is tracked on
@@ -313,9 +311,7 @@ class Landscape:
         0.42
         """
         active_mutations = {
-            int(pos): aa
-            for pos, aa in mutations.items()
-            if self.wild_type.get(int(pos)) != aa
+            int(pos): aa for pos, aa in mutations.items() if self.wild_type.get(int(pos)) != aa
         }
 
         # Additive component summed in preimage (stability-equivalent) space
@@ -367,18 +363,11 @@ class Landscape:
                 aa_idx = nk.aa_index
                 idx = (
                     aa_idx[active_mutations.get(pos, self.wild_type[pos])],
-                    *(
-                        aa_idx[active_mutations.get(n, self.wild_type[n])]
-                        for n in neighbours
-                    ),
+                    *(aa_idx[active_mutations.get(n, self.wild_type[n])] for n in neighbours),
                 )
                 higher_order_contribution += float(nk.per_position_functions[pos][idx])
 
-        raw = (
-            additive_preimage
-            + self.alpha * epistatic
-            + self.alpha_ho * higher_order_contribution
-        )
+        raw = additive_preimage + self.alpha * epistatic + self.alpha_ho * higher_order_contribution
 
         # Noise enters before the global-epistasis function. By default it
         # is pinned to genotype so complete-landscape metrics and MLDE oracles
@@ -388,9 +377,7 @@ class Landscape:
 
         fitness = float(self.nonlinearity.forward(raw))
         if self.readout_texture_sigma > 0 and self._readout_texture_applies(fitness):
-            fitness += self.readout_texture_sigma * self._readout_texture_value(
-                active_mutations
-            )
+            fitness += self.readout_texture_sigma * self._readout_texture_value(active_mutations)
 
         return fitness
 
@@ -722,9 +709,7 @@ class Landscape:
         indices = []
 
         for combo in product(*(alphabets[p] for p in positions)):
-            mutations = {
-                pos: aa for pos, aa in zip(positions, combo) if aa != self.wild_type[pos]
-            }
+            mutations = {pos: aa for pos, aa in zip(positions, combo) if aa != self.wild_type[pos]}
             variants.append(mutations)
             indices.append(tuple(alphabets[p].index(aa) for p, aa in zip(positions, combo)))
 
@@ -980,7 +965,8 @@ class Landscape:
         # entries to 0 is wrong (it injects neutral mutations where the
         # synthetic model should predict something).
         single_site_effects = _impute_missing_single_sites(
-            single_site_effects, strategy=missing_aa_prior,
+            single_site_effects,
+            strategy=missing_aa_prior,
         )
 
         # Restrict contact map to positions with effects

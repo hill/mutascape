@@ -84,9 +84,7 @@ def _gb1_landscape(alpha: float, seed: int) -> Landscape:
     )
 
 
-def _synthetic_landscape(
-    wt: str, site_positions: list[int], alpha: float, seed: int
-) -> Landscape:
+def _synthetic_landscape(wt: str, site_positions: list[int], alpha: float, seed: int) -> Landscape:
     """For pasted FASTAs we have no DMS and no structure. Build a tiny
     landscape with random single-site effects at the selected positions and
     a uniform all-contacts map over those same positions.
@@ -174,9 +172,7 @@ def score(req: ScoreRequest) -> ScoreResponse:
         lscape = _gb1_landscape(req.alpha, req.seed)
     else:
         backend = "synthetic-legacy-alpha"
-        lscape = _synthetic_landscape(
-            req.wt, [s.position for s in req.sites], req.alpha, req.seed
-        )
+        lscape = _synthetic_landscape(req.wt, [s.position for s in req.sites], req.alpha, req.seed)
 
     scores = _score_variants(lscape, req.sites, masks)
     return ScoreResponse(

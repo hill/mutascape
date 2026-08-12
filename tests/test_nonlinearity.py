@@ -7,7 +7,7 @@ import pytest
 from mutascape.contacts import ContactMap
 from mutascape.epistasis import RandomEpistasis
 from mutascape.landscape import Landscape
-from mutascape.nonlinearity import Identity, GlobalEpistasisSigmoid, resolve
+from mutascape.nonlinearity import GlobalEpistasisSigmoid, Identity, resolve
 
 
 class TestIdentity:
@@ -146,12 +146,14 @@ def tiny_landscape_args(tmp_path):
         ]
     )
     cm = ContactMap.from_distance_matrix(distances, [10, 20, 30], threshold=8.0)
-    dms = pd.DataFrame({
-        "position": [10, 10, 20, 20, 30, 30],
-        "wildtype": ["A", "A", "L", "L", "K", "K"],
-        "mutant": ["G", "V", "I", "F", "R", "E"],
-        "fitness": [0.5, -0.3, 0.2, -0.5, 0.1, -0.2],
-    })
+    dms = pd.DataFrame(
+        {
+            "position": [10, 10, 20, 20, 30, 30],
+            "wildtype": ["A", "A", "L", "L", "K", "K"],
+            "mutant": ["G", "V", "I", "F", "R", "E"],
+            "fitness": [0.5, -0.3, 0.2, -0.5, 0.1, -0.2],
+        }
+    )
     csv = tmp_path / "dms.csv"
     dms.to_csv(csv, index=False)
     return dict(dms_path=csv, contact_map=cm, epistasis=RandomEpistasis(sigma=0.3, seed=42))
@@ -168,8 +170,14 @@ class TestLandscapeIntegration:
     def test_single_mutants_recover_dms_values(self, tiny_landscape_args):
         # With the sigmoid applied, g(g^{-1}(h_i)) = h_i must hold at every single.
         ls = Landscape.from_dms(**tiny_landscape_args, alpha=1.0, nonlinearity="fit")
-        for pos, aa, expected in [(10, "G", 0.5), (10, "V", -0.3), (20, "I", 0.2),
-                                  (20, "F", -0.5), (30, "R", 0.1), (30, "E", -0.2)]:
+        for pos, aa, expected in [
+            (10, "G", 0.5),
+            (10, "V", -0.3),
+            (20, "I", 0.2),
+            (20, "F", -0.5),
+            (30, "R", 0.1),
+            (30, "E", -0.2),
+        ]:
             assert ls.evaluate({pos: aa}) == pytest.approx(expected, abs=1e-9)
 
     def test_wt_is_zero_under_nonlinearity(self, tiny_landscape_args):

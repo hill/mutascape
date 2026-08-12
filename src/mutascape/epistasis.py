@@ -319,12 +319,7 @@ class MSACouplingsEpistasis(EpistasisModel):
         if self.restrict_to_contacts:
             pairs = contact_map.contact_pairs()
         else:
-            pairs = [
-                (a, b)
-                for a in contact_map.positions
-                for b in contact_map.positions
-                if a < b
-            ]
+            pairs = [(a, b) for a in contact_map.positions for b in contact_map.positions if a < b]
 
         missing = [p for p in contact_map.positions if p not in pos_to_idx]
         if missing:
@@ -422,9 +417,7 @@ class MSACouplingsEpistasis(EpistasisModel):
         if n_kept < 50:
             raise ValueError(f"Too few MSA sequences ({n_kept}) for coupling estimation")
 
-        idx_cols = np.stack(
-            [np.array([aa_to_idx[c] for c in col[keep]]) for col in col_data]
-        )
+        idx_cols = np.stack([np.array([aa_to_idx[c] for c in col[keep]]) for col in col_data])
 
         J = np.zeros((L, L, K, K), dtype=np.float64)
         marginals = np.zeros((L, K), dtype=np.float64)

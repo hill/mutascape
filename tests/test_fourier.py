@@ -114,9 +114,7 @@ def test_observed_alphabets_includes_wt(tiny_combinatorial_df):
 def test_fitness_tensor_from_real_wt_is_zero_and_coverage(tiny_combinatorial_df):
     wt = {1: "M", 2: "K"}
     alphabets = {1: ["A", "G", "M"], 2: ["K", "L", "V"]}
-    tensor, coverage = fitness_tensor_from_real(
-        tiny_combinatorial_df, (1, 2), wt, alphabets
-    )
+    tensor, coverage = fitness_tensor_from_real(tiny_combinatorial_df, (1, 2), wt, alphabets)
     # WT cell (M, K) is set to 0 by convention.
     assert tensor[alphabets[1].index("M"), alphabets[2].index("K")] == 0.0
     # Known single-mutant entries match.
@@ -131,12 +129,14 @@ def test_fitness_tensor_from_real_wt_is_zero_and_coverage(tiny_combinatorial_df)
 def test_fitness_tensor_from_landscape_matches_evaluate(tmp_path):
     distances = np.array([[0.0, 5.0], [5.0, 0.0]])
     cm = ContactMap.from_distance_matrix(distances, [10, 20], threshold=8.0)
-    dms = pd.DataFrame({
-        "position": [10, 10, 20, 20],
-        "wildtype": ["A", "A", "L", "L"],
-        "mutant": ["G", "V", "I", "F"],
-        "fitness": [0.3, -0.1, 0.2, -0.4],
-    })
+    dms = pd.DataFrame(
+        {
+            "position": [10, 10, 20, 20],
+            "wildtype": ["A", "A", "L", "L"],
+            "mutant": ["G", "V", "I", "F"],
+            "fitness": [0.3, -0.1, 0.2, -0.4],
+        }
+    )
     csv_path = tmp_path / "dms.csv"
     dms.to_csv(csv_path, index=False)
     ls = Landscape.from_dms(
@@ -259,9 +259,7 @@ def test_walsh_signed_effects_grouped_matches_decompose():
     coeffs, orders = walsh_signed_effects(tensor)
     total = float(np.var(tensor)) * tensor.size
     L = tensor.ndim
-    regrouped = {
-        k: float((coeffs[orders == k] ** 2).sum()) / total for k in range(1, L + 1)
-    }
+    regrouped = {k: float((coeffs[orders == k] ** 2).sum()) / total for k in range(1, L + 1)}
     reference = walsh_decompose(tensor)
     for k in reference:
         assert regrouped[k] == pytest.approx(reference[k])

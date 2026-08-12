@@ -91,8 +91,7 @@ class GlobalEpistasisSigmoid:
             )
         if self.floor_hard is not None and self.floor_hard >= 0:
             raise ValueError(
-                f"floor_hard ({self.floor_hard}) must be < 0 so WT (fitness 0) "
-                "is not clipped"
+                f"floor_hard ({self.floor_hard}) must be < 0 so WT (fitness 0) is not clipped"
             )
 
     @property

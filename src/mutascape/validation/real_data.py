@@ -157,18 +157,19 @@ def load_gb1_combinatorial(
             n_skipped += 1
             continue
         fitness = float(row["fitness"])
-        rows.append({
-            "mutations": mutations,
-            "fitness": fitness,
-            "additive_prediction": additive,
-            "depth": depth,
-            "epistatic_deviation": fitness - additive,
-        })
+        rows.append(
+            {
+                "mutations": mutations,
+                "fitness": fitness,
+                "additive_prediction": additive,
+                "depth": depth,
+                "epistatic_deviation": fitness - additive,
+            }
+        )
 
     df = pd.DataFrame(rows)
     print(
-        f"Loaded {len(df)}/{len(raw)} variants "
-        f"({n_skipped} skipped, missing single-site effects)"
+        f"Loaded {len(df)}/{len(raw)} variants ({n_skipped} skipped, missing single-site effects)"
     )
     print(f"Depth distribution: {df['depth'].value_counts().sort_index().to_dict()}")
     return df

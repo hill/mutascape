@@ -62,17 +62,19 @@ def add_contact_features(
         all_resolved = len(resolved) == depth
 
         if len(resolved) < 2:
-            rows.append({
-                "resolved_depth": float(len(resolved)),
-                "all_positions_resolved": all_resolved,
-                "possible_contact_pairs": 0.0,
-                "contact_count": 0.0,
-                "contact_fraction": np.nan,
-                "contact_proximity": np.nan,
-                "mean_pair_distance": np.nan,
-                "min_pair_distance": np.nan,
-                "largest_contact_component_fraction": np.nan,
-            })
+            rows.append(
+                {
+                    "resolved_depth": float(len(resolved)),
+                    "all_positions_resolved": all_resolved,
+                    "possible_contact_pairs": 0.0,
+                    "contact_count": 0.0,
+                    "contact_fraction": np.nan,
+                    "contact_proximity": np.nan,
+                    "mean_pair_distance": np.nan,
+                    "min_pair_distance": np.nan,
+                    "largest_contact_component_fraction": np.nan,
+                }
+            )
             continue
 
         pair_distances = []
@@ -92,17 +94,19 @@ def add_contact_features(
         possible = len(pair_distances)
         largest = _largest_component_size(adjacency)
         pair_distances_arr = np.array(pair_distances, dtype=np.float64)
-        rows.append({
-            "resolved_depth": float(len(resolved)),
-            "all_positions_resolved": all_resolved,
-            "possible_contact_pairs": float(possible),
-            "contact_count": float(contact_count),
-            "contact_fraction": float(contact_count / possible) if possible else np.nan,
-            "contact_proximity": float(np.mean(np.exp(-pair_distances_arr / distance_scale))),
-            "mean_pair_distance": float(np.mean(pair_distances_arr)),
-            "min_pair_distance": float(np.min(pair_distances_arr)),
-            "largest_contact_component_fraction": float(largest / len(resolved)),
-        })
+        rows.append(
+            {
+                "resolved_depth": float(len(resolved)),
+                "all_positions_resolved": all_resolved,
+                "possible_contact_pairs": float(possible),
+                "contact_count": float(contact_count),
+                "contact_fraction": float(contact_count / possible) if possible else np.nan,
+                "contact_proximity": float(np.mean(np.exp(-pair_distances_arr / distance_scale))),
+                "mean_pair_distance": float(np.mean(pair_distances_arr)),
+                "min_pair_distance": float(np.min(pair_distances_arr)),
+                "largest_contact_component_fraction": float(largest / len(resolved)),
+            }
+        )
 
     features = pd.DataFrame(rows, index=df.index)
     return pd.concat([df.reset_index(drop=True), features.reset_index(drop=True)], axis=1)
@@ -145,10 +149,12 @@ def contact_epistasis_regression(
 
     y = _zscore(work[outcome].to_numpy(dtype=np.float64))
     contact = _zscore(work[contact_feature].to_numpy(dtype=np.float64))
-    control_matrix = np.column_stack([
-        np.ones(len(work)),
-        *(_zscore(work[c].to_numpy(dtype=np.float64)) for c in controls),
-    ])
+    control_matrix = np.column_stack(
+        [
+            np.ones(len(work)),
+            *(_zscore(work[c].to_numpy(dtype=np.float64)) for c in controls),
+        ]
+    )
     full_matrix = np.column_stack([control_matrix, contact])
 
     reduced_coef, *_ = np.linalg.lstsq(control_matrix, y, rcond=None)
@@ -158,9 +164,7 @@ def contact_epistasis_regression(
     reduced_sse = float(np.sum(reduced_resid**2))
     full_sse = float(np.sum(full_resid**2))
     partial_r2 = (
-        max(0.0, (reduced_sse - full_sse) / reduced_sse)
-        if reduced_sse > 0
-        else float("nan")
+        max(0.0, (reduced_sse - full_sse) / reduced_sse) if reduced_sse > 0 else float("nan")
     )
     beta = float(full_coef[-1])
     spearman_r, spearman_p = sp_stats.spearmanr(work[contact_feature], work[outcome])

@@ -171,10 +171,14 @@ def fig_cross_protein_summary(proteins: list[dict]) -> Figure:
         if walsh_r is not None and walsh_s is not None:
             orders = sorted(walsh_r.keys())
             x = np.arange(len(orders))
-            ax.bar(x - 0.18, [walsh_r[o] for o in orders], width=0.36,
-                   color="black", label="real")
-            ax.bar(x + 0.18, [walsh_s[o] for o in orders], width=0.36,
-                   color=palette[0], label="mutascape")
+            ax.bar(x - 0.18, [walsh_r[o] for o in orders], width=0.36, color="black", label="real")
+            ax.bar(
+                x + 0.18,
+                [walsh_s[o] for o in orders],
+                width=0.36,
+                color=palette[0],
+                label="mutascape",
+            )
             ax.set_xticks(x)
             ax.set_xticklabels([f"order {o}" for o in orders])
             ax.set_ylabel("Variance fraction")
@@ -182,8 +186,15 @@ def fig_cross_protein_summary(proteins: list[dict]) -> Figure:
             ax.legend(fontsize=8)
             ax.set_ylim(0, 1.0)
         else:
-            ax.text(0.5, 0.5, "Complete space\nnot tractable",
-                    ha="center", va="center", fontsize=11, transform=ax.transAxes)
+            ax.text(
+                0.5,
+                0.5,
+                "Complete space\nnot tractable",
+                ha="center",
+                va="center",
+                fontsize=11,
+                transform=ax.transAxes,
+            )
             ax.set_title(f"{name} Walsh decomposition")
             ax.set_xticks([])
             ax.set_yticks([])
@@ -309,8 +320,9 @@ def fig_sigmoid_curves(
 
     rug_width = 0.02 * (z_range[1] - z_range[0])
     for y in np.asarray(observed_singles).ravel():
-        ax.plot([z_range[0], z_range[0] + rug_width], [y, y],
-                color="black", alpha=0.35, linewidth=0.5)
+        ax.plot(
+            [z_range[0], z_range[0] + rug_width], [y, y], color="black", alpha=0.35, linewidth=0.5
+        )
 
     ax.axhline(0.0, color="grey", linewidth=0.5, linestyle="--")
     ax.axvline(0.0, color="grey", linewidth=0.5, linestyle="--")
@@ -374,13 +386,13 @@ def fig_fitness_distribution(
             hi = max(hi, float(arr.max()))
     edges = np.linspace(lo, hi, bins + 1)
 
-    ax.hist(real_finite, bins=edges, density=True, color="black",
-            alpha=0.4, label="real")
+    ax.hist(real_finite, bins=edges, density=True, color="black", alpha=0.4, label="real")
     for i, (label, values) in enumerate(synth_values_by_label.items()):
         arr = np.asarray(values)
         arr = arr[np.isfinite(arr)].ravel()
-        ax.hist(arr, bins=edges, density=True, color=palette[i % len(palette)],
-                alpha=0.35, label=label)
+        ax.hist(
+            arr, bins=edges, density=True, color=palette[i % len(palette)], alpha=0.35, label=label
+        )
 
     ax.set_xlabel("fitness")
     ax.set_ylabel("density")
@@ -410,7 +422,8 @@ def fig_tensor_scatter(
     s = synth_tensor[mask].ravel()
 
     r_pearson = (
-        float("nan") if r.size < 2 or np.std(r) == 0 or np.std(s) == 0
+        float("nan")
+        if r.size < 2 or np.std(r) == 0 or np.std(s) == 0
         else float(np.corrcoef(r, s)[0, 1])
     )
 
@@ -461,8 +474,11 @@ def fig_parameter_trajectory(
         ax.plot(xs, ys, "o-", color=palette[0], linewidth=2, label="synthetic")
         if metric in real_values and real_values[metric] is not None:
             ax.axhline(
-                real_values[metric], color="black", linestyle="--",
-                linewidth=1.5, label=f"real {protein_name}",
+                real_values[metric],
+                color="black",
+                linestyle="--",
+                linewidth=1.5,
+                label=f"real {protein_name}",
             )
         ax.set_xlabel(sweep_col)
         ax.set_ylabel(metric)
@@ -507,12 +523,24 @@ def fig_cross_protein_nk(
         ax = axes[r][c]
         for name, df in sweeps.items():
             col = protein_colors[name]
-            ax.plot(df[sweep_col].values, df[metric].values, "o-",
-                    color=col, linewidth=2, label=f"{name} synth")
+            ax.plot(
+                df[sweep_col].values,
+                df[metric].values,
+                "o-",
+                color=col,
+                linewidth=2,
+                label=f"{name} synth",
+            )
             real_v = real_values.get(name, {}).get(metric)
             if real_v is not None:
-                ax.axhline(real_v, color=col, linestyle="--", linewidth=1.5,
-                           alpha=0.7, label=f"{name} real")
+                ax.axhline(
+                    real_v,
+                    color=col,
+                    linestyle="--",
+                    linewidth=1.5,
+                    alpha=0.7,
+                    label=f"{name} real",
+                )
         ax.set_xlabel(sweep_col)
         ax.set_ylabel(metric)
         ax.set_title(metric)

@@ -2,7 +2,6 @@
 
 import warnings
 from itertools import islice
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -577,8 +576,14 @@ class TestLocalOptima:
     def test_returns_expected_keys(self, landscape):
         result = landscape.local_optima()
         for key in (
-            "n_optima", "peak_indices", "peak_fitnesses", "global_peak",
-            "basin_sizes", "positions", "alphabets", "tensor",
+            "n_optima",
+            "peak_indices",
+            "peak_fitnesses",
+            "global_peak",
+            "basin_sizes",
+            "positions",
+            "alphabets",
+            "tensor",
         ):
             assert key in result
 
@@ -592,9 +597,7 @@ class TestLocalOptima:
         result = landscape.local_optima()
         assert sum(result["basin_sizes"]) == result["n_variants"]
 
-    def test_additive_landscape_has_single_peak_matching_argmax(
-        self, small_contact_map, dms_csv
-    ):
+    def test_additive_landscape_has_single_peak_matching_argmax(self, small_contact_map, dms_csv):
         # With alpha=0 and no epistatic contribution, the global optimum is
         # the combination of the best single-site mutations at each position.
         additive = Landscape.from_dms(
@@ -610,8 +613,7 @@ class TestLocalOptima:
             for pos in additive.positions
         }
         expected_global = tuple(
-            result["alphabets"][pos].index(best_aa_per_pos[pos])
-            for pos in result["positions"]
+            result["alphabets"][pos].index(best_aa_per_pos[pos]) for pos in result["positions"]
         )
         assert result["global_peak"] == expected_global
 
@@ -631,9 +633,9 @@ class TestImputeMissingSingleSites:
         """3-position dict where each position has WT + 2 measured AAs of the 19
         non-WT alphabet. 17 missing AAs per position = 51 missing total."""
         return {
-            10: {"A": 0.0, "G": 0.6, "V": -0.3},   # A is wt
-            20: {"L": 0.0, "I": 0.2, "F": -0.5},   # L is wt
-            30: {"K": 0.0, "R": 0.1, "E": -0.2},   # K is wt
+            10: {"A": 0.0, "G": 0.6, "V": -0.3},  # A is wt
+            20: {"L": 0.0, "I": 0.2, "F": -0.5},  # L is wt
+            30: {"K": 0.0, "R": 0.1, "E": -0.2},  # K is wt
         }
 
     def test_position_mean_fills_all_20_aas(self, partial_effects):
@@ -771,7 +773,9 @@ class TestFromDmsWithMSACouplings:
         )
         return npz
 
-    def test_from_dms_accepts_msa_couplings_epistasis(self, small_contact_map, dms_csv, msa_coupling_npz):
+    def test_from_dms_accepts_msa_couplings_epistasis(
+        self, small_contact_map, dms_csv, msa_coupling_npz
+    ):
         """Landscape.from_dms accepts MSACouplingsEpistasis as the `epistasis`
         arg (the path-loading wrapper lives in build_landscape, not here)."""
         eps = MSACouplingsEpistasis.from_npz(msa_coupling_npz, scale=1.0)
@@ -787,13 +791,16 @@ class TestFromDmsWithMSACouplings:
         # Couplings should be populated for the contact pairs (10,20) and (20,30)
         assert lc.couplings.n_pairs == 2
 
-    def test_calibration_build_landscape_threads_msa_path(self, dms_csv, msa_coupling_npz, tmp_path):
-        """The path-loading wrapper in build_landscape forwards to MSACouplingsEpistasis.from_npz."""
+    def test_calibration_build_landscape_threads_msa_path(
+        self, dms_csv, msa_coupling_npz, tmp_path
+    ):
+        """The path-loading wrapper in build_landscape forwards to
+        MSACouplingsEpistasis.from_npz."""
         from mutascape.validation.calibration import build_landscape
 
         # WT fasta with the right residues at positions 10/20/30 (1-based)
         seq = list("M" * 30)
-        seq[9] = "A"   # pos 10
+        seq[9] = "A"  # pos 10
         seq[19] = "L"  # pos 20
         seq[29] = "K"  # pos 30
         wt_fasta = tmp_path / "wt.fasta"

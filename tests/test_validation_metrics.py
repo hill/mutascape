@@ -16,49 +16,59 @@ from mutascape.validation.metrics import (
 
 
 def test_roughness_slope_ratio_perfect_additive():
-    df = pd.DataFrame({
-        "fitness": [0.1, 0.2, 0.3, -0.1],
-        "additive_prediction": [0.1, 0.2, 0.3, -0.1],
-    })
+    df = pd.DataFrame(
+        {
+            "fitness": [0.1, 0.2, 0.3, -0.1],
+            "additive_prediction": [0.1, 0.2, 0.3, -0.1],
+        }
+    )
     # Residuals are zero -> r/s = 0.
     assert roughness_slope_ratio(df) == pytest.approx(0.0)
 
 
 def test_roughness_slope_ratio_known_value():
-    df = pd.DataFrame({
-        "fitness": [1.0, 2.0, 3.0],
-        "additive_prediction": [0.5, 1.5, 2.5],
-    })
+    df = pd.DataFrame(
+        {
+            "fitness": [1.0, 2.0, 3.0],
+            "additive_prediction": [0.5, 1.5, 2.5],
+        }
+    )
     # Residuals all 0.5 -> RMSD = 0.5; slope = mean(|add|) = 1.5; r/s = 1/3.
     assert roughness_slope_ratio(df) == pytest.approx(0.5 / 1.5)
 
 
 def test_fitness_distance_correlation_negative_when_farther_worse():
-    df = pd.DataFrame({
-        "depth": [1, 2, 3, 4, 5],
-        "fitness": [0.5, 0.4, 0.3, 0.2, 0.1],
-    })
+    df = pd.DataFrame(
+        {
+            "depth": [1, 2, 3, 4, 5],
+            "fitness": [0.5, 0.4, 0.3, 0.2, 0.1],
+        }
+    )
     # Perfect monotonic decrease with depth -> r == -1.
     assert fitness_distance_correlation(df) == pytest.approx(-1.0)
 
 
 def test_fitness_distance_correlation_from_tensor_negative_when_peak_is_funnel():
     # 2D tensor where fitness decreases with Hamming distance from peak at (0,0).
-    tensor = np.array([
-        [3.0, 2.0, 2.0],
-        [2.0, 1.0, 1.0],
-        [2.0, 1.0, 1.0],
-    ])
+    tensor = np.array(
+        [
+            [3.0, 2.0, 2.0],
+            [2.0, 1.0, 1.0],
+            [2.0, 1.0, 1.0],
+        ]
+    )
     r = fitness_distance_correlation_from_tensor(tensor, peak_idx=(0, 0))
     assert r < 0
 
 
 def test_local_optima_single_peak():
-    tensor = np.array([
-        [0.0, 1.0, 0.5],
-        [0.8, 2.0, 1.2],
-        [0.3, 1.5, 0.9],
-    ])
+    tensor = np.array(
+        [
+            [0.0, 1.0, 0.5],
+            [0.8, 2.0, 1.2],
+            [0.3, 1.5, 0.9],
+        ]
+    )
     result = local_optima_from_tensor(tensor)
     assert result["n_optima"] == 1
     assert result["peak_fraction"] == pytest.approx(1 / tensor.size)
@@ -72,11 +82,13 @@ def test_local_optima_single_peak():
 
 def test_local_optima_two_peaks():
     # Construct a tensor with two isolated peaks at (0,0) and (2,2).
-    tensor = np.array([
-        [3.0, 1.0, 0.0],
-        [1.0, 0.5, 1.0],
-        [0.0, 1.0, 3.0],
-    ])
+    tensor = np.array(
+        [
+            [3.0, 1.0, 0.0],
+            [1.0, 0.5, 1.0],
+            [0.0, 1.0, 3.0],
+        ]
+    )
     result = local_optima_from_tensor(tensor)
     assert result["n_optima"] == 2
     assert sum(result["basin_sizes"]) == tensor.size
@@ -121,10 +133,12 @@ def test_accessible_paths_on_reciprocal_sign_square_is_zero():
     # together increase fitness. Peak is (1, 1); sources at (0, 1) and (1, 0)
     # both have lower fitness than the direct paths would require, and (0, 0)
     # has both steps blocked.
-    tensor = np.array([
-        [1.0, 0.5],
-        [0.5, 2.0],
-    ])
+    tensor = np.array(
+        [
+            [1.0, 0.5],
+            [0.5, 2.0],
+        ]
+    )
     result = accessible_paths(tensor, n_rsign_samples=100, seed=0)
     # From (0,0) both paths must pass through fitness 0.5 which is lower
     # than the start (1.0), so no paths are accessible.
@@ -141,11 +155,13 @@ def test_ssmula_attributes_has_expected_keys():
 
 
 def test_sampled_neighbourhood_ruggedness_matches_exact_on_full_sample():
-    tensor = np.array([
-        [3.0, 1.0, 0.0],
-        [1.0, 0.5, 1.0],
-        [0.0, 1.0, 3.0],
-    ])
+    tensor = np.array(
+        [
+            [3.0, 1.0, 0.0],
+            [1.0, 0.5, 1.0],
+            [0.0, 1.0, 3.0],
+        ]
+    )
     exact = local_optima_from_tensor(tensor)
     sampled = sampled_neighbourhood_ruggedness(tensor, n_samples=None, seed=0)
     assert sampled["local_optimum_rate"] == pytest.approx(exact["peak_fraction"])

@@ -109,11 +109,13 @@ class ReferenceConfig:
             "nonlinearity": nonlinearity,
         }
         if nonlinearity == "fit":
-            params.update({
-                "scale": self.scale,
-                "floor_hard": self.resolved_floor_hard(),
-                "combinatorial_upside": self.combinatorial_upside,
-            })
+            params.update(
+                {
+                    "scale": self.scale,
+                    "floor_hard": self.resolved_floor_hard(),
+                    "combinatorial_upside": self.combinatorial_upside,
+                }
+            )
         if self.msa_couplings_npz is not None:
             params["msa_couplings"] = MSACouplingsEpistasis.from_npz(
                 self.msa_couplings_npz,
@@ -299,12 +301,8 @@ def evaluate_reference_config(config: ReferenceConfig) -> ReferenceEvaluation:
     # discriminating signal lives at order >= 2; order 2 is reported as primary.
     real_coeffs, coeff_orders = walsh_signed_effects(real_tensor)
     synth_coeffs, _ = walsh_signed_effects(synth_tensor)
-    cos_order2 = spectral_cosine(
-        real_coeffs[coeff_orders == 2], synth_coeffs[coeff_orders == 2]
-    )
-    cos_ge2 = spectral_cosine(
-        real_coeffs[coeff_orders >= 2], synth_coeffs[coeff_orders >= 2]
-    )
+    cos_order2 = spectral_cosine(real_coeffs[coeff_orders == 2], synth_coeffs[coeff_orders == 2])
+    cos_ge2 = spectral_cosine(real_coeffs[coeff_orders >= 2], synth_coeffs[coeff_orders >= 2])
 
     real_paths = accessible_paths(
         real_tensor,

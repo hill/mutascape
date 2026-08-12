@@ -12,7 +12,7 @@ from mutascape.epistasis import (
     EpistasisModel,
     MSACouplingsEpistasis,
 )
-from mutascape.nonlinearity import Identity, NonLinearity, GlobalEpistasisSigmoid
+from mutascape.nonlinearity import GlobalEpistasisSigmoid, Identity, NonLinearity
 
 from .comparisons import composite_validation_score
 from .metrics import compute_all_metrics
@@ -173,7 +173,9 @@ def build_landscape(
 
     if sigma_nk > 0:
         nk_model = ContactNKEpistasis(
-            sigma=sigma_nk, max_neighbours=max_neighbours, seed=seed,
+            sigma=sigma_nk,
+            max_neighbours=max_neighbours,
+            seed=seed,
         )
         nk_tensor = nk_model.generate(landscape.contact_map)
         # Re-create the landscape so __post_init__ pins the wildtype; cheap

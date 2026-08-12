@@ -27,7 +27,6 @@ from fetch_msa_couplings import (  # noqa: E402
     zero_sum_gauge,
 )
 
-
 K = len(ALPHABET)  # 20
 
 
@@ -66,12 +65,12 @@ class TestHammingReweighting:
         # The 5 share AA 0 everywhere; the 3 use AAs 1, 2, 3
         idx = np.array(
             [
-                [0] * 10,   # cluster A
+                [0] * 10,  # cluster A
                 [0] * 10,
                 [0] * 10,
                 [0] * 10,
                 [0] * 10,
-                [1] * 10,   # singletons
+                [1] * 10,  # singletons
                 [2] * 10,
                 [3] * 10,
             ],
@@ -132,7 +131,7 @@ class TestZeroSumGauge:
         assert J_gauge.shape == J.shape
 
     def test_grand_mean_correction(self):
-        """Test the explicit formula: gauge(J)[a,b] = J[a,b] - row_mean[b] - col_mean[a] + grand_mean."""
+        """gauge(J)[a,b] = J[a,b] - row_mean[b] - col_mean[a] + grand_mean."""
         rng = np.random.default_rng(7)
         sub = rng.normal(0.0, 1.0, (K, K))
         # Wrap in (1, 1, K, K) so zero_sum_gauge sees pair axes
@@ -156,7 +155,7 @@ class TestComputeCouplingsReweighted:
         log-odds are non-trivial."""
         rng = np.random.default_rng(0)
         idx = np.zeros((20, 3), dtype=np.int64)
-        idx[:10] = 0   # cluster
+        idx[:10] = 0  # cluster
         idx[10:] = rng.integers(0, K, size=(10, 3))
         return idx
 

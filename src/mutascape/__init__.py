@@ -24,7 +24,7 @@ from mutascape.epistasis import (
 )
 from mutascape.landscape import Landscape, Variant
 from mutascape.mutant import Mutant
-from mutascape.nonlinearity import Identity, NonLinearity, GlobalEpistasisSigmoid
+from mutascape.nonlinearity import GlobalEpistasisSigmoid, Identity, NonLinearity
 from mutascape.plotting import (
     plot_alpha_sweep,
     plot_contact_map,
@@ -44,6 +44,7 @@ except ModuleNotFoundError as exc:
         raise ModuleNotFoundError(
             "morphing_landscape requires the optional Plotly dependency."
         ) from _plotly_exc
+
 
 __all__ = [
     "AMINO_ACIDS",

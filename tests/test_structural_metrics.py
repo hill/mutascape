@@ -14,18 +14,22 @@ from mutascape.validation.structural_metrics import (
 
 def test_add_contact_features_counts_induced_contacts():
     contact_map = ContactMap(
-        matrix=np.array([
-            [False, True, False],
-            [True, False, False],
-            [False, False, False],
-        ]),
+        matrix=np.array(
+            [
+                [False, True, False],
+                [True, False, False],
+                [False, False, False],
+            ]
+        ),
         positions=(1, 2, 3),
         threshold=8.0,
-        distances=np.array([
-            [0.0, 5.0, 12.0],
-            [5.0, 0.0, 9.0],
-            [12.0, 9.0, 0.0],
-        ]),
+        distances=np.array(
+            [
+                [0.0, 5.0, 12.0],
+                [5.0, 0.0, 9.0],
+                [12.0, 9.0, 0.0],
+            ]
+        ),
     )
     df = pd.DataFrame({"mutations": [{1: "A", 2: "C", 3: "D"}, {1: "A"}]})
 
@@ -40,10 +44,12 @@ def test_add_contact_features_counts_induced_contacts():
 
 
 def test_contact_epistasis_regression_detects_positive_enrichment():
-    df = pd.DataFrame({
-        "abs_epistatic_deviation": [0.0, 1.0, 2.0, 3.0, 4.0],
-        "contact_proximity": [0.0, 0.25, 0.5, 0.75, 1.0],
-    })
+    df = pd.DataFrame(
+        {
+            "abs_epistatic_deviation": [0.0, 1.0, 2.0, 3.0, 4.0],
+            "contact_proximity": [0.0, 0.25, 0.5, 0.75, 1.0],
+        }
+    )
 
     result = contact_epistasis_regression(df, controls=())
 
@@ -53,10 +59,12 @@ def test_contact_epistasis_regression_detects_positive_enrichment():
 
 
 def test_contact_bin_profile_returns_quantile_means():
-    df = pd.DataFrame({
-        "abs_epistatic_deviation": [1.0, 2.0, 3.0, 4.0],
-        "contact_proximity": [0.1, 0.2, 0.8, 0.9],
-    })
+    df = pd.DataFrame(
+        {
+            "abs_epistatic_deviation": [1.0, 2.0, 3.0, 4.0],
+            "contact_proximity": [0.1, 0.2, 0.8, 0.9],
+        }
+    )
 
     profile = contact_bin_profile(df, n_bins=2)
 

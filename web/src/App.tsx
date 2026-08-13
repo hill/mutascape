@@ -8,19 +8,19 @@ import {
   Empty,
   Grid,
   Input,
+  type KumoChartOption,
   LayerCard,
   Select,
   Sidebar,
   Table,
   Tabs,
   Text,
-  type KumoChartOption,
-} from "@cloudflare/kumo";
+} from "@cloudflare/kumo"
 import {
-  ArrowLeft,
   ArrowClockwise,
-  CheckCircle,
+  ArrowLeft,
   ChartBar,
+  CheckCircle,
   Database,
   Dna,
   Flask,
@@ -30,25 +30,26 @@ import {
   Trophy,
   UploadSimple,
   WarningCircle,
-} from "@phosphor-icons/react";
-import { BarChart, GraphChart, LineChart } from "echarts/charts";
+} from "@phosphor-icons/react"
+import { BarChart, GraphChart, LineChart } from "echarts/charts"
 import {
   AriaComponent,
   GridComponent,
   LegendComponent,
   TooltipComponent,
   VisualMapComponent,
-} from "echarts/components";
-import * as echarts from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
+} from "echarts/components"
+import * as echarts from "echarts/core"
+import { CanvasRenderer } from "echarts/renderers"
 import {
   type ChangeEvent,
   type DragEvent,
   type FormEvent,
+  useCallback,
   useEffect,
   useMemo,
   useState,
-} from "react";
+} from "react"
 import {
   addLeaderboardEntry,
   createDraft,
@@ -58,9 +59,16 @@ import {
   listLeaderboards,
   listModels,
   publishModel,
+  queryPosterior,
+  runPosteriorPreview,
   runPreview,
-} from "./api";
-import { fitnessProfileOptions, landscapeGraphOptions, walshOptions } from "./charts";
+} from "./api"
+import {
+  fitnessProfileOptions,
+  landscapeGraphOptions,
+  posteriorProfileOptions,
+  walshOptions,
+} from "./charts"
 import type {
   CodeExamples,
   DraftResponse,
@@ -69,9 +77,11 @@ import type {
   LeaderboardEntry,
   ModelParameters,
   ModelSummary,
+  PosteriorPreviewResponse,
+  PosteriorQueryResult,
   PreviewResponse,
   PreviewSource,
-} from "./types";
+} from "./types"
 
 echarts.use([
   LineChart,
@@ -83,7 +93,7 @@ echarts.use([
   VisualMapComponent,
   AriaComponent,
   CanvasRenderer,
-]);
+])
 
 const DEFAULT_PARAMETERS: ModelParameters = {
   noiseSigma: 0.3,
@@ -91,41 +101,49 @@ const DEFAULT_PARAMETERS: ModelParameters = {
   pairwiseSigma: 0,
   combinatorialUpside: 3,
   seed: 42,
-};
+}
 
-export type Page = "studio" | "explore" | "models" | "leaderboards";
+export type Page = "studio" | "explore" | "models" | "leaderboards"
 
 interface AppProps {
-  page?: Page;
-  landscapeId?: string;
-  onPageChange?: (page: Page) => void;
-  onExploreLandscape?: (modelId: string) => void;
+  page?: Page
+  landscapeId?: string
+  onPageChange?: (page: Page) => void
+  onExploreLandscape?: (modelId: string) => void
 }
 
 function sourceFromModel(model: ModelSummary, draftId?: string): PreviewSource {
-  if (draftId && model.id === draftId) return { kind: "draft", id: model.id };
-  return { kind: model.kind === "reference" ? "reference" : "model", id: model.id };
+  if (draftId && model.id === draftId) return { kind: "draft", id: model.id }
+  const isBundled = model.kind === "reference" || (model.kind === "posterior" && !model.createdAt)
+  return { kind: isBundled ? "reference" : "model", id: model.id }
 }
 
 function initialWeights(maxDepth: number): Record<number, number> {
-  return Object.fromEntries(Array.from({ length: maxDepth }, (_, index) => [index + 1, 1]));
+  return Object.fromEntries(Array.from({ length: maxDepth }, (_, index) => [index + 1, 1]))
 }
 
 function sampleCapacity(positionCount: number, maxDepth: number): number {
-  let combinations = 1;
-  let total = 0;
+  let combinations = 1
+  let total = 0
   for (let depth = 1; depth <= Math.min(positionCount, maxDepth); depth++) {
-    combinations = (combinations * (positionCount - depth + 1)) / depth;
-    total += combinations * 19 ** depth;
+    combinations = (combinations * (positionCount - depth + 1)) / depth
+    total += combinations * 19 ** depth
   }
-  return Math.min(100_000, total);
+  return Math.min(100_000, total)
+}
+
+function modelSampleLimit(model: ModelSummary | null, maxDepth: number): number {
+  if (!model) return 1
+  const theoretical = sampleCapacity(model.positions.length, maxDepth)
+  if (model.kind !== "posterior") return theoretical
+  return Math.min(5_000, model.sourceSummary?.previewCapacity ?? theoretical)
 }
 
 function formatNumber(value: number | null, metricName?: string): string {
-  if (value === null) return "N/A";
-  if (metricName === "Local optima") return Math.round(value).toLocaleString();
-  if (Math.abs(value) < 0.001 && value !== 0) return value.toExponential(2);
-  return value.toFixed(3);
+  if (value === null) return "N/A"
+  if (metricName === "Local optima") return Math.round(value).toLocaleString()
+  if (Math.abs(value) < 0.001 && value !== 0) return value.toExponential(2)
+  return value.toFixed(3)
 }
 
 export default function App({
@@ -134,140 +152,168 @@ export default function App({
   onPageChange,
   onExploreLandscape,
 }: AppProps) {
-  const [models, setModels] = useState<ModelSummary[]>([]);
-  const [draft, setDraft] = useState<DraftResponse | null>(null);
-  const [draftModel, setDraftModel] = useState<ModelSummary | null>(null);
-  const [selectedId, setSelectedId] = useState("gb1_headline");
-  const [parameters, setParameters] = useState<ModelParameters>(DEFAULT_PARAMETERS);
-  const [sampleSize, setSampleSize] = useState(10_000);
-  const [maxDepth, setMaxDepth] = useState(4);
-  const [depthWeights, setDepthWeights] = useState<Record<number, number>>(
-    initialWeights(4),
-  );
-  const [preview, setPreview] = useState<PreviewResponse | null>(null);
-  const [loadingModels, setLoadingModels] = useState(true);
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [publishedExamples, setPublishedExamples] = useState<CodeExamples | null>(null);
+  const [models, setModels] = useState<ModelSummary[]>([])
+  const [draft, setDraft] = useState<DraftResponse | null>(null)
+  const [draftModel, setDraftModel] = useState<ModelSummary | null>(null)
+  const [selectedId, setSelectedId] = useState("gb1_headline")
+  const [parameters, setParameters] = useState<ModelParameters>(DEFAULT_PARAMETERS)
+  const [sampleSize, setSampleSize] = useState(10_000)
+  const [maxDepth, setMaxDepth] = useState(4)
+  const [depthWeights, setDepthWeights] = useState<Record<number, number>>(initialWeights(4))
+  const [preview, setPreview] = useState<PreviewResponse | null>(null)
+  const [posteriorPreview, setPosteriorPreview] = useState<PosteriorPreviewResponse | null>(null)
+  const [priorId, setPriorId] = useState("combinatorial-v1")
+  const [oracleSeed, setOracleSeed] = useState(42)
+  const [ensembleSize, setEnsembleSize] = useState(100)
+  const [loadingModels, setLoadingModels] = useState(true)
+  const [running, setRunning] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [publishedExamples, setPublishedExamples] = useState<CodeExamples | null>(null)
 
   const availableModels = useMemo(
     () => (draftModel ? [draftModel, ...models] : models),
     [draftModel, models],
-  );
-  const selectedModel = availableModels.find((model) => model.id === selectedId) ?? null;
-  const selectedIsDraft = draft !== null && selectedId === draft.id;
-  const parametersLocked = selectedModel?.kind === "custom" && !selectedIsDraft;
+  )
+  const selectedModel = availableModels.find((model) => model.id === selectedId) ?? null
+  const selectedIsDraft = draft !== null && selectedId === draft.id
+  const selectedIsPosterior = selectedModel?.kind === "posterior"
+  const parametersLocked = selectedModel?.kind === "custom" && !selectedIsDraft
   const hasStructure =
-    selectedModel?.kind === "reference" || selectedModel?.sourceSummary?.hasStructure === true;
+    selectedModel?.kind === "reference" || selectedModel?.sourceSummary?.hasStructure === true
   const canFitNonlinearity =
-    selectedModel?.kind === "reference" ||
-    selectedModel?.sourceSummary?.canFitNonlinearity === true;
+    selectedModel?.kind === "reference" || selectedModel?.sourceSummary?.canFitNonlinearity === true
 
-  async function refreshModels() {
-    setLoadingModels(true);
+  const refreshModels = useCallback(async () => {
+    setLoadingModels(true)
     try {
-      const items = await listModels();
-      setModels(items);
-      if (!items.some((model) => model.id === selectedId) && !selectedIsDraft) {
-        setSelectedId(items[0]?.id ?? "");
-      }
+      const items = await listModels()
+      setModels(items)
+      setSelectedId((current) =>
+        !items.some((model) => model.id === current) && current !== draft?.id
+          ? (items[0]?.id ?? "")
+          : current,
+      )
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load the model catalogue.");
+      setError(cause instanceof Error ? cause.message : "Could not load the model catalogue.")
     } finally {
-      setLoadingModels(false);
+      setLoadingModels(false)
     }
-  }
+  }, [draft?.id])
 
   useEffect(() => {
-    void refreshModels();
-  }, []);
+    void refreshModels()
+  }, [refreshModels])
 
   useEffect(() => {
     if (!selectedId || selectedIsDraft) {
-      setPublishedExamples(null);
-      return;
+      setPublishedExamples(null)
+      return
     }
-    let active = true;
+    let active = true
     void getModel(selectedId)
       .then((model) => {
-        if (active) setPublishedExamples(model.examples ?? null);
+        if (active) setPublishedExamples(model.examples ?? null)
       })
       .catch(() => {
-        if (active) setPublishedExamples(null);
-      });
+        if (active) setPublishedExamples(null)
+      })
     return () => {
-      active = false;
-    };
-  }, [selectedId, selectedIsDraft]);
+      active = false
+    }
+  }, [selectedId, selectedIsDraft])
 
   useEffect(() => {
-    if (!landscapeId || landscapeId === selectedId) return;
-    const model = availableModels.find((item) => item.id === landscapeId);
-    if (!model) return;
-    setSelectedId(model.id);
-    setParameters(model.parameters);
-    const nextMaxDepth = Math.max(1, Math.min(4, model.positions.length));
-    setMaxDepth(nextMaxDepth);
-    setDepthWeights(initialWeights(nextMaxDepth));
-    setSampleSize(Math.min(10_000, sampleCapacity(model.positions.length, nextMaxDepth)));
-    setPreview(null);
-    setError(null);
-  }, [availableModels, landscapeId, selectedId]);
+    if (!landscapeId || landscapeId === selectedId) return
+    const model = availableModels.find((item) => item.id === landscapeId)
+    if (!model) return
+    setSelectedId(model.id)
+    setParameters(model.parameters)
+    setPriorId(model.posteriorSettings?.priorId ?? "combinatorial-v1")
+    setOracleSeed(model.posteriorSettings?.oracleSeed ?? 42)
+    const nextMaxDepth = Math.max(1, Math.min(4, model.positions.length))
+    setMaxDepth(nextMaxDepth)
+    setDepthWeights(initialWeights(nextMaxDepth))
+    setSampleSize(
+      Math.min(model.kind === "posterior" ? 500 : 10_000, modelSampleLimit(model, nextMaxDepth)),
+    )
+    setPreview(null)
+    setPosteriorPreview(null)
+    setError(null)
+  }, [availableModels, landscapeId, selectedId])
 
   function selectModel(modelId: string) {
-    const model = availableModels.find((item) => item.id === modelId);
-    if (!model) return;
-    setSelectedId(modelId);
-    setParameters(model.parameters);
-    const nextMaxDepth = Math.max(1, Math.min(4, model.positions.length));
-    setMaxDepth(nextMaxDepth);
-    setDepthWeights(initialWeights(nextMaxDepth));
-    setSampleSize(Math.min(10_000, sampleCapacity(model.positions.length, nextMaxDepth)));
-    setPreview(null);
-    setError(null);
+    const model = availableModels.find((item) => item.id === modelId)
+    if (!model) return
+    setSelectedId(modelId)
+    setParameters(model.parameters)
+    setPriorId(model.posteriorSettings?.priorId ?? "combinatorial-v1")
+    setOracleSeed(model.posteriorSettings?.oracleSeed ?? 42)
+    const nextMaxDepth = Math.max(1, Math.min(4, model.positions.length))
+    setMaxDepth(nextMaxDepth)
+    setDepthWeights(initialWeights(nextMaxDepth))
+    setSampleSize(
+      Math.min(model.kind === "posterior" ? 500 : 10_000, modelSampleLimit(model, nextMaxDepth)),
+    )
+    setPreview(null)
+    setPosteriorPreview(null)
+    setError(null)
   }
 
   function changeMaxDepth(value: number) {
-    const positionCount = selectedModel?.positions.length ?? 1;
-    const bounded = Math.max(1, Math.min(positionCount, Math.floor(value || 1)));
-    setMaxDepth(bounded);
-    setSampleSize((current) => Math.min(current, sampleCapacity(positionCount, bounded)));
+    const positionCount = selectedModel?.positions.length ?? 1
+    const bounded = Math.max(1, Math.min(positionCount, Math.floor(value || 1)))
+    setMaxDepth(bounded)
+    setSampleSize((current) => Math.min(current, modelSampleLimit(selectedModel, bounded)))
     setDepthWeights((current) => {
-      const next: Record<number, number> = {};
-      for (let depth = 1; depth <= bounded; depth++) next[depth] = current[depth] ?? 1;
-      return next;
-    });
+      const next: Record<number, number> = {}
+      for (let depth = 1; depth <= bounded; depth++) next[depth] = current[depth] ?? 1
+      return next
+    })
   }
 
   async function applyPreview(): Promise<boolean> {
-    if (!selectedModel) return false;
-    setRunning(true);
-    setError(null);
+    if (!selectedModel) return false
+    setRunning(true)
+    setError(null)
     try {
-      const source = sourceFromModel(selectedModel, draft?.id);
-      const result = await runPreview(source, parameters, sampleSize, depthWeights);
-      setPreview(result);
-      return true;
+      const source = sourceFromModel(selectedModel, draft?.id)
+      if (selectedIsPosterior) {
+        const result = await runPosteriorPreview(
+          source,
+          priorId,
+          oracleSeed,
+          ensembleSize,
+          sampleSize,
+          depthWeights,
+        )
+        setPosteriorPreview(result)
+        setPreview(null)
+      } else {
+        const result = await runPreview(source, parameters, sampleSize, depthWeights)
+        setPreview(result)
+        setPosteriorPreview(null)
+      }
+      return true
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "The preview failed.");
-      return false;
+      setError(cause instanceof Error ? cause.message : "The preview failed.")
+      return false
     } finally {
-      setRunning(false);
+      setRunning(false)
     }
   }
 
   async function createLandscape() {
-    if (!selectedModel) return;
-    if (await applyPreview()) onExploreLandscape?.(selectedModel.id);
+    if (!selectedModel) return
+    if (await applyPreview()) onExploreLandscape?.(selectedModel.id)
   }
 
   function acceptDraft(created: DraftResponse) {
-    const summary = created.summary;
+    const summary = created.summary
     const model: ModelSummary = {
       id: created.id,
       name: "Custom draft",
-      kind: "custom",
-      description: "Temporary single-site DMS benchmark draft.",
+      kind: "posterior",
+      description: "Temporary posterior landscape grounded in sparse DMS.",
       positions: summary.positions,
       wtCompact: summary.wtCompact,
       parameters: DEFAULT_PARAMETERS,
@@ -279,30 +325,44 @@ export default function App({
         contactCount: summary.contactCount,
         canFitNonlinearity: summary.canFitNonlinearity,
         structureMethod: summary.structureMethod,
+        observationCount: summary.observationCount,
+        higherOrderRows: summary.higherOrderRows,
+        dmsSchema: summary.dmsSchema,
+        wildTypeFitness: summary.wildTypeFitness,
+        supportedSubstitutions: summary.supportedSubstitutions,
+        previewCapacity: summary.previewCapacity,
       },
-    };
-    setDraft(created);
-    setDraftModel(model);
-    setSelectedId(created.id);
-    setParameters(DEFAULT_PARAMETERS);
-    const nextMaxDepth = Math.max(1, Math.min(4, summary.positionCount));
-    setMaxDepth(nextMaxDepth);
-    setDepthWeights(initialWeights(nextMaxDepth));
-    setSampleSize(Math.min(10_000, sampleCapacity(summary.positionCount, nextMaxDepth)));
-    setPreview(null);
-    setError(null);
-    onPageChange?.("studio");
+      posteriorSettings: { priorId: "combinatorial-v1", oracleSeed: 42 },
+    }
+    setDraft(created)
+    setDraftModel(model)
+    setSelectedId(created.id)
+    setParameters(DEFAULT_PARAMETERS)
+    setPriorId("combinatorial-v1")
+    setOracleSeed(42)
+    const nextMaxDepth = Math.max(1, Math.min(4, summary.positionCount))
+    setMaxDepth(nextMaxDepth)
+    setDepthWeights(initialWeights(nextMaxDepth))
+    setSampleSize(Math.min(500, summary.previewCapacity))
+    setPreview(null)
+    setPosteriorPreview(null)
+    setError(null)
+    onPageChange?.("studio")
   }
 
   async function publish(name: string) {
-    if (!draft) return;
-    const model = await publishModel(draft.id, name, parameters);
-    setPublishedExamples(model.examples);
-    await refreshModels();
-    setSelectedId(model.id);
-    setDraft(null);
-    setDraftModel(null);
-    onExploreLandscape?.(model.id);
+    if (!draft) return
+    const model = await publishModel(draft.id, name, parameters, {
+      modelType: "posterior",
+      priorId,
+      oracleSeed,
+    })
+    setPublishedExamples(model.examples)
+    await refreshModels()
+    setSelectedId(model.id)
+    setDraft(null)
+    setDraftModel(null)
+    onExploreLandscape?.(model.id)
   }
 
   return (
@@ -324,8 +384,8 @@ export default function App({
         loading={loadingModels}
         onPageChange={onPageChange}
         onSelectLandscape={(modelId) => {
-          selectModel(modelId);
-          onExploreLandscape?.(modelId);
+          selectModel(modelId)
+          onExploreLandscape?.(modelId)
         }}
       />
 
@@ -364,6 +424,12 @@ export default function App({
               parametersLocked={parametersLocked}
               hasStructure={hasStructure}
               canFitNonlinearity={canFitNonlinearity}
+              priorId={priorId}
+              setPriorId={setPriorId}
+              oracleSeed={oracleSeed}
+              setOracleSeed={setOracleSeed}
+              ensembleSize={ensembleSize}
+              setEnsembleSize={setEnsembleSize}
               running={running}
               createLandscape={createLandscape}
               acceptDraft={acceptDraft}
@@ -373,8 +439,11 @@ export default function App({
             <LandscapeExplorer
               selectedModel={selectedModel}
               parameters={parameters}
+              priorId={priorId}
+              oracleSeed={oracleSeed}
+              ensembleSize={ensembleSize}
               sampleSize={sampleSize}
-              sampleLimit={sampleCapacity(selectedModel?.positions.length ?? 1, maxDepth)}
+              sampleLimit={modelSampleLimit(selectedModel, maxDepth)}
               setSampleSize={setSampleSize}
               maxDepth={maxDepth}
               changeMaxDepth={changeMaxDepth}
@@ -385,6 +454,7 @@ export default function App({
               draft={draft}
               publish={publish}
               preview={preview}
+              posteriorPreview={posteriorPreview}
               publishedExamples={publishedExamples}
               onBack={() => onPageChange?.("studio")}
             />
@@ -395,8 +465,8 @@ export default function App({
               loading={loadingModels}
               onRefresh={refreshModels}
               onExplore={(modelId) => {
-                selectModel(modelId);
-                onExploreLandscape?.(modelId);
+                selectModel(modelId)
+                onExploreLandscape?.(modelId)
               }}
             />
           )}
@@ -404,7 +474,7 @@ export default function App({
         </main>
       </section>
     </Sidebar.Provider>
-  );
+  )
 }
 
 function AppSidebar({
@@ -415,12 +485,12 @@ function AppSidebar({
   onPageChange,
   onSelectLandscape,
 }: {
-  page: Page;
-  models: ModelSummary[];
-  selectedId: string;
-  loading: boolean;
-  onPageChange?: (page: Page) => void;
-  onSelectLandscape: (modelId: string) => void;
+  page: Page
+  models: ModelSummary[]
+  selectedId: string
+  loading: boolean
+  onPageChange?: (page: Page) => void
+  onSelectLandscape: (modelId: string) => void
 }) {
   return (
     <Sidebar className="app-sidebar" contentClassName="app-sidebar-content">
@@ -497,22 +567,28 @@ function AppSidebar({
       </Sidebar.Content>
       <Sidebar.ResizeHandle />
     </Sidebar>
-  );
+  )
 }
 
 interface LandscapeBuilderProps {
-  models: ModelSummary[];
-  selectedModel: ModelSummary | null;
-  loadingModels: boolean;
-  selectModel: (id: string) => void;
-  parameters: ModelParameters;
-  setParameters: (value: ModelParameters) => void;
-  parametersLocked: boolean;
-  hasStructure: boolean;
-  canFitNonlinearity: boolean;
-  running: boolean;
-  createLandscape: () => Promise<void>;
-  acceptDraft: (draft: DraftResponse) => void;
+  models: ModelSummary[]
+  selectedModel: ModelSummary | null
+  loadingModels: boolean
+  selectModel: (id: string) => void
+  parameters: ModelParameters
+  setParameters: (value: ModelParameters) => void
+  parametersLocked: boolean
+  hasStructure: boolean
+  canFitNonlinearity: boolean
+  priorId: string
+  setPriorId: (value: string) => void
+  oracleSeed: number
+  setOracleSeed: (value: number) => void
+  ensembleSize: number
+  setEnsembleSize: (value: number) => void
+  running: boolean
+  createLandscape: () => Promise<void>
+  acceptDraft: (draft: DraftResponse) => void
 }
 
 function LandscapeBuilder(props: LandscapeBuilderProps) {
@@ -526,12 +602,18 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
     parametersLocked,
     hasStructure,
     canFitNonlinearity,
+    priorId,
+    setPriorId,
+    oracleSeed,
+    setOracleSeed,
+    ensembleSize,
+    setEnsembleSize,
     running,
     createLandscape,
     acceptDraft,
-  } = props;
-  const [sourceMode, setSourceMode] = useState<"preset" | "upload">("preset");
-  const modelItems = Object.fromEntries(models.map((model) => [model.id, model.name]));
+  } = props
+  const [sourceMode, setSourceMode] = useState<"preset" | "upload">("preset")
+  const modelItems = Object.fromEntries(models.map((model) => [model.id, model.name]))
 
   return (
     <div className="studio-stack">
@@ -616,20 +698,32 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
           ) : (
             <CustomUploadPanel
               onCreated={(created) => {
-                acceptDraft(created);
-                setSourceMode("preset");
+                acceptDraft(created)
+                setSourceMode("preset")
               }}
             />
           )}
         </LayerCard>
 
-        <ParameterPanel
-          value={parameters}
-          onChange={setParameters}
-          locked={parametersLocked}
-          hasStructure={hasStructure}
-          canFitNonlinearity={canFitNonlinearity}
-        />
+        {selectedModel?.kind === "posterior" ? (
+          <PosteriorParameterPanel
+            priorId={priorId}
+            setPriorId={setPriorId}
+            oracleSeed={oracleSeed}
+            setOracleSeed={setOracleSeed}
+            ensembleSize={ensembleSize}
+            setEnsembleSize={setEnsembleSize}
+            locked={!selectedModel.createdAt ? false : !selectedModel.id.startsWith("draft_")}
+          />
+        ) : (
+          <ParameterPanel
+            value={parameters}
+            onChange={setParameters}
+            locked={parametersLocked}
+            hasStructure={hasStructure}
+            canFitNonlinearity={canFitNonlinearity}
+          />
+        )}
       </Grid>
 
       <div className="builder-action-bar">
@@ -657,40 +751,48 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
         </Button>
       </div>
     </div>
-  );
+  )
 }
 
 interface SamplingProps {
-  selectedModel: ModelSummary | null;
-  sampleSize: number;
-  sampleLimit: number;
-  setSampleSize: (value: number) => void;
-  maxDepth: number;
-  changeMaxDepth: (value: number) => void;
-  depthWeights: Record<number, number>;
+  selectedModel: ModelSummary | null
+  sampleSize: number
+  sampleLimit: number
+  setSampleSize: (value: number) => void
+  maxDepth: number
+  changeMaxDepth: (value: number) => void
+  depthWeights: Record<number, number>
   setDepthWeights: (
     update: Record<number, number> | ((current: Record<number, number>) => Record<number, number>),
-  ) => void;
-  running: boolean;
-  applyPreview: () => Promise<boolean>;
+  ) => void
+  running: boolean
+  applyPreview: () => Promise<boolean>
 }
 
 function LandscapeExplorer({
   selectedModel,
   parameters,
+  priorId,
+  oracleSeed,
+  ensembleSize,
   preview,
+  posteriorPreview,
   draft,
   publish,
   publishedExamples,
   onBack,
   ...sampling
 }: SamplingProps & {
-  parameters: ModelParameters;
-  preview: PreviewResponse | null;
-  draft: DraftResponse | null;
-  publish: (name: string) => Promise<void>;
-  publishedExamples: CodeExamples | null;
-  onBack: () => void;
+  parameters: ModelParameters
+  priorId: string
+  oracleSeed: number
+  ensembleSize: number
+  preview: PreviewResponse | null
+  posteriorPreview: PosteriorPreviewResponse | null
+  draft: DraftResponse | null
+  publish: (name: string) => Promise<void>
+  publishedExamples: CodeExamples | null
+  onBack: () => void
 }) {
   return (
     <div className="studio-stack">
@@ -710,13 +812,28 @@ function LandscapeExplorer({
       </section>
 
       <ExactQueryPanel
+        key={`${selectedModel?.id ?? ""}:${priorId}:${oracleSeed}:${ensembleSize}:${Object.values(parameters).join(":")}`}
         selectedModel={selectedModel}
         draft={draft}
         parameters={parameters}
+        priorId={priorId}
+        oracleSeed={oracleSeed}
+        ensembleSize={ensembleSize}
       />
-      <SamplePanel {...sampling} selectedModel={selectedModel} hasPreview={preview !== null} />
+      <SamplePanel
+        {...sampling}
+        selectedModel={selectedModel}
+        hasPreview={preview !== null || posteriorPreview !== null}
+      />
 
-      {preview ? (
+      {posteriorPreview ? (
+        <PosteriorPreviewResults
+          preview={posteriorPreview}
+          draft={draft}
+          publish={publish}
+          examples={publishedExamples}
+        />
+      ) : preview ? (
         <PreviewResults
           preview={preview}
           draft={draft}
@@ -734,54 +851,67 @@ function LandscapeExplorer({
         </LayerCard>
       )}
     </div>
-  );
+  )
 }
 
 function mutationExample(model: ModelSummary | null): string {
-  if (!model) return "V39A+D40G";
+  if (!model) return "V39A+D40G"
   return model.positions
     .slice(0, 2)
     .map((position, index) => {
-      const wildType = model.wtCompact[index];
-      const mutant = wildType === "A" ? "G" : "A";
-      return `${wildType}${position}${mutant}`;
+      const wildType = model.wtCompact[index]
+      const mutant = wildType === "A" ? "G" : "A"
+      return `${wildType}${position}${mutant}`
     })
-    .join("+");
+    .join("+")
 }
 
 function ExactQueryPanel({
   selectedModel,
   draft,
   parameters,
+  priorId,
+  oracleSeed,
+  ensembleSize,
 }: {
-  selectedModel: ModelSummary | null;
-  draft: DraftResponse | null;
-  parameters: ModelParameters;
+  selectedModel: ModelSummary | null
+  draft: DraftResponse | null
+  parameters: ModelParameters
+  priorId: string
+  oracleSeed: number
+  ensembleSize: number
 }) {
-  const [mutation, setMutation] = useState("");
-  const [result, setResult] = useState<EvaluationResult | null>(null);
-  const [querying, setQuerying] = useState(false);
-  const [queryError, setQueryError] = useState<string | null>(null);
+  const [mutation, setMutation] = useState("")
+  const [result, setResult] = useState<EvaluationResult | null>(null)
+  const [posteriorResults, setPosteriorResults] = useState<PosteriorQueryResult[]>([])
+  const [querying, setQuerying] = useState(false)
+  const [queryError, setQueryError] = useState<string | null>(null)
 
-  useEffect(() => {
-    setMutation("");
-    setResult(null);
-    setQueryError(null);
-  }, [selectedModel?.id, parameters]);
+  const latestPosterior = posteriorResults.at(-1)
 
   async function submit(event: FormEvent) {
-    event.preventDefault();
-    if (!selectedModel || !mutation.trim()) return;
-    setQuerying(true);
-    setQueryError(null);
+    event.preventDefault()
+    if (!selectedModel || !mutation.trim()) return
+    setQuerying(true)
+    setQueryError(null)
     try {
-      const source = sourceFromModel(selectedModel, draft?.id);
-      setResult(await evaluateLandscape(source, parameters, mutation.trim().toUpperCase()));
+      const source = sourceFromModel(selectedModel, draft?.id)
+      const label = mutation.trim().toUpperCase()
+      if (selectedModel.kind === "posterior") {
+        const response = await queryPosterior(source, priorId, oracleSeed, ensembleSize, label)
+        const next = response.results[0]
+        setPosteriorResults((current) =>
+          [...current.filter((item) => item.mutationLabel !== next.mutationLabel), next].slice(-10),
+        )
+        setResult(null)
+      } else {
+        setResult(await evaluateLandscape(source, parameters, label))
+      }
     } catch (cause) {
-      setResult(null);
-      setQueryError(cause instanceof Error ? cause.message : "Could not score this mutation.");
+      setResult(null)
+      setQueryError(cause instanceof Error ? cause.message : "Could not score this mutation.")
     } finally {
-      setQuerying(false);
+      setQuerying(false)
     }
   }
 
@@ -823,8 +953,124 @@ function ExactQueryPanel({
           </div>
         )}
       </form>
+      {latestPosterior && (
+        <div className="posterior-query-results" aria-live="polite">
+          <div className="posterior-metric-grid">
+            <div>
+              <span>Fixed oracle</span>
+              <strong>{latestPosterior.fixedOracleFitness.toFixed(4)}</strong>
+            </div>
+            <div>
+              <span>Posterior mean</span>
+              <strong>{latestPosterior.posteriorMean.toFixed(4)}</strong>
+            </div>
+            <div>
+              <span>Posterior SD</span>
+              <strong>{latestPosterior.posteriorStd.toFixed(4)}</strong>
+            </div>
+            <div>
+              <span>80% interval</span>
+              <strong>
+                {latestPosterior.intervals["80"].lower.toFixed(3)} to{" "}
+                {latestPosterior.intervals["80"].upper.toFixed(3)}
+              </strong>
+            </div>
+          </div>
+          <Grid variant="2up" gap="sm">
+            <div className="embedded-chart">
+              <Text bold size="sm">
+                Queried variants
+              </Text>
+              <PosteriorQueryPlot results={posteriorResults} />
+            </div>
+            <div className="embedded-chart">
+              <Text bold size="sm">
+                Latest posterior distribution
+              </Text>
+              <PosteriorDistributionPlot result={latestPosterior} />
+            </div>
+          </Grid>
+        </div>
+      )}
     </LayerCard>
-  );
+  )
+}
+
+function PosteriorQueryPlot({ results }: { results: PosteriorQueryResult[] }) {
+  const values = results.flatMap((result) => [
+    result.intervals["80"].lower,
+    result.intervals["80"].upper,
+    result.additiveFitness,
+    result.fixedOracleFitness,
+    result.posteriorMean,
+  ])
+  const minimum = Math.min(...values)
+  const maximum = Math.max(...values)
+  const range = maximum - minimum || 1
+  const position = (value: number) => `${((value - minimum) / range) * 100}%`
+  return (
+    <div className="interval-plot" role="img" aria-label="Posterior intervals for queried variants">
+      {results.map((result) => (
+        <div className="interval-row" key={result.mutationLabel}>
+          <span className="mono-value">{result.mutationLabel}</span>
+          <div className="interval-track">
+            <i
+              className="interval-band"
+              style={{
+                left: position(result.intervals["80"].lower),
+                width: `${((result.intervals["80"].upper - result.intervals["80"].lower) / range) * 100}%`,
+              }}
+            />
+            <i
+              className="interval-point additive"
+              style={{ left: position(result.additiveFitness) }}
+            />
+            <i className="interval-point mean" style={{ left: position(result.posteriorMean) }} />
+            <i
+              className="interval-point fixed"
+              style={{ left: position(result.fixedOracleFitness) }}
+            />
+          </div>
+        </div>
+      ))}
+      <div className="interval-axis">
+        <span>{minimum.toFixed(2)}</span>
+        <span>{maximum.toFixed(2)}</span>
+      </div>
+    </div>
+  )
+}
+
+function PosteriorDistributionPlot({ result }: { result: PosteriorQueryResult }) {
+  const minimum = Math.min(...result.samples)
+  const maximum = Math.max(...result.samples)
+  const bins = Array.from({ length: 14 }, (_, index) => ({ index, count: 0 }))
+  const width = (maximum - minimum) / bins.length || 1
+  for (const value of result.samples) {
+    const index = Math.min(bins.length - 1, Math.floor((value - minimum) / width))
+    bins[index].count += 1
+  }
+  const peak = Math.max(...bins.map((bin) => bin.count), 1)
+  return (
+    <div
+      className="histogram"
+      role="img"
+      aria-label={`Posterior distribution for ${result.mutationLabel}`}
+    >
+      <div className="histogram-bars">
+        {bins.map((bin) => (
+          <i
+            key={(minimum + bin.index * width).toFixed(8)}
+            style={{ height: `${(bin.count / peak) * 100}%` }}
+          />
+        ))}
+      </div>
+      <div className="histogram-axis">
+        <span>{minimum.toFixed(2)}</span>
+        <span>{maximum.toFixed(2)}</span>
+      </div>
+    </div>
+  )
 }
 
 function SamplePanel({
@@ -872,7 +1118,7 @@ function SamplePanel({
           onChange={(event) => changeMaxDepth(Number(event.currentTarget.value))}
         />
         {Object.keys(depthWeights).map((rawDepth) => {
-          const depth = Number(rawDepth);
+          const depth = Number(rawDepth)
           return (
             <Input
               size="sm"
@@ -889,7 +1135,7 @@ function SamplePanel({
                 }))
               }
             />
-          );
+          )
         })}
         <Button
           size="sm"
@@ -909,12 +1155,12 @@ function SamplePanel({
         </Text>
       )}
     </LayerCard>
-  );
+  )
 }
 
 function WorkflowProgress({ active }: { active: "create" | "explore" }) {
   return (
-    <div className="workflow-progress" aria-label="Landscape workflow">
+    <nav className="workflow-progress" aria-label="Landscape workflow">
       <div className={active === "create" ? "workflow-stage active" : "workflow-stage done"}>
         <span>1</span>
         Create landscape
@@ -924,16 +1170,86 @@ function WorkflowProgress({ active }: { active: "create" | "explore" }) {
         <span>2</span>
         Explore landscape
       </div>
-    </div>
-  );
+    </nav>
+  )
+}
+
+function PosteriorParameterPanel({
+  priorId,
+  setPriorId,
+  oracleSeed,
+  setOracleSeed,
+  ensembleSize,
+  setEnsembleSize,
+  locked,
+}: {
+  priorId: string
+  setPriorId: (value: string) => void
+  oracleSeed: number
+  setOracleSeed: (value: number) => void
+  ensembleSize: number
+  setEnsembleSize: (value: number) => void
+  locked: boolean
+}) {
+  return (
+    <LayerCard className="panel-card">
+      <div className="panel-heading">
+        <div>
+          <Text variant="heading3" as="h2">
+            Posterior ensemble
+          </Text>
+          <Text variant="secondary" size="sm">
+            Set the transferred interaction prior, stable oracle seed, and uncertainty sample.
+          </Text>
+        </div>
+        {locked && <Badge variant="neutral">Fixed oracle</Badge>}
+      </div>
+      <div className="field-grid">
+        <Select
+          size="sm"
+          label="Interaction prior"
+          value={priorId}
+          items={{ "combinatorial-v1": "Combinatorial v1" }}
+          disabled={locked}
+          onValueChange={(value) => value && setPriorId(String(value))}
+        />
+        <Input
+          size="sm"
+          label="Oracle seed"
+          type="number"
+          step={1}
+          value={oracleSeed}
+          disabled={locked}
+          onChange={(event) => setOracleSeed(Number(event.currentTarget.value))}
+        />
+        <Input
+          size="sm"
+          label="Posterior draws"
+          labelTooltip="More draws give smoother interval estimates and take longer."
+          type="number"
+          min={2}
+          max={200}
+          step={1}
+          value={ensembleSize}
+          onChange={(event) => setEnsembleSize(Number(event.currentTarget.value))}
+        />
+      </div>
+      <Banner
+        size="sm"
+        variant="secondary"
+        title="Transferred empirical prior"
+        description="Version one pools pairwise interaction statistics from 30 landscapes across 14 proteins."
+      />
+    </LayerCard>
+  )
 }
 
 interface ParameterPanelProps {
-  value: ModelParameters;
-  onChange: (value: ModelParameters) => void;
-  locked: boolean;
-  hasStructure: boolean;
-  canFitNonlinearity: boolean;
+  value: ModelParameters
+  onChange: (value: ModelParameters) => void
+  locked: boolean
+  hasStructure: boolean
+  canFitNonlinearity: boolean
 }
 
 function ParameterPanel({
@@ -944,7 +1260,7 @@ function ParameterPanel({
   canFitNonlinearity,
 }: ParameterPanelProps) {
   function set<K extends keyof ModelParameters>(key: K, next: ModelParameters[K]) {
-    onChange({ ...value, [key]: next });
+    onChange({ ...value, [key]: next })
   }
   return (
     <LayerCard className="panel-card">
@@ -1033,7 +1349,7 @@ function ParameterPanel({
         />
       )}
     </LayerCard>
-  );
+  )
 }
 
 function PreviewResults({
@@ -1042,10 +1358,10 @@ function PreviewResults({
   publish,
   examples,
 }: {
-  preview: PreviewResponse;
-  draft: DraftResponse | null;
-  publish: (name: string) => Promise<void>;
-  examples: CodeExamples | null;
+  preview: PreviewResponse
+  draft: DraftResponse | null
+  publish: (name: string) => Promise<void>
+  examples: CodeExamples | null
 }) {
   return (
     <div className="results-stack">
@@ -1110,7 +1426,125 @@ function PreviewResults({
       {draft && <PublishPanel onPublish={publish} />}
       {examples && <CodePanel examples={examples} />}
     </div>
-  );
+  )
+}
+
+function PosteriorPreviewResults({
+  preview,
+  draft,
+  publish,
+  examples,
+}: {
+  preview: PosteriorPreviewResponse
+  draft: DraftResponse | null
+  publish: (name: string) => Promise<void>
+  examples: CodeExamples | null
+}) {
+  return (
+    <div className="results-stack">
+      <Banner
+        size="sm"
+        variant="secondary"
+        title={preview.prior.name}
+        description={`Pairwise prior fitted to ${preview.prior.nLandscapes} landscapes across ${preview.prior.nProteins} proteins.`}
+      />
+      <LayerCard className="panel-card chart-card">
+        <div className="panel-heading">
+          <div>
+            <Text variant="heading3" as="h2">
+              Fitness and uncertainty by mutation depth
+            </Text>
+            <Text variant="secondary" size="sm">
+              Bands pool posterior draws. Lines compare the stable oracle and additive model.
+            </Text>
+          </div>
+          <Badge variant="purple">{preview.settings.ensembleSize} draws</Badge>
+        </div>
+        <Chart echarts={echarts} options={posteriorProfileOptions(preview.profile)} height={340} />
+      </LayerCard>
+
+      <LayerCard className="panel-card chart-card">
+        <div className="panel-heading">
+          <div>
+            <Text variant="heading3" as="h2">
+              Posterior landscape map
+            </Text>
+            <Text variant="secondary" size="sm">
+              Colour shows fixed-draw fitness. Larger purple borders show greater uncertainty.
+            </Text>
+          </div>
+          <Badge variant="neutral">{preview.sample.graph.nodes.length} variants</Badge>
+        </div>
+        <Chart
+          echarts={echarts}
+          options={landscapeGraphOptions(preview.sample.graph)}
+          height={430}
+        />
+      </LayerCard>
+
+      {preview.notices.map((notice) => (
+        <Banner key={notice} size="sm" variant="secondary" description={notice} />
+      ))}
+
+      <PosteriorSampleTable preview={preview} />
+      {draft && <PublishPanel onPublish={publish} />}
+      {examples && <CodePanel examples={examples} />}
+    </div>
+  )
+}
+
+function PosteriorSampleTable({ preview }: { preview: PosteriorPreviewResponse }) {
+  return (
+    <LayerCard className="panel-card sample-card">
+      <div className="panel-heading">
+        <div>
+          <Text variant="heading3" as="h2">
+            Posterior sample explorer
+          </Text>
+          <Text variant="secondary" size="sm">
+            Showing {preview.sample.returnedRows} rows from {preview.sample.requested} sampled
+            variants.
+          </Text>
+        </div>
+      </div>
+      <div className="table-scroll sample-table-scroll">
+        <Table layout="auto">
+          <Table.Header>
+            <Table.Row>
+              <Table.Head>Variant</Table.Head>
+              <Table.Head>Depth</Table.Head>
+              <Table.Head>Fixed</Table.Head>
+              <Table.Head>Mean</Table.Head>
+              <Table.Head>SD</Table.Head>
+              <Table.Head>80% interval</Table.Head>
+              <Table.Head>Additive</Table.Head>
+              <Table.Head>Sequence</Table.Head>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {preview.sample.rows.map((row) => (
+              <Table.Row key={row.variant}>
+                <Table.Cell>
+                  <span className="mono-value">{row.variant}</span>
+                </Table.Cell>
+                <Table.Cell>{row.depth}</Table.Cell>
+                <Table.Cell>{row.fixedOracleFitness.toFixed(3)}</Table.Cell>
+                <Table.Cell>{row.posteriorMean.toFixed(3)}</Table.Cell>
+                <Table.Cell>{row.posteriorStd.toFixed(3)}</Table.Cell>
+                <Table.Cell>
+                  {row.lower80.toFixed(2)} to {row.upper80.toFixed(2)}
+                </Table.Cell>
+                <Table.Cell>{row.additiveFitness.toFixed(3)}</Table.Cell>
+                <Table.Cell>
+                  <span className="mono-value">{row.sequence}</span>
+                </Table.Cell>
+              </Table.Row>
+            ))}
+          </Table.Body>
+        </Table>
+      </div>
+    </LayerCard>
+  )
 }
 
 function MetricTable({ rows }: { rows: PreviewResponse["metrics"] }) {
@@ -1143,7 +1577,7 @@ function MetricTable({ rows }: { rows: PreviewResponse["metrics"] }) {
         </Table>
       </div>
     </LayerCard>
-  );
+  )
 }
 
 function SampleTable({ preview }: { preview: PreviewResponse }) {
@@ -1193,25 +1627,25 @@ function SampleTable({ preview }: { preview: PreviewResponse }) {
         </Table>
       </div>
     </LayerCard>
-  );
+  )
 }
 
 function PublishPanel({ onPublish }: { onPublish: (name: string) => Promise<void> }) {
-  const [name, setName] = useState("");
-  const [publishing, setPublishing] = useState(false);
-  const [publishError, setPublishError] = useState<string | null>(null);
+  const [name, setName] = useState("")
+  const [publishing, setPublishing] = useState(false)
+  const [publishError, setPublishError] = useState<string | null>(null)
 
   async function submit(event: FormEvent) {
-    event.preventDefault();
-    if (!name.trim()) return;
-    setPublishing(true);
-    setPublishError(null);
+    event.preventDefault()
+    if (!name.trim()) return
+    setPublishing(true)
+    setPublishError(null)
     try {
-      await onPublish(name.trim());
+      await onPublish(name.trim())
     } catch (cause) {
-      setPublishError(cause instanceof Error ? cause.message : "Publishing failed.");
+      setPublishError(cause instanceof Error ? cause.message : "Publishing failed.")
     } finally {
-      setPublishing(false);
+      setPublishing(false)
     }
   }
 
@@ -1246,7 +1680,7 @@ function PublishPanel({ onPublish }: { onPublish: (name: string) => Promise<void
         </Button>
       </form>
     </LayerCard>
-  );
+  )
 }
 
 function CodePanel({ examples }: { examples: CodeExamples }) {
@@ -1267,81 +1701,72 @@ function CodePanel({ examples }: { examples: CodeExamples }) {
         <div>
           <Text bold>Local Python</Text>
           <pre className="code-preview">{examples.localPython}</pre>
-          <ClipboardText
-            size="sm"
-            text="Copy local Python"
-            textToCopy={examples.localPython}
-          />
+          <ClipboardText size="sm" text="Copy local Python" textToCopy={examples.localPython} />
         </div>
         <div>
           <Text bold>Hosted API</Text>
           <pre className="code-preview">{examples.hostedPython}</pre>
-          <ClipboardText
-            size="sm"
-            text="Copy hosted Python"
-            textToCopy={examples.hostedPython}
-          />
+          <ClipboardText size="sm" text="Copy hosted Python" textToCopy={examples.hostedPython} />
         </div>
       </Grid>
     </LayerCard>
-  );
+  )
 }
 
 function CustomUploadPanel({ onCreated }: { onCreated: (draft: DraftResponse) => void }) {
-  type StructureMode = "none" | "upload" | "esmfold";
-  const [dmsCsv, setDmsCsv] = useState("");
-  const [dmsName, setDmsName] = useState("");
-  const [wtFasta, setWtFasta] = useState("");
-  const [fastaName, setFastaName] = useState("");
-  const [structureMode, setStructureMode] = useState<StructureMode>("none");
-  const [structureText, setStructureText] = useState("");
-  const [structureName, setStructureName] = useState("");
-  const [structureFormat, setStructureFormat] = useState<"pdb" | "cif" | "mmcif" | undefined>();
-  const [creating, setCreating] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  type StructureMode = "none" | "upload" | "esmfold"
+  const [dmsCsv, setDmsCsv] = useState("")
+  const [dmsName, setDmsName] = useState("")
+  const [wtFasta, setWtFasta] = useState("")
+  const [fastaName, setFastaName] = useState("")
+  const [structureMode, setStructureMode] = useState<StructureMode>("none")
+  const [structureText, setStructureText] = useState("")
+  const [structureName, setStructureName] = useState("")
+  const [structureFormat, setStructureFormat] = useState<"pdb" | "cif" | "mmcif" | undefined>()
+  const [creating, setCreating] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   async function readFile(
     file: File,
     setter: (text: string) => void,
     setName: (name: string) => void,
   ) {
-    setter(await file.text());
-    setName(file.name);
+    setter(await file.text())
+    setName(file.name)
   }
 
   async function readStructure(file: File) {
-    const extension = file.name.split(".").pop()?.toLowerCase();
-    setStructureFormat(extension === "cif" || extension === "mmcif" ? extension : "pdb");
-    await readFile(file, setStructureText, setStructureName);
+    const extension = file.name.split(".").pop()?.toLowerCase()
+    setStructureFormat(extension === "cif" || extension === "mmcif" ? extension : "pdb")
+    await readFile(file, setStructureText, setStructureName)
   }
 
   function chooseStructureMode(value: StructureMode) {
-    setStructureMode(value);
+    setStructureMode(value)
     if (value !== "upload") {
-      setStructureText("");
-      setStructureName("");
-      setStructureFormat(undefined);
+      setStructureText("")
+      setStructureName("")
+      setStructureFormat(undefined)
     }
   }
 
   async function submit(event: FormEvent) {
-    event.preventDefault();
-    setCreating(true);
-    setUploadError(null);
+    event.preventDefault()
+    setCreating(true)
+    setUploadError(null)
     try {
       const next = await createDraft({
         dmsCsv,
         wtFasta,
-        structureText:
-          structureMode === "upload" ? structureText || undefined : undefined,
+        structureText: structureMode === "upload" ? structureText || undefined : undefined,
         structureFormat: structureMode === "upload" ? structureFormat : undefined,
         structureInference: structureMode === "esmfold" ? "esmfold" : "none",
-      });
-      onCreated(next);
+      })
+      onCreated(next)
     } catch (cause) {
-      setUploadError(cause instanceof Error ? cause.message : "The upload failed.");
+      setUploadError(cause instanceof Error ? cause.message : "The upload failed.")
     } finally {
-      setCreating(false);
+      setCreating(false)
     }
   }
 
@@ -1350,8 +1775,8 @@ function CustomUploadPanel({ onCreated }: { onCreated: (draft: DraftResponse) =>
       {uploadError && <Banner variant="error" title="Upload failed" description={uploadError} />}
       <div className="drop-zone-grid">
         <DropFileField
-          label="Single-site DMS CSV"
-          description="position, wildtype, mutant, fitness"
+          label="DMS CSV"
+          description="single-site columns or variant and fitness columns"
           accept=".csv,text/csv"
           fileName={dmsName}
           required
@@ -1366,6 +1791,12 @@ function CustomUploadPanel({ onCreated }: { onCreated: (draft: DraftResponse) =>
           onFile={(file) => readFile(file, setWtFasta, setFastaName)}
         />
       </div>
+      <Banner
+        size="sm"
+        variant="secondary"
+        title="Two supported DMS formats"
+        description="Use position, wildtype, mutant, fitness for singles. Use variant, fitness for WT, singles, and optional combinations."
+      />
       <Select
         label="Structure source"
         size="sm"
@@ -1412,7 +1843,7 @@ function CustomUploadPanel({ onCreated }: { onCreated: (draft: DraftResponse) =>
         </Button>
       </div>
     </form>
-  );
+  )
 }
 
 function DropFileField({
@@ -1423,39 +1854,39 @@ function DropFileField({
   fileName,
   onFile,
 }: {
-  label: string;
-  description: string;
-  required?: boolean;
-  accept: string;
-  fileName: string;
-  onFile: (file: File) => void | Promise<void>;
+  label: string
+  description: string
+  required?: boolean
+  accept: string
+  fileName: string
+  onFile: (file: File) => void | Promise<void>
 }) {
-  const [dragging, setDragging] = useState(false);
+  const [dragging, setDragging] = useState(false)
 
   function acceptDrop(event: DragEvent<HTMLLabelElement>) {
-    event.preventDefault();
-    setDragging(false);
-    const file = event.dataTransfer.files[0];
-    if (file) void onFile(file);
+    event.preventDefault()
+    setDragging(false)
+    const file = event.dataTransfer.files[0]
+    if (file) void onFile(file)
   }
 
   function selectFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.currentTarget.files?.[0];
-    if (file) void onFile(file);
+    const file = event.currentTarget.files?.[0]
+    if (file) void onFile(file)
   }
 
   return (
     <label
       className={dragging ? "drop-file-field dragging" : "drop-file-field"}
       onDragEnter={(event) => {
-        event.preventDefault();
-        setDragging(true);
+        event.preventDefault()
+        setDragging(true)
       }}
       onDragOver={(event) => event.preventDefault()}
       onDragLeave={() => setDragging(false)}
       onDrop={acceptDrop}
     >
-      <input type="file" accept={accept} onChange={selectFile} aria-required={required} />
+      <input type="file" accept={accept} onChange={selectFile} required={required} />
       <UploadSimple size={22} weight={fileName ? "fill" : "regular"} />
       <span className="drop-file-copy">
         <strong>{label}</strong>
@@ -1463,7 +1894,7 @@ function DropFileField({
       </span>
       {fileName && <CheckCircle className="success-icon" size={18} weight="fill" />}
     </label>
-  );
+  )
 }
 
 function ModelCatalogue({
@@ -1472,10 +1903,10 @@ function ModelCatalogue({
   onRefresh,
   onExplore,
 }: {
-  models: ModelSummary[];
-  loading: boolean;
-  onRefresh: () => Promise<void>;
-  onExplore: (modelId: string) => void;
+  models: ModelSummary[]
+  loading: boolean
+  onRefresh: () => Promise<void>
+  onExplore: (modelId: string) => void
 }) {
   return (
     <div className="studio-stack">
@@ -1484,9 +1915,7 @@ function ModelCatalogue({
           <Text variant="heading2" as="h1">
             Landscape library
           </Text>
-          <Text variant="secondary">
-            Frozen references and saved custom benchmark landscapes.
-          </Text>
+          <Text variant="secondary">Frozen references and saved custom benchmark landscapes.</Text>
         </div>
         <Button
           size="sm"
@@ -1546,53 +1975,53 @@ function ModelCatalogue({
         </div>
       </LayerCard>
     </div>
-  );
+  )
 }
 
 export function Leaderboards({ models }: { models: ModelSummary[] }) {
-  const [boards, setBoards] = useState<Leaderboard[]>([]);
-  const [selectedBoardId, setSelectedBoardId] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [boardError, setBoardError] = useState<string | null>(null);
+  const [boards, setBoards] = useState<Leaderboard[]>([])
+  const [selectedBoardId, setSelectedBoardId] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [boardError, setBoardError] = useState<string | null>(null)
 
-  async function refreshBoards(preferredId?: string) {
-    setLoading(true);
-    setBoardError(null);
+  const refreshBoards = useCallback(async (preferredId?: string) => {
+    setLoading(true)
+    setBoardError(null)
     try {
-      const next = await listLeaderboards();
-      setBoards(next);
+      const next = await listLeaderboards()
+      setBoards(next)
       setSelectedBoardId((current) =>
         preferredId && next.some((board) => board.id === preferredId)
           ? preferredId
           : next.some((board) => board.id === current)
             ? current
             : (next[0]?.id ?? ""),
-      );
+      )
     } catch (cause) {
-      setBoardError(cause instanceof Error ? cause.message : "Could not load leaderboards.");
+      setBoardError(cause instanceof Error ? cause.message : "Could not load leaderboards.")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    void refreshBoards();
-  }, []);
+    void refreshBoards()
+  }, [refreshBoards])
 
-  const selectedBoard = boards.find((board) => board.id === selectedBoardId) ?? null;
+  const selectedBoard = boards.find((board) => board.id === selectedBoardId) ?? null
   const landscapeName =
     models.find((model) => model.id === selectedBoard?.landscapeId)?.name ??
-    selectedBoard?.landscapeId;
+    selectedBoard?.landscapeId
 
   async function makeBoard(name: string, landscapeId: string, queryBudget: number) {
-    const board = await createLeaderboard(name, landscapeId, queryBudget);
-    await refreshBoards(board.id);
+    const board = await createLeaderboard(name, landscapeId, queryBudget)
+    await refreshBoards(board.id)
   }
 
   async function addResult(modelName: string, successes: number, trials: number) {
-    if (!selectedBoard) return;
-    await addLeaderboardEntry(selectedBoard.id, modelName, successes, trials);
-    await refreshBoards(selectedBoard.id);
+    if (!selectedBoard) return
+    await addLeaderboardEntry(selectedBoard.id, modelName, successes, trials)
+    await refreshBoards(selectedBoard.id)
   }
 
   return (
@@ -1609,11 +2038,7 @@ export function Leaderboards({ models }: { models: ModelSummary[] }) {
         <CreateLeaderboardDialog models={models} onCreate={makeBoard} />
       </section>
       {boardError && (
-        <Banner
-          variant="error"
-          title="Leaderboard request failed"
-          description={boardError}
-        />
+        <Banner variant="error" title="Leaderboard request failed" description={boardError} />
       )}
       {loading && boards.length === 0 ? (
         <LayerCard className="leaderboard-empty panel-card">
@@ -1657,8 +2082,7 @@ export function Leaderboards({ models }: { models: ModelSummary[] }) {
                       {selectedBoard.name}
                     </Text>
                     <Text variant="secondary" size="sm">
-                      {landscapeName} · {selectedBoard.queryBudget.toLocaleString()} queries
-                      per run
+                      {landscapeName} · {selectedBoard.queryBudget.toLocaleString()} queries per run
                     </Text>
                   </div>
                   <AddResultDialog onAdd={addResult} />
@@ -1688,7 +2112,7 @@ export function Leaderboards({ models }: { models: ModelSummary[] }) {
         </div>
       )}
     </div>
-  );
+  )
 }
 
 function leaderboardChartOptions(entries: LeaderboardEntry[]): KumoChartOption {
@@ -1725,7 +2149,7 @@ function leaderboardChartOptions(entries: LeaderboardEntry[]): KumoChartOption {
         label: { show: true, position: "right", formatter: "{c}%" },
       },
     ],
-  };
+  }
 }
 
 function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
@@ -1763,40 +2187,40 @@ function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
         </Table>
       </div>
     </LayerCard>
-  );
+  )
 }
 
 function CreateLeaderboardDialog({
   models,
   onCreate,
 }: {
-  models: ModelSummary[];
-  onCreate: (name: string, landscapeId: string, queryBudget: number) => Promise<void>;
+  models: ModelSummary[]
+  onCreate: (name: string, landscapeId: string, queryBudget: number) => Promise<void>
 }) {
-  const [name, setName] = useState("");
-  const [landscapeId, setLandscapeId] = useState(models[0]?.id ?? "");
-  const [queryBudget, setQueryBudget] = useState(1_000);
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const items = Object.fromEntries(models.map((model) => [model.id, model.name]));
+  const [name, setName] = useState("")
+  const [landscapeId, setLandscapeId] = useState(models[0]?.id ?? "")
+  const [queryBudget, setQueryBudget] = useState(1_000)
+  const [open, setOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+  const items = Object.fromEntries(models.map((model) => [model.id, model.name]))
 
   useEffect(() => {
-    if (!landscapeId && models[0]) setLandscapeId(models[0].id);
-  }, [landscapeId, models]);
+    if (!landscapeId && models[0]) setLandscapeId(models[0].id)
+  }, [landscapeId, models])
 
   async function submit(event: FormEvent) {
-    event.preventDefault();
-    setSaving(true);
-    setFormError(null);
+    event.preventDefault()
+    setSaving(true)
+    setFormError(null)
     try {
-      await onCreate(name.trim(), landscapeId, queryBudget);
-      setName("");
-      setOpen(false);
+      await onCreate(name.trim(), landscapeId, queryBudget)
+      setName("")
+      setOpen(false)
     } catch (cause) {
-      setFormError(cause instanceof Error ? cause.message : "Could not create leaderboard.");
+      setFormError(cause instanceof Error ? cause.message : "Could not create leaderboard.")
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
   }
 
@@ -1865,33 +2289,33 @@ function CreateLeaderboardDialog({
         </form>
       </Dialog>
     </Dialog.Root>
-  );
+  )
 }
 
 function AddResultDialog({
   onAdd,
 }: {
-  onAdd: (modelName: string, successes: number, trials: number) => Promise<void>;
+  onAdd: (modelName: string, successes: number, trials: number) => Promise<void>
 }) {
-  const [modelName, setModelName] = useState("");
-  const [successes, setSuccesses] = useState(0);
-  const [trials, setTrials] = useState(10);
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [modelName, setModelName] = useState("")
+  const [successes, setSuccesses] = useState(0)
+  const [trials, setTrials] = useState(10)
+  const [open, setOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
 
   async function submit(event: FormEvent) {
-    event.preventDefault();
-    setSaving(true);
-    setFormError(null);
+    event.preventDefault()
+    setSaving(true)
+    setFormError(null)
     try {
-      await onAdd(modelName.trim(), successes, trials);
-      setModelName("");
-      setOpen(false);
+      await onAdd(modelName.trim(), successes, trials)
+      setModelName("")
+      setOpen(false)
     } catch (cause) {
-      setFormError(cause instanceof Error ? cause.message : "Could not add result.");
+      setFormError(cause instanceof Error ? cause.message : "Could not add result.")
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
   }
 
@@ -1961,5 +2385,5 @@ function AddResultDialog({
         </form>
       </Dialog>
     </Dialog.Root>
-  );
+  )
 }

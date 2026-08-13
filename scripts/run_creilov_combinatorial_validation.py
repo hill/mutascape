@@ -53,10 +53,26 @@ SEED = 42
 
 # Three-letter to one-letter amino acid map.
 THREE_TO_ONE = {
-    "Ala": "A", "Arg": "R", "Asn": "N", "Asp": "D", "Cys": "C", "Gln": "Q",
-    "Glu": "E", "Gly": "G", "His": "H", "Ile": "I", "Leu": "L", "Lys": "K",
-    "Met": "M", "Phe": "F", "Pro": "P", "Ser": "S", "Thr": "T", "Trp": "W",
-    "Tyr": "Y", "Val": "V",
+    "Ala": "A",
+    "Arg": "R",
+    "Asn": "N",
+    "Asp": "D",
+    "Cys": "C",
+    "Gln": "Q",
+    "Glu": "E",
+    "Gly": "G",
+    "His": "H",
+    "Ile": "I",
+    "Leu": "L",
+    "Lys": "K",
+    "Met": "M",
+    "Phe": "F",
+    "Pro": "P",
+    "Ser": "S",
+    "Thr": "T",
+    "Trp": "W",
+    "Tyr": "Y",
+    "Val": "V",
 }
 MUTATION_RE = re.compile(r"p\.([A-Z][a-z]{2})(\d+)([A-Z][a-z]{2})")
 
@@ -90,9 +106,14 @@ CONFIGS = [
 
 def _build_v1():
     return build_landscape(
-        DMS_CSV, DISTANCES_NPZ, WT_FASTA,
-        alpha=1.5, sigma=0.0, seed=SEED,
-        nonlinearity="fit", combinatorial_upside=3.0,
+        DMS_CSV,
+        DISTANCES_NPZ,
+        WT_FASTA,
+        alpha=1.5,
+        sigma=0.0,
+        seed=SEED,
+        nonlinearity="fit",
+        combinatorial_upside=3.0,
         noise_sigma=0.0,
     )
 
@@ -100,15 +121,21 @@ def _build_v1():
 def _build_v2(msa_scale: float):
     epistasis = MSACouplingsEpistasis.from_npz(MSA_COUPLINGS_NPZ, scale=msa_scale)
     return build_landscape(
-        DMS_CSV, DISTANCES_NPZ, WT_FASTA,
-        alpha=1.5, seed=SEED,
-        nonlinearity="fit", combinatorial_upside=3.0,
+        DMS_CSV,
+        DISTANCES_NPZ,
+        WT_FASTA,
+        alpha=1.5,
+        seed=SEED,
+        nonlinearity="fit",
+        combinatorial_upside=3.0,
         noise_sigma=0.0,
         msa_couplings=epistasis,
     )
 
 
-def _evaluate_variants(landscape, variants_as_mut_lists: list[list[tuple[int, str, str]]]) -> np.ndarray:
+def _evaluate_variants(
+    landscape, variants_as_mut_lists: list[list[tuple[int, str, str]]]
+) -> np.ndarray:
     """Evaluate Mutascape landscape on each variant. Returns fitness array."""
     wt = landscape.wild_type
     out = np.empty(len(variants_as_mut_lists), dtype=np.float64)
@@ -216,19 +243,21 @@ def main() -> None:
                 synth_add_corr, _ = pearsonr(p_d, a_d)
             except ValueError:
                 synth_add_corr = np.nan
-            summary_rows.append({
-                "config": label,
-                "scale": scale if scale is not None else 0.0,
-                "depth": int(d),
-                "n": int(mask.sum()),
-                "overall_pearson_to_real": overall_p,
-                "overall_spearman_to_real": overall_s,
-                "pearson_to_real": pearson_d,
-                "spearman_to_real": spearman_d,
-                "real_additive_correlation": real_add_corr,
-                "synth_additive_correlation": synth_add_corr,
-                "synth_minus_real_additive_diff": synth_add_corr - real_add_corr,
-            })
+            summary_rows.append(
+                {
+                    "config": label,
+                    "scale": scale if scale is not None else 0.0,
+                    "depth": int(d),
+                    "n": int(mask.sum()),
+                    "overall_pearson_to_real": overall_p,
+                    "overall_spearman_to_real": overall_s,
+                    "pearson_to_real": pearson_d,
+                    "spearman_to_real": spearman_d,
+                    "real_additive_correlation": real_add_corr,
+                    "synth_additive_correlation": synth_add_corr,
+                    "synth_minus_real_additive_diff": synth_add_corr - real_add_corr,
+                }
+            )
         print(f"  Overall Pearson(real, pred) = {overall_p:.3f}, Spearman = {overall_s:.3f}")
 
     summary = pd.DataFrame(summary_rows)
@@ -246,7 +275,10 @@ def main() -> None:
         .agg(
             mean_pearson_per_depth=("pearson_to_real", "mean"),
             mean_spearman_per_depth=("spearman_to_real", "mean"),
-            mean_synth_minus_real_add_diff=("synth_minus_real_additive_diff", lambda x: x.abs().mean()),
+            mean_synth_minus_real_add_diff=(
+                "synth_minus_real_additive_diff",
+                lambda x: x.abs().mean(),
+            ),
             overall_pearson=("overall_pearson_to_real", "first"),
             overall_spearman=("overall_spearman_to_real", "first"),
         )

@@ -8,11 +8,13 @@ test *ARGS:
     uv run pytest {{ARGS}}
 
 lint:
-    uv run ruff check src tests
+    uv run ruff check src tests scripts
+    cd web && bun run lint
 
 fmt:
-    uv run ruff check --fix src tests
-    uv run ruff format src tests
+    uv run ruff check --fix src tests scripts
+    uv run ruff format src tests scripts
+    cd web && bun run format
 
 # Download pinned SSMuLA and CombinGym sources outside Git.
 benchmark-data *ARGS:
@@ -34,7 +36,11 @@ web-data:
 web-build:
     cd web && bun install --silent && bun run build
 
-# Frontend-only dev server (Bun). No oracle; client-side synthetic couplings.
+# Check, test, and build the web application.
+web-check:
+    cd web && bun run lint && bun run typecheck && bun test && bun run build
+
+# Frontend-only dev server with client-side synthetic couplings.
 web-dev:
     cd web && bun install --silent && bun run dev
 

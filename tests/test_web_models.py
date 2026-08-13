@@ -25,6 +25,13 @@ DMS = """position,wildtype,mutant,fitness
 2,C,D,-0.4
 """
 FASTA = ">WT\nAC\n"
+VARIANT_DMS = """variant,fitness
+WT,1.0
+A1G,1.5
+A1V,0.8
+C2D,0.5
+A1G+C2D,2.1
+"""
 PDB = """ATOM      1  CA  ALA A   1       0.000   0.000   0.000  1.00 20.00           C
 ATOM      2  CB  ALA A   1       0.000   1.000   0.000  1.00 20.00           C
 ATOM      3  CA  CYS A   2       0.000   0.000   6.000  1.00 20.00           C
@@ -86,6 +93,34 @@ def test_parse_custom_source_rejects_wild_type_mismatch():
         parse_custom_source(DMS.replace("1,A,G", "1,C,G"), FASTA)
 
 
+def test_parse_custom_source_accepts_variant_rows_and_preserves_doubles():
+    parsed, summary = parse_custom_source(VARIANT_DMS, FASTA)
+
+    assert summary["dmsSchema"] == "variants"
+    assert summary["wildTypeFitness"] == 1.0
+    assert summary["higherOrderRows"] == 1
+    assert parsed["dmsRows"][0]["fitness"] == pytest.approx(0.5)
+    double = next(row for row in parsed["observationRows"] if row["depth"] == 2)
+    assert double["variant"] == "A1G+C2D"
+    assert double["fitness"] == 2.1
+
+
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        ("variant,fitness\nA1G,1.5\n", "include a WT row"),
+        (
+            "variant,fitness\nWT,1.0\nA1G+C2D,2.0\nA1G,1.5\n",
+            "missing constituent singles",
+        ),
+        ("variant,fitness\nWT,1.0\nWT,1.1\nA1G,1.5\n", "duplicate measurement"),
+    ],
+)
+def test_variant_dms_rejects_incomplete_or_duplicate_rows(text, message):
+    with pytest.raises(ValueError, match=message):
+        parse_custom_source(text, FASTA)
+
+
 def test_custom_preview_is_deterministic_and_synthetic_only(source):
     parameters = BenchmarkParameters(seed=17)
     first = preview_custom(source, parameters, 20, {1: 1, 2: 1})
@@ -126,6 +161,25 @@ def test_store_publishes_once_and_survives_reopen(tmp_path, source):
     assert second["name"] == "Example"
     reopened = ModelStore(path)
     assert reopened.get_model(first["id"])["name"] == "Example"
+
+
+def test_store_persists_posterior_definition(tmp_path, source):
+    store = ModelStore(tmp_path / "models.sqlite3")
+    draft = store.create_draft(source, {"dmsCsv": DMS, "wtFasta": FASTA})
+
+    model, created = store.publish(
+        draft["id"],
+        "Posterior example",
+        BenchmarkParameters(seed=17),
+        model_kind="posterior",
+        prior_id="combinatorial-v1",
+        oracle_seed=17,
+    )
+
+    assert created is True
+    assert model["modelKind"] == "posterior"
+    assert model["priorId"] == "combinatorial-v1"
+    assert model["oracleSeed"] == 17
 
 
 def test_store_removes_expired_draft(tmp_path, source):

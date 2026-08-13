@@ -8,8 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 just sync            # uv sync --extra dev
 just test            # full suite
 just test tests/test_fourier.py::test_walsh_fractions_sum_to_one   # single test
-just lint            # ruff check src tests
-just fmt             # ruff check --fix + ruff format
+just lint            # Ruff for Python and Biome for TypeScript
+just fmt             # apply Ruff and Biome fixes
 ```
 
 Web stack (Bun frontend plus FastAPI oracle):
@@ -17,6 +17,7 @@ Web stack (Bun frontend plus FastAPI oracle):
 ```bash
 just dev             # builds frontend, serves both on :8000
 just web-data        # regenerate web/data/gb1.json after changing data/gb1/
+just web-check       # lint, type-check, test, and build the studio
 ```
 
 The suite takes about 70 seconds. Most of that is `tests/test_reference_configs.py`, which builds complete 20^4 landscapes and computes exact Walsh decompositions.

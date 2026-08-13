@@ -39,16 +39,28 @@ def main() -> None:
         background = df[df["coupling_frob"] < top_thresh]
         top = df[df["coupling_frob"] >= top_thresh]
         ax.scatter(
-            background["distance_A"], background["coupling_frob"],
-            s=2, alpha=0.10, color="#888888", label="bottom 90% of pairs",
+            background["distance_A"],
+            background["coupling_frob"],
+            s=2,
+            alpha=0.10,
+            color="#888888",
+            label="bottom 90% of pairs",
         )
         ax.scatter(
-            top.loc[~top["is_contact"], "distance_A"], top.loc[~top["is_contact"], "coupling_frob"],
-            s=8, alpha=0.5, color="#3498db", label="top 10%, non-contact",
+            top.loc[~top["is_contact"], "distance_A"],
+            top.loc[~top["is_contact"], "coupling_frob"],
+            s=8,
+            alpha=0.5,
+            color="#3498db",
+            label="top 10%, non-contact",
         )
         ax.scatter(
-            top.loc[top["is_contact"], "distance_A"], top.loc[top["is_contact"], "coupling_frob"],
-            s=10, alpha=0.7, color="#c0392b", label="top 10%, contact (≤8 Å)",
+            top.loc[top["is_contact"], "distance_A"],
+            top.loc[top["is_contact"], "coupling_frob"],
+            s=10,
+            alpha=0.7,
+            color="#c0392b",
+            label="top 10%, contact (≤8 Å)",
         )
         ax.axvline(CONTACT_THRESHOLD_A, color="black", lw=0.7, ls="--", alpha=0.6)
         ax.set_xlabel("Cα-Cα distance (Å)")
@@ -61,7 +73,9 @@ def main() -> None:
         ax = axes[1, col]
         ax.plot(prec["k"], prec["precision"], "o-", color="#2980b9", label="top-K precision")
         baseline = float(meta["contact_density"])
-        ax.axhline(baseline, color="black", lw=0.7, ls="--", label=f"random baseline = {baseline:.3f}")
+        ax.axhline(
+            baseline, color="black", lw=0.7, ls="--", label=f"random baseline = {baseline:.3f}"
+        )
         ax.set_xscale("log")
         ax.set_xlabel("Top-K most strongly coupled pairs (K)")
         ax.set_ylabel("Fraction within 8 Å contact")

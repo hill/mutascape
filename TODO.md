@@ -61,11 +61,11 @@ Chance C2ST performance supports distributional similarity within the classifier
 
 ## Web studio
 
-- [ ] Ship a versioned empirical prior with source provenance.
-- [ ] Accept both single-site and variant-level DMS CSV files.
-- [ ] Show posterior intervals and a stable sampled oracle for exact queries.
-- [ ] Show uncertainty by mutation depth and across genotype neighbourhoods.
-- [ ] Keep benchmark evidence outside the first query-focused release.
+- [x] Ship a versioned empirical prior with source provenance.
+- [x] Accept both single-site and variant-level DMS CSV files.
+- [x] Show posterior intervals and a stable sampled oracle for exact queries.
+- [x] Show uncertainty by mutation depth and across genotype neighbourhoods.
+- [x] Keep benchmark evidence outside the first query-focused release.
 
 ## Integrations
 

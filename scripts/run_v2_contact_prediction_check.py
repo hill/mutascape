@@ -53,10 +53,10 @@ CONTACT_THRESHOLD_A = 8.0
 def load_coupling_distance(couplings_npz: Path, distances_npz: Path) -> pd.DataFrame:
     cdata = np.load(couplings_npz)
     ddata = np.load(distances_npz)
-    J = cdata["coupling_matrix"]               # (L, L, K, K)
+    J = cdata["coupling_matrix"]  # (L, L, K, K)
     c_pos = list(int(p) for p in cdata["positions"])
     d_pos = list(int(p) for p in ddata["positions"])
-    D = ddata["distances"]                     # (Nd, Nd)
+    D = ddata["distances"]  # (Nd, Nd)
 
     pos_to_d = {p: i for i, p in enumerate(d_pos)}
     L = J.shape[0]
@@ -70,13 +70,15 @@ def load_coupling_distance(couplings_npz: Path, distances_npz: Path) -> pd.DataF
                 continue
             dist = float(D[pos_to_d[pi], pos_to_d[pj]])
             frob = float(np.linalg.norm(J[i, j]))
-            rows.append({
-                "pos_i": pi,
-                "pos_j": pj,
-                "distance_A": dist,
-                "coupling_frob": frob,
-                "is_contact": bool(dist <= CONTACT_THRESHOLD_A),
-            })
+            rows.append(
+                {
+                    "pos_i": pi,
+                    "pos_j": pj,
+                    "distance_A": dist,
+                    "coupling_frob": frob,
+                    "is_contact": bool(dist <= CONTACT_THRESHOLD_A),
+                }
+            )
     return pd.DataFrame(rows)
 
 
@@ -86,7 +88,9 @@ def precision_at_k(df: pd.DataFrame, ks: list[int]) -> pd.DataFrame:
     for k in ks:
         top = df_sorted.head(k)
         precision = float(top["is_contact"].mean()) if len(top) else float("nan")
-        rows.append({"k": k, "precision": precision, "n_contact_in_top": int(top["is_contact"].sum())})
+        rows.append(
+            {"k": k, "precision": precision, "n_contact_in_top": int(top["is_contact"].sum())}
+        )
     return pd.DataFrame(rows)
 
 
@@ -110,18 +114,23 @@ def main() -> None:
         prec["lift_over_baseline"] = prec["precision"] / contact_density
 
         print(f"\n=== {protein} ===")
-        print(f"  pairs total: {len(df)}, pairs within 8 Å: {int(df['is_contact'].sum())} ({contact_density:.3%})")
+        print(
+            f"  pairs total: {len(df)}, pairs within 8 Å: "
+            f"{int(df['is_contact'].sum())} ({contact_density:.3%})"
+        )
         print(f"  Spearman (distance vs |J|_F): rho={rho:.3f}, p={p:.2e}")
         print(prec.to_string(index=False))
 
-        summary_rows.append({
-            "protein": protein,
-            "n_pairs": len(df),
-            "n_contacts": int(df["is_contact"].sum()),
-            "contact_density": contact_density,
-            "spearman_rho": float(rho),
-            "spearman_p": float(p),
-        })
+        summary_rows.append(
+            {
+                "protein": protein,
+                "n_pairs": len(df),
+                "n_contacts": int(df["is_contact"].sum()),
+                "contact_density": contact_density,
+                "spearman_rho": float(rho),
+                "spearman_p": float(p),
+            }
+        )
         # Append the precision rows in a flat output
         prec.to_csv(OUTPUT_DIR / f"{protein}_precision_at_k.csv", index=False)
 

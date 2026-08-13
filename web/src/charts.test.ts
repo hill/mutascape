@@ -1,6 +1,13 @@
-import { describe, expect, test } from "bun:test";
-import { fitnessProfileOptions, landscapeGraphOptions, walshOptions } from "./charts";
-import type { ProfilePoint } from "./types";
+import { describe, expect, test } from "bun:test"
+import {
+  fitnessProfileOptions,
+  landscapeGraphOptions,
+  posteriorDistributionOptions,
+  posteriorProfileOptions,
+  posteriorQueryOptions,
+  walshOptions,
+} from "./charts"
+import type { PosteriorProfilePoint, PosteriorQueryResult, ProfilePoint } from "./types"
 
 const point = (depth: number, median: number): ProfilePoint => ({
   depth,
@@ -10,41 +17,41 @@ const point = (depth: number, median: number): ProfilePoint => ({
   median,
   q75: median + 1,
   q95: median + 2,
-});
+})
 
 describe("fitnessProfileOptions", () => {
   test("aligns measured and synthetic depths", () => {
     const options = fitnessProfileOptions({
       real: [point(1, 0.1), point(2, -0.2)],
       synthetic: [point(1, 0.2), point(3, -0.4)],
-    });
-    const xAxis = options.xAxis as { data: number[] };
-    const series = options.series as Array<{ name: string; data: Array<number | null> }>;
+    })
+    const xAxis = options.xAxis as { data: number[] }
+    const series = options.series as Array<{ name: string; data: Array<number | null> }>
 
-    expect(xAxis.data).toEqual([1, 2, 3]);
-    expect(series.find((item) => item.name === "Measured")?.data).toEqual([0.1, -0.2, null]);
-    expect(series.find((item) => item.name === "Synthetic")?.data).toEqual([0.2, null, -0.4]);
-  });
+    expect(xAxis.data).toEqual([1, 2, 3])
+    expect(series.find((item) => item.name === "Measured")?.data).toEqual([0.1, -0.2, null])
+    expect(series.find((item) => item.name === "Synthetic")?.data).toEqual([0.2, null, -0.4])
+  })
 
   test("omits measured series for custom previews", () => {
-    const options = fitnessProfileOptions({ synthetic: [point(1, 0.2)] });
-    const series = options.series as Array<{ name: string }>;
+    const options = fitnessProfileOptions({ synthetic: [point(1, 0.2)] })
+    const series = options.series as Array<{ name: string }>
 
-    expect(series.some((item) => item.name === "Measured")).toBeFalse();
-    expect(series.some((item) => item.name === "Synthetic")).toBeTrue();
-  });
-});
+    expect(series.some((item) => item.name === "Measured")).toBeFalse()
+    expect(series.some((item) => item.name === "Synthetic")).toBeTrue()
+  })
+})
 
 test("walshOptions keeps interaction order", () => {
   const options = walshOptions({
     orders: [1, 2, 3, 4],
     real: { "1": 0.2, "2": 0.4, "3": 0.3, "4": 0.1 },
     synthetic: { "1": 0.3, "2": 0.4, "3": 0.2, "4": 0.1 },
-  });
-  const xAxis = options.xAxis as { data: string[] };
+  })
+  const xAxis = options.xAxis as { data: string[] }
 
-  expect(xAxis.data).toEqual(["Order 1", "Order 2", "Order 3", "Order 4"]);
-});
+  expect(xAxis.data).toEqual(["Order 1", "Order 2", "Order 3", "Order 4"])
+})
 
 test("landscapeGraphOptions makes the mutation paths interactive", () => {
   const options = landscapeGraphOptions({
@@ -53,16 +60,50 @@ test("landscapeGraphOptions makes the mutation paths interactive", () => {
       { id: "V39A", variant: "V39A", depth: 1, fitness: 0.4, sampled: true },
     ],
     edges: [{ source: "wt", target: "V39A" }],
-  });
+  })
   const series = options.series as Array<{
-    type: string;
-    roam: boolean;
-    data: Array<{ name: string }>;
-    links: Array<{ source: string; target: string }>;
-  }>;
+    type: string
+    roam: boolean
+    data: Array<{ name: string }>
+    links: Array<{ source: string; target: string }>
+  }>
 
-  expect(series[0].type).toBe("graph");
-  expect(series[0].roam).toBeTrue();
-  expect(series[0].data.map((node) => node.name)).toEqual(["wt", "V39A"]);
-  expect(series[0].links).toEqual([{ source: "wt", target: "V39A" }]);
-});
+  expect(series[0].type).toBe("graph")
+  expect(series[0].roam).toBeTrue()
+  expect(series[0].data.map((node) => node.name)).toEqual(["wt", "V39A"])
+  expect(series[0].links).toEqual([{ source: "wt", target: "V39A" }])
+})
+
+const posteriorResult: PosteriorQueryResult = {
+  index: 0,
+  mutationLabel: "V39A+D40G",
+  depth: 2,
+  additiveFitness: 0.2,
+  fixedOracleFitness: 0.7,
+  posteriorMean: 0.5,
+  posteriorStd: 0.3,
+  intervals: {
+    "50": { lower: 0.3, upper: 0.7 },
+    "80": { lower: 0.1, upper: 0.9 },
+    "95": { lower: -0.2, upper: 1.2 },
+  },
+  samples: [0.1, 0.3, 0.5, 0.7, 0.9],
+}
+
+test("posterior charts expose intervals, oracle draws, and distributions", () => {
+  const profile: PosteriorProfilePoint = {
+    ...point(2, 0.5),
+    fixedMedian: 0.7,
+    additiveMedian: 0.2,
+    meanStd: 0.3,
+  }
+  const profileSeries = posteriorProfileOptions([profile]).series as Array<{ name: string }>
+  const querySeries = posteriorQueryOptions([posteriorResult]).series as Array<{ name: string }>
+  const distributionSeries = posteriorDistributionOptions(posteriorResult).series as Array<{
+    data: number[]
+  }>
+
+  expect(profileSeries.some((series) => series.name === "Fixed oracle")).toBeTrue()
+  expect(querySeries.some((series) => series.name === "80% interval")).toBeTrue()
+  expect(distributionSeries[0].data.reduce((sum, value) => sum + value, 0)).toBe(5)
+})

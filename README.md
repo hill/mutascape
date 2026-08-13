@@ -87,6 +87,30 @@ just benchmark-completion \
 
 See [the benchmark protocol](docs/benchmark_protocol.md) for splits, metrics, and current pilot status.
 
+### Posterior web studio
+
+The studio exposes the posterior as a queryable model. One seed fixes a stable oracle draw. An ensemble reports uncertainty for unseen combinations.
+
+The bundled `combinatorial-v1` prior pools 30 complete landscapes from SSMuLA and CombinGym. Its metadata records source revisions, proteins, and fitted scales.
+
+Upload DMS data with either supported CSV schema. Both schemas require a matching FASTA sequence.
+
+```csv
+position,wildtype,mutant,fitness
+39,V,A,-0.42
+```
+
+Variant-level files must include `WT`. They may also include measured combinations.
+
+```csv
+variant,fitness
+WT,1.0
+V39A,0.58
+V39A:D40W,0.91
+```
+
+Run the studio and API locally with `just dev`. Posterior routes are available at `/api/v1/priors`, `/api/v1/posterior-queries`, and `/api/v1/posterior-previews`.
+
 ## Loading landscapes
 
 ### From a PDB or mmCIF structure
@@ -230,7 +254,7 @@ gb1["V39A"]
 trpb[Mutant("V183A") + Mutant("F184I")]
 ```
 
-At the shared default `noise_sigma=0.3` and `sigma=0`, with a tiny censored readout texture, these reach `walsh_L1=0.317` / `fitness_W1=0.036` / `n_optima=200` on GB1 and `walsh_L1=0.105` / `fitness_W1=0.027` / `n_optima=843` on TrpB, against real `n_optima=182` and `802`.
+At the shared defaults, GB1 reaches `walsh_L1=0.317`, `fitness_W1=0.036`, and `n_optima=200`. TrpB reaches `0.105`, `0.027`, and `843` for those metrics. The real landscapes have `n_optima=182` and `802`.
 
 ## Reproducing the published outputs
 
@@ -248,6 +272,7 @@ The rebuild script regenerates the GB1 / TrpB sweep CSVs and the headline figure
 - Complete combinatorial references calibrate the censored readout texture. For unvalidated proteins, treat it as a tunable topology parameter rather than a universal default.
 - Sparse full-protein GFP remains smoother than the real landscape under the same default settings. The structural pairwise term (`alpha > 0`), MSA-derived couplings, and Contact-NK higher-order terms are the supported routes for closing this gap.
 - Functional-contact overrides should only be used when a ligand/cofactor or annotated active-site mechanism justifies them.
+- Posterior intervals describe uncertainty under the fitted prior. They do not prove that an unmeasured landscape matches biology.
 
 ## Docs
 

@@ -65,7 +65,8 @@ PROTEIN_CONFIG = {
         "n_pages": 8,
         "whole_protein": True,
     },
-    # tem1: data lives in mutantopt/experiments/datasets/tem1/; wire after copying or symlinking the WT FASTA.
+    # tem1 data lives in mutantopt/experiments/datasets/tem1/.
+    # Wire it after copying or symlinking the WT FASTA.
 }
 
 
@@ -89,7 +90,7 @@ def fetch_homologs(pfam_id: str, page_size: int, n_pages: int) -> list[SeqRecord
         records = list(SeqIO.parse(io.StringIO(text), "fasta"))
         all_records.extend(records)
         print(f"  page {page + 1}: {len(records)} sequences (cumulative {len(all_records)})")
-        if "rel=\"next\"" in link:
+        if 'rel="next"' in link:
             next_url = link.split(";")[0].strip("<> ")
             cursor = next_url
         else:
@@ -139,7 +140,9 @@ def extract_focal_aas(
 
 
 def compute_couplings(
-    focal_seqs: list[tuple[str, ...]], positions: tuple[int, ...], pseudocount: float = 0.5,
+    focal_seqs: list[tuple[str, ...]],
+    positions: tuple[int, ...],
+    pseudocount: float = 0.5,
 ):
     L = len(positions)
     K = len(ALPHABET)
@@ -180,10 +183,10 @@ def hamming_reweighting(idx_matrix: np.ndarray, identity_threshold: float = 0.8)
     # Chunked to keep memory bounded; O(N^2 L) work total.
     chunk = max(1, min(256, n_seqs))
     for start in range(0, n_seqs, chunk):
-        block = idx_matrix[start:start + chunk]
+        block = idx_matrix[start : start + chunk]
         # broadcast Hamming distance (block_size, n_seqs, L) -> (block_size, n_seqs)
         diff_frac = (block[:, None, :] != idx_matrix[None, :, :]).mean(axis=2)
-        cluster_sizes[start:start + chunk] = (diff_frac < distance_threshold).sum(axis=1)
+        cluster_sizes[start : start + chunk] = (diff_frac < distance_threshold).sum(axis=1)
     weights = 1.0 / cluster_sizes
     return weights
 
@@ -250,7 +253,9 @@ def compute_couplings_reweighted(
             valid_ij = valid_i & gap_mask[:, j]
             joint = np.full((K, K), pseudocount / K, dtype=np.float64)
             if valid_ij.any():
-                np.add.at(joint, (idx_matrix[valid_ij, i], idx_matrix[valid_ij, j]), weights[valid_ij])
+                np.add.at(
+                    joint, (idx_matrix[valid_ij, i], idx_matrix[valid_ij, j]), weights[valid_ij]
+                )
             joint /= joint.sum()
             lo = np.log(joint) - log_marg[i][:, None] - log_marg[j][None, :]
             J[i, j] = lo

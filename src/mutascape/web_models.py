@@ -42,6 +42,10 @@ REFERENCE_CONFIGS = {
     "gb1_headline": GB1_HEADLINE,
     "trpb_headline": TRPB_HEADLINE,
 }
+POSTERIOR_REFERENCE_CONFIGS = {
+    "gb1_posterior": "gb1_headline",
+    "trpb_posterior": "trpb_headline",
+}
 DEFAULT_DATABASE = Path(__file__).resolve().parents[2] / ".mutascape" / "web.sqlite3"
 
 
@@ -141,6 +145,17 @@ class ModelStore:
                     ON leaderboard_entries(leaderboard_id, created_at);
                 """
             )
+            model_columns = {
+                row[1] for row in connection.execute("PRAGMA table_info(models)").fetchall()
+            }
+            if "model_kind" not in model_columns:
+                connection.execute(
+                    "ALTER TABLE models ADD COLUMN model_kind TEXT NOT NULL DEFAULT 'deterministic'"
+                )
+            if "prior_id" not in model_columns:
+                connection.execute("ALTER TABLE models ADD COLUMN prior_id TEXT")
+            if "oracle_seed" not in model_columns:
+                connection.execute("ALTER TABLE models ADD COLUMN oracle_seed INTEGER")
 
     def create_draft(self, source: dict[str, Any], uploads: dict[str, Any]) -> dict[str, Any]:
         now = datetime.now(UTC)
@@ -184,11 +199,25 @@ class ModelStore:
         draft_id: str,
         name: str,
         parameters: BenchmarkParameters,
+        *,
+        model_kind: str = "deterministic",
+        prior_id: str | None = None,
+        oracle_seed: int | None = None,
     ) -> tuple[dict[str, Any], bool]:
         draft = self.get_draft(draft_id)
         if draft is None:
             raise KeyError(draft_id)
-        model_id = custom_model_id(draft["source"], parameters)
+        if model_kind not in {"deterministic", "posterior"}:
+            raise ValueError("model kind must be deterministic or posterior")
+        if model_kind == "posterior" and (prior_id is None or oracle_seed is None):
+            raise ValueError("posterior models need a prior and oracle seed")
+        model_id = stored_model_id(
+            draft["source"],
+            parameters,
+            model_kind=model_kind,
+            prior_id=prior_id,
+            oracle_seed=oracle_seed,
+        )
         now = datetime.now(UTC).isoformat()
         with self._connect() as connection:
             existing = connection.execute(
@@ -200,8 +229,9 @@ class ModelStore:
             connection.execute(
                 """
                 INSERT INTO models(
-                    id, name, source_json, uploads_json, parameters_json, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?)
+                    id, name, source_json, uploads_json, parameters_json, created_at,
+                    model_kind, prior_id, oracle_seed
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     model_id,
@@ -210,6 +240,9 @@ class ModelStore:
                     _canonical_json(draft["uploads"]),
                     _canonical_json(parameters.as_json()),
                     now,
+                    model_kind,
+                    prior_id,
+                    oracle_seed,
                 ),
             )
             row = connection.execute(
@@ -338,6 +371,9 @@ def _model_row(row: sqlite3.Row) -> dict[str, Any]:
         "id": row["id"],
         "name": row["name"],
         "kind": "custom",
+        "modelKind": row["model_kind"],
+        "priorId": row["prior_id"],
+        "oracleSeed": row["oracle_seed"],
         "source": source,
         "uploads": json.loads(row["uploads_json"]),
         "parameters": json.loads(row["parameters_json"]),
@@ -408,7 +444,10 @@ def parse_custom_source(
         raise ValueError("structure file must be at most 20 MB")
 
     wt_sequence = _parse_fasta(wt_fasta)
-    rows = _parse_dms_csv(dms_csv, wt_sequence)
+    schema, rows, observation_rows, wild_type_fitness, input_row_count = _parse_dms_input(
+        dms_csv,
+        wt_sequence,
+    )
     positions = sorted({int(row["position"]) for row in rows})
     wild_type = {int(row["position"]): row["wildtype"] for row in rows}
     wt_compact = "".join(wild_type[position] for position in positions)
@@ -459,14 +498,25 @@ def parse_custom_source(
         warnings.simplefilter("ignore", UserWarning)
         complete = _impute_missing_single_sites(observed)
     imputed_count = sum(len(complete[position]) - len(observed[position]) for position in positions)
+    depth_capacities = [0] * (min(4, len(positions)) + 1)
+    depth_capacities[0] = 1
+    for position in positions:
+        alternatives = len(observed[position]) - 1
+        for depth in range(len(depth_capacities) - 1, 0, -1):
+            depth_capacities[depth] += depth_capacities[depth - 1] * alternatives
 
     source = {
-        "version": 1,
+        "version": 2,
+        "dmsSchema": schema,
         "wtSequence": wt_sequence,
         "wtCompact": wt_compact,
+        "wildTypeFitness": wild_type_fitness,
+        "supportedSubstitutions": len(rows),
+        "previewCapacity": min(5_000, sum(depth_capacities[1:])),
         "positions": positions,
         "wildType": {str(key): value for key, value in wild_type.items()},
         "dmsRows": rows,
+        "observationRows": observation_rows,
         "canFitNonlinearity": can_fit,
         "contactPositions": contact_positions,
         "contactPairs": contact_pairs,
@@ -480,7 +530,13 @@ def parse_custom_source(
         "positionCount": len(positions),
         "wtLength": len(wt_sequence),
         "wtCompact": wt_compact,
-        "measuredRows": len(rows),
+        "measuredRows": input_row_count,
+        "observationCount": len(observation_rows),
+        "higherOrderRows": sum(row["depth"] > 1 for row in observation_rows),
+        "dmsSchema": schema,
+        "wildTypeFitness": wild_type_fitness,
+        "supportedSubstitutions": len(rows),
+        "previewCapacity": min(5_000, sum(depth_capacities[1:])),
         "imputedEffects": imputed_count,
         "canFitNonlinearity": can_fit,
         "hasStructure": structure_method != "none",
@@ -489,6 +545,107 @@ def parse_custom_source(
         "contactCount": len(contact_pairs),
     }
     return source, summary
+
+
+def _parse_dms_input(
+    text: str,
+    wt_sequence: str,
+) -> tuple[str, list[dict[str, Any]], list[dict[str, Any]], float, int]:
+    try:
+        fieldnames = csv.DictReader(io.StringIO(text)).fieldnames
+    except csv.Error as exc:
+        raise ValueError(f"cannot parse DMS CSV: {exc}") from exc
+    fields = set(fieldnames or ())
+    if {"variant", "fitness"}.issubset(fields):
+        return _parse_variant_csv(text, wt_sequence)
+    rows = _parse_dms_csv(text, wt_sequence)
+    observations = [
+        {"variant": "wt", "mutations": {}, "fitness": 0.0, "depth": 0}
+    ]
+    observations.extend(
+        {
+            "variant": f"{row['wildtype']}{row['position']}{row['mutant']}",
+            "mutations": {str(row["position"]): row["mutant"]},
+            "fitness": float(row["fitness"]),
+            "depth": 1,
+        }
+        for row in rows
+    )
+    return "singles", rows, observations, 0.0, len(rows)
+
+
+def _parse_variant_csv(
+    text: str,
+    wt_sequence: str,
+) -> tuple[str, list[dict[str, Any]], list[dict[str, Any]], float, int]:
+    reader = csv.DictReader(io.StringIO(text))
+    records: dict[tuple[tuple[int, str], ...], tuple[Mutant, float]] = {}
+    for row_number, row in enumerate(reader, start=2):
+        raw_label = str(row.get("variant", "")).strip().upper()
+        try:
+            fitness = float(row["fitness"])
+            mutant = Mutant(raw_label)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"invalid variant DMS value on row {row_number}: {exc}") from exc
+        if not np.isfinite(fitness):
+            raise ValueError(f"DMS fitness on row {row_number} must be finite")
+        for position, amino_acid in mutant.items():
+            if position < 1 or position > len(wt_sequence):
+                raise ValueError(f"DMS position {position} is outside the WT sequence")
+            claimed = mutant._wild_type.get(position)
+            actual = wt_sequence[position - 1]
+            if claimed != actual:
+                raise ValueError(
+                    f"DMS wild type {claimed}{position} does not match the WT FASTA"
+                )
+            if amino_acid not in CANONICAL_AAS:
+                raise ValueError(f"DMS row {row_number} uses a non-canonical amino acid")
+        key = tuple(sorted(mutant.items()))
+        if key in records:
+            label = Mutant.from_dict(dict(key), mutant._wild_type).label
+            raise ValueError(f"DMS has a duplicate measurement for {label}")
+        records[key] = (mutant, fitness)
+    if not records:
+        raise ValueError("DMS CSV has no data rows")
+    if () not in records:
+        raise ValueError("variant DMS CSV must include a WT row")
+
+    single_keys = {key for key in records if len(key) == 1}
+    for key in records:
+        missing = [mutation for mutation in key if (mutation,) not in single_keys]
+        if missing:
+            labels = ", ".join(
+                f"{wt_sequence[position - 1]}{position}{amino_acid}"
+                for position, amino_acid in missing
+            )
+            raise ValueError(f"variant DMS is missing constituent singles: {labels}")
+
+    wild_type_fitness = records[()][1]
+    rows = []
+    observations = []
+    for key, (mutant, fitness) in sorted(records.items(), key=lambda item: (len(item[0]), item[0])):
+        wild_type = {position: wt_sequence[position - 1] for position, _ in key}
+        observations.append(
+            {
+                "variant": Mutant.from_dict(dict(key), wild_type).label,
+                "mutations": {str(position): amino_acid for position, amino_acid in key},
+                "fitness": float(fitness),
+                "depth": len(key),
+            }
+        )
+        if len(key) == 1:
+            position, amino_acid = key[0]
+            rows.append(
+                {
+                    "position": position,
+                    "wildtype": wt_sequence[position - 1],
+                    "mutant": amino_acid,
+                    "fitness": float(fitness - wild_type_fitness),
+                }
+            )
+    if not rows:
+        raise ValueError("variant DMS CSV must include at least one single mutant")
+    return "variants", rows, observations, float(wild_type_fitness), len(records)
 
 
 def _parse_fasta(text: str) -> str:
@@ -580,6 +737,27 @@ def custom_model_id(source: dict[str, Any], parameters: BenchmarkParameters) -> 
     return f"ms_{digest[:20]}"
 
 
+def stored_model_id(
+    source: dict[str, Any],
+    parameters: BenchmarkParameters,
+    *,
+    model_kind: str,
+    prior_id: str | None,
+    oracle_seed: int | None,
+) -> str:
+    """Return a content ID for either stored model family."""
+    if model_kind == "deterministic":
+        return custom_model_id(source, parameters)
+    payload = {
+        "source": source,
+        "modelKind": model_kind,
+        "priorId": prior_id,
+        "oracleSeed": oracle_seed,
+    }
+    digest = hashlib.sha256(_canonical_json(payload).encode()).hexdigest()
+    return f"msp_{digest[:20]}"
+
+
 def _canonical_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
@@ -603,14 +781,48 @@ def reference_catalogue_entries() -> list[dict[str, Any]]:
                 "createdAt": None,
             }
         )
+    for model_id, base_id in POSTERIOR_REFERENCE_CONFIGS.items():
+        config = REFERENCE_CONFIGS[base_id]
+        protein = "GB1" if model_id.startswith("gb1") else "TrpB"
+        entries.append(
+            {
+                "id": model_id,
+                "name": f"{protein} posterior",
+                "kind": "posterior",
+                "description": (
+                    f"Posterior completion of {protein} from its wild type and single mutants."
+                ),
+                "positions": list(config.positions),
+                "wtCompact": "".join(config.wt_aa_at_position[p] for p in config.positions),
+                "parameters": _reference_parameters(config).as_public_json(),
+                "posteriorSettings": {
+                    "priorId": "combinatorial-v1",
+                    "oracleSeed": config.seed,
+                },
+                "createdAt": None,
+            }
+        )
     return entries
 
 
 def reference_detail(model_id: str) -> dict[str, Any] | None:
-    config = REFERENCE_CONFIGS.get(model_id)
-    if config is None:
+    if model_id not in REFERENCE_CONFIGS and model_id not in POSTERIOR_REFERENCE_CONFIGS:
         return None
     return next(item for item in reference_catalogue_entries() if item["id"] == model_id)
+
+
+@lru_cache(maxsize=2)
+def reference_posterior_source(model_id: str) -> dict[str, Any]:
+    """Return WT and single-mutant observations for a reference model."""
+    base_id = POSTERIOR_REFERENCE_CONFIGS.get(model_id, model_id)
+    config = REFERENCE_CONFIGS.get(base_id)
+    if config is None:
+        raise ValueError(f"unknown reference model {model_id}")
+    source, _ = parse_custom_source(
+        config.dms_csv.read_text(),
+        config.wt_fasta.read_text(),
+    )
+    return source
 
 
 def _reference_parameters(config: ReferenceConfig) -> BenchmarkParameters:

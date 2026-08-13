@@ -10,6 +10,15 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from mutascape.posterior_web import (
+    DEFAULT_PRIOR_ID,
+    fixed_posterior_entries,
+    list_prior_metadata,
+    load_prior_bundle,
+    posterior_from_source,
+    preview_posterior,
+    query_posterior,
+)
 from mutascape.web_models import (
     BenchmarkParameters,
     LandscapeRegistry,
@@ -23,6 +32,7 @@ from mutascape.web_models import (
     preview_reference,
     reference_catalogue_entries,
     reference_detail,
+    reference_posterior_source,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -92,6 +102,9 @@ class PublishRequest(ApiModel):
     draft_id: str = Field(min_length=1, max_length=128)
     name: str = Field(min_length=1, max_length=80)
     parameters: ParameterInput
+    model_type: Literal["deterministic", "posterior"] = "deterministic"
+    prior_id: str = Field(default=DEFAULT_PRIOR_ID, min_length=1, max_length=80)
+    oracle_seed: int = 42
 
 
 class EvaluationEntry(ApiModel):
@@ -113,6 +126,33 @@ class InteractiveEvaluationRequest(ApiModel):
     source: PreviewSource
     parameters: ParameterInput
     entries: list[EvaluationEntry] = Field(min_length=1, max_length=1_000)
+
+
+class PosteriorQueryRequest(ApiModel):
+    source: PreviewSource
+    prior_id: str = Field(default=DEFAULT_PRIOR_ID, min_length=1, max_length=80)
+    seed: int = 42
+    ensemble_size: int = Field(default=100, ge=2, le=500)
+    entries: list[EvaluationEntry] = Field(min_length=1, max_length=100)
+
+
+class PosteriorPreviewSample(ApiModel):
+    size: int = Field(default=500, ge=1, le=5_000)
+    depth_weights: dict[int, Annotated[float, Field(ge=0)]]
+
+    @model_validator(mode="after")
+    def check_positive_weight(self) -> PosteriorPreviewSample:
+        if not any(value > 0 for value in self.depth_weights.values()):
+            raise ValueError("depthWeights needs at least one positive value")
+        return self
+
+
+class PosteriorPreviewRequest(ApiModel):
+    source: PreviewSource
+    prior_id: str = Field(default=DEFAULT_PRIOR_ID, min_length=1, max_length=80)
+    seed: int = 42
+    ensemble_size: int = Field(default=100, ge=2, le=200)
+    sample: PosteriorPreviewSample
 
 
 class LeaderboardCreate(ApiModel):
@@ -161,11 +201,17 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
         return {
             "oracle": True,
             "mode": "benchmark-studio",
-            "references": ["gb1_headline", "trpb_headline"],
+            "references": [model["id"] for model in reference_catalogue_entries()],
             "previewMaxVariants": 100_000,
             "evaluationMaxEntries": 10_000,
+            "posteriorQueryMaxEntries": 100,
+            "posteriorPreviewMaxVariants": 5_000,
             "structureInference": ["esmfold"],
         }
+
+    @app.get("/api/v1/priors")
+    def list_priors() -> dict[str, Any]:
+        return {"priors": list_prior_metadata(), "defaultPriorId": DEFAULT_PRIOR_ID}
 
     @app.get("/api/v1/models")
     def list_models(request: Request) -> dict[str, Any]:
@@ -235,8 +281,11 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
         draft_source: dict[str, Any] | None = None
         published_model: dict[str, Any] | None = None
         if payload.source.kind == "reference":
-            if reference_detail(payload.source.id) is None:
+            detail = reference_detail(payload.source.id)
+            if detail is None:
                 raise HTTPException(404, "reference model not found")
+            if detail["kind"] == "posterior":
+                raise HTTPException(422, "use posterior-previews for posterior models")
         elif payload.source.kind == "draft":
             draft = store.get_draft(payload.source.id)
             if draft is None:
@@ -300,10 +349,15 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
             raise HTTPException(422, "name cannot be blank")
         try:
             parameters.validate()
+            if payload.model_type == "posterior":
+                load_prior_bundle(payload.prior_id)
             model, created = _store(request).publish(
                 payload.draft_id,
                 name,
                 parameters,
+                model_kind=payload.model_type,
+                prior_id=payload.prior_id if payload.model_type == "posterior" else None,
+                oracle_seed=payload.oracle_seed if payload.model_type == "posterior" else None,
             )
         except KeyError as exc:
             raise HTTPException(404, "draft not found or expired") from exc
@@ -328,12 +382,45 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
         request: Request,
     ) -> dict[str, Any]:
         registry: LandscapeRegistry = request.app.state.landscapes
-        if reference_detail(model_id) is not None:
+        detail = reference_detail(model_id)
+        if detail is not None and detail["kind"] == "posterior":
+            try:
+                source = reference_posterior_source(model_id)
+                settings = detail["posteriorSettings"]
+                posterior, _ = posterior_from_source(source, settings["priorId"])
+                entries = [entry.model_dump(by_alias=True) for entry in payload.entries]
+                results = fixed_posterior_entries(
+                    posterior,
+                    entries,
+                    positions=source["positions"],
+                    wild_type={int(key): value for key, value in source["wildType"].items()},
+                    seed=int(settings["oracleSeed"]),
+                )
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from exc
+            return {"modelId": model_id, "results": results}
+        if detail is not None:
             landscape = registry.reference(model_id)
         else:
             model = _store(request).get_model(model_id)
             if model is None:
                 raise HTTPException(404, "model not found")
+            if model["modelKind"] == "posterior":
+                try:
+                    posterior, _ = posterior_from_source(model["source"], model["priorId"])
+                    entries = [entry.model_dump(by_alias=True) for entry in payload.entries]
+                    results = fixed_posterior_entries(
+                        posterior,
+                        entries,
+                        positions=model["positions"],
+                        wild_type={
+                            int(key): value for key, value in model["source"]["wildType"].items()
+                        },
+                        seed=int(model["oracleSeed"]),
+                    )
+                except ValueError as exc:
+                    raise HTTPException(422, str(exc)) from exc
+                return {"modelId": model_id, "results": results}
             landscape = registry.custom(model)
         entries = [entry.model_dump(by_alias=True) for entry in payload.entries]
         try:
@@ -351,8 +438,11 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
         parameters = payload.parameters.domain()
         try:
             if payload.source.kind == "reference":
-                if reference_detail(payload.source.id) is None:
+                detail = reference_detail(payload.source.id)
+                if detail is None:
                     raise HTTPException(404, "reference model not found")
+                if detail["kind"] == "posterior":
+                    raise HTTPException(422, "use posterior-queries for posterior models")
                 landscape = build_reference_landscape(payload.source.id, parameters)
             elif payload.source.kind == "draft":
                 draft = store.get_draft(payload.source.id)
@@ -372,6 +462,65 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
         return {"source": payload.source.model_dump(), "results": results}
+
+    @app.post("/api/v1/posterior-queries")
+    def posterior_query(
+        payload: PosteriorQueryRequest,
+        request: Request,
+    ) -> dict[str, Any]:
+        source, source_summary, model = _posterior_source(payload.source, request)
+        prior_id, seed = _resolve_posterior_settings(
+            model,
+            requested_prior=payload.prior_id,
+            requested_seed=payload.seed,
+        )
+        try:
+            posterior, prior = posterior_from_source(source, prior_id)
+            entries = [entry.model_dump(by_alias=True) for entry in payload.entries]
+            results = query_posterior(
+                posterior,
+                entries,
+                positions=[int(value) for value in source["positions"]],
+                wild_type={int(key): value for key, value in source["wildType"].items()},
+                seed=seed,
+                ensemble_size=payload.ensemble_size,
+            )
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {
+            "source": source_summary,
+            "prior": prior,
+            "settings": {"seed": seed, "ensembleSize": payload.ensemble_size},
+            "results": results,
+        }
+
+    @app.post("/api/v1/posterior-previews")
+    def posterior_preview(
+        payload: PosteriorPreviewRequest,
+        request: Request,
+    ) -> dict[str, Any]:
+        source, source_summary, model = _posterior_source(payload.source, request)
+        prior_id, seed = _resolve_posterior_settings(
+            model,
+            requested_prior=payload.prior_id,
+            requested_seed=payload.seed,
+        )
+        try:
+            posterior, prior = posterior_from_source(source, prior_id)
+            result = preview_posterior(
+                posterior,
+                source_summary=source_summary,
+                prior_metadata=prior,
+                sample_size=payload.sample.size,
+                depth_weights={
+                    int(key): value for key, value in payload.sample.depth_weights.items()
+                },
+                seed=seed,
+                ensemble_size=payload.ensemble_size,
+            )
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return result
 
     @app.get("/api/v1/leaderboards")
     def list_leaderboards(request: Request) -> dict[str, Any]:
@@ -434,7 +583,11 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
     def logo() -> FileResponse:
         return FileResponse(LOGO_PATH, media_type="image/png")
 
-    app.mount("/dist", StaticFiles(directory=WEB_ROOT / "dist"), name="dist")
+    app.mount(
+        "/dist",
+        StaticFiles(directory=WEB_ROOT / "dist", check_dir=False),
+        name="dist",
+    )
     return app
 
 
@@ -442,13 +595,62 @@ def _store(request: Request) -> ModelStore:
     return request.app.state.model_store
 
 
+def _posterior_source(
+    requested: PreviewSource,
+    request: Request,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any] | None]:
+    if requested.kind == "reference":
+        detail = reference_detail(requested.id)
+        if detail is None:
+            raise HTTPException(404, "reference model not found")
+        return reference_posterior_source(requested.id), detail, None
+    if requested.kind == "draft":
+        draft = _store(request).get_draft(requested.id)
+        if draft is None:
+            raise HTTPException(404, "draft not found or expired")
+        source = draft["source"]
+        return (
+            source,
+            {
+                "id": draft["id"],
+                "name": "Custom draft",
+                "kind": "posterior",
+                "positions": source["positions"],
+                "wtCompact": source["wtCompact"],
+            },
+            None,
+        )
+    model = _store(request).get_model(requested.id)
+    if model is None:
+        raise HTTPException(404, "model not found")
+    return model["source"], _public_model(model), model
+
+
+def _resolve_posterior_settings(
+    model: dict[str, Any] | None,
+    *,
+    requested_prior: str,
+    requested_seed: int,
+) -> tuple[str, int]:
+    if model is None or model["modelKind"] != "posterior":
+        return requested_prior, requested_seed
+    if requested_prior != model["priorId"] or requested_seed != model["oracleSeed"]:
+        raise HTTPException(422, "published posterior prior and seed are fixed")
+    return str(model["priorId"]), int(model["oracleSeed"])
+
+
 def _public_model(model: dict[str, Any]) -> dict[str, Any]:
     source = model["source"]
-    return {
+    is_posterior = model["modelKind"] == "posterior"
+    public = {
         "id": model["id"],
         "name": model["name"],
-        "kind": "custom",
-        "description": "Published custom single-site DMS benchmark oracle.",
+        "kind": "posterior" if is_posterior else "custom",
+        "description": (
+            "Published posterior landscape ensemble grounded in sparse DMS."
+            if is_posterior
+            else "Published custom single-site DMS benchmark oracle."
+        ),
         "positions": model["positions"],
         "wtCompact": model["wtCompact"],
         "parameters": BenchmarkParameters(**model["parameters"]).as_public_json(),
@@ -456,6 +658,14 @@ def _public_model(model: dict[str, Any]) -> dict[str, Any]:
         "sourceSummary": {
             "wtLength": len(source["wtSequence"]),
             "measuredRows": len(source["dmsRows"]),
+            "observationCount": len(source.get("observationRows", source["dmsRows"])),
+            "higherOrderRows": sum(
+                row.get("depth", 1) > 1 for row in source.get("observationRows", [])
+            ),
+            "dmsSchema": source.get("dmsSchema", "singles"),
+            "wildTypeFitness": source.get("wildTypeFitness", 0.0),
+            "supportedSubstitutions": source.get("supportedSubstitutions"),
+            "previewCapacity": source.get("previewCapacity"),
             "hasStructure": source["hasStructure"],
             "structureMethod": source.get(
                 "structureMethod",
@@ -465,6 +675,12 @@ def _public_model(model: dict[str, Any]) -> dict[str, Any]:
             "canFitNonlinearity": source["canFitNonlinearity"],
         },
     }
+    if is_posterior:
+        public["posteriorSettings"] = {
+            "priorId": model["priorId"],
+            "oracleSeed": model["oracleSeed"],
+        }
+    return public
 
 
 def _examples(
@@ -476,7 +692,26 @@ def _examples(
     wildtype = wt_compact[0] if wt_compact else "A"
     mutant = "G" if wildtype == "A" else "A"
     mutation = f"{wildtype}{positions[0]}{mutant}" if positions else "A1G"
-    if model_id.endswith("_headline"):
+    is_posterior = model_id.endswith("_posterior") or (
+        model is not None and model["modelKind"] == "posterior"
+    )
+    if is_posterior:
+        seed = (
+            int(reference_detail(model_id)["posteriorSettings"]["oracleSeed"])
+            if model is None
+            else int(model["oracleSeed"])
+        )
+        local = (
+            "import pandas as pd\n\n"
+            "from mutascape import LandscapePrior, PosteriorLandscape\n\n"
+            '# Load the bundled prior parameters and normalise the DMS rows first.\n'
+            'prior = LandscapePrior.from_dict(prior_parameters)\n'
+            'observations = pd.DataFrame(observation_rows)\n'
+            'posterior = PosteriorLandscape.condition(wt_sequence, observations, prior)\n'
+            f'oracle = posterior.sample(seed={seed})\n'
+            f"fitness = oracle.evaluate({{{positions[0]}: {mutant!r}}})"
+        )
+    elif model_id.endswith("_headline"):
         local = (
             "from mutascape.validation.reference_configs import get_reference_config\n\n"
             f"landscape = get_reference_config({model_id!r}).build_landscape()\n"

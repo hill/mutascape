@@ -1,16 +1,16 @@
-import { Window } from "happy-dom";
+import { Window } from "happy-dom"
 
-const browserWindow = new Window({ url: "http://localhost/" });
+const browserWindow = new Window({ url: "http://localhost/" })
 
 Object.defineProperty(browserWindow.Element.prototype, "getAnimations", {
   configurable: true,
   value: () => [],
-});
+})
 
 Object.defineProperty(browserWindow.Element.prototype, "scrollIntoView", {
   configurable: true,
   value: () => undefined,
-});
+})
 
 Object.assign(globalThis, {
   window: browserWindow,
@@ -33,4 +33,4 @@ Object.assign(globalThis, {
   requestAnimationFrame: browserWindow.requestAnimationFrame.bind(browserWindow),
   cancelAnimationFrame: browserWindow.cancelAnimationFrame.bind(browserWindow),
   scrollTo: browserWindow.scrollTo.bind(browserWindow),
-});
+})

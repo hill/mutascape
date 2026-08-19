@@ -162,7 +162,7 @@ export default function App({
   const [depthWeights, setDepthWeights] = useState<Record<number, number>>(initialWeights(4))
   const [preview, setPreview] = useState<PreviewResponse | null>(null)
   const [posteriorPreview, setPosteriorPreview] = useState<PosteriorPreviewResponse | null>(null)
-  const [priorId, setPriorId] = useState("combinatorial-v1")
+  const [priorId, setPriorId] = useState("combinatorial-v2")
   const [oracleSeed, setOracleSeed] = useState(42)
   const [ensembleSize, setEnsembleSize] = useState(100)
   const [loadingModels, setLoadingModels] = useState(true)
@@ -228,7 +228,7 @@ export default function App({
     if (!model) return
     setSelectedId(model.id)
     setParameters(model.parameters)
-    setPriorId(model.posteriorSettings?.priorId ?? "combinatorial-v1")
+    setPriorId(model.posteriorSettings?.priorId ?? "combinatorial-v2")
     setOracleSeed(model.posteriorSettings?.oracleSeed ?? 42)
     const nextMaxDepth = Math.max(1, Math.min(4, model.positions.length))
     setMaxDepth(nextMaxDepth)
@@ -246,7 +246,7 @@ export default function App({
     if (!model) return
     setSelectedId(modelId)
     setParameters(model.parameters)
-    setPriorId(model.posteriorSettings?.priorId ?? "combinatorial-v1")
+    setPriorId(model.posteriorSettings?.priorId ?? "combinatorial-v2")
     setOracleSeed(model.posteriorSettings?.oracleSeed ?? 42)
     const nextMaxDepth = Math.max(1, Math.min(4, model.positions.length))
     setMaxDepth(nextMaxDepth)
@@ -332,13 +332,13 @@ export default function App({
         supportedSubstitutions: summary.supportedSubstitutions,
         previewCapacity: summary.previewCapacity,
       },
-      posteriorSettings: { priorId: "combinatorial-v1", oracleSeed: 42 },
+      posteriorSettings: { priorId: "combinatorial-v2", oracleSeed: 42 },
     }
     setDraft(created)
     setDraftModel(model)
     setSelectedId(created.id)
     setParameters(DEFAULT_PARAMETERS)
-    setPriorId("combinatorial-v1")
+    setPriorId("combinatorial-v2")
     setOracleSeed(42)
     const nextMaxDepth = Math.max(1, Math.min(4, summary.positionCount))
     setMaxDepth(nextMaxDepth)
@@ -1209,7 +1209,7 @@ function PosteriorParameterPanel({
           size="sm"
           label="Interaction prior"
           value={priorId}
-          items={{ "combinatorial-v1": "Combinatorial v1" }}
+          items={{ "combinatorial-v2": "Combinatorial v2" }}
           disabled={locked}
           onValueChange={(value) => value && setPriorId(String(value))}
         />

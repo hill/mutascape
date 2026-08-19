@@ -172,13 +172,13 @@ def test_store_persists_posterior_definition(tmp_path, source):
         "Posterior example",
         BenchmarkParameters(seed=17),
         model_kind="posterior",
-        prior_id="combinatorial-v1",
+        prior_id="combinatorial-v2",
         oracle_seed=17,
     )
 
     assert created is True
     assert model["modelKind"] == "posterior"
-    assert model["priorId"] == "combinatorial-v1"
+    assert model["priorId"] == "combinatorial-v2"
     assert model["oracleSeed"] == 17
 
 

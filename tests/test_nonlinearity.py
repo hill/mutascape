@@ -106,10 +106,24 @@ class TestFitFromSingles:
         assert fitted.floor < observed.min()
         assert fitted.ceiling > observed.max()
 
-    def test_rejects_range_not_straddling_wt(self):
+    def test_rejects_all_positive_effects_without_floor(self):
         effects = {1: {"A": 0.5, "G": 1.2, "V": 0.8}}
-        with pytest.raises(ValueError, match="straddle"):
+        with pytest.raises(ValueError, match="does not fall below WT"):
             GlobalEpistasisSigmoid.fit_from_singles(effects)
+
+    def test_rejects_all_negative_effects_without_ceiling(self):
+        effects = {1: {"A": -0.5, "G": -1.2, "V": -0.8}}
+        with pytest.raises(ValueError, match="does not rise above WT"):
+            GlobalEpistasisSigmoid.fit_from_singles(effects)
+
+    def test_supplied_bounds_admit_one_sided_effects(self):
+        # Assays where every single mutation is deleterious still define a
+        # sigmoid once the caller supplies the ceiling from the assay range.
+        effects = {1: {"A": -0.5, "G": -1.2, "V": -0.8}}
+        fitted = GlobalEpistasisSigmoid.fit_from_singles(effects, floor=-2.0, ceiling=1.5)
+        assert fitted.floor == -2.0
+        assert fitted.ceiling == 1.5
+        assert fitted.scale > 0
 
     def test_rejects_empty_effects(self):
         with pytest.raises(ValueError, match="no values"):

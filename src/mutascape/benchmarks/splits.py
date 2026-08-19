@@ -90,3 +90,56 @@ def iter_protein_holdouts(datasets: Sequence[LandscapeDataset]) -> Iterator[Prot
         train = tuple(dataset for dataset in datasets if dataset.protein != protein)
         test = tuple(dataset for dataset in datasets if dataset.protein == protein)
         yield ProteinHoldout(train=train, test=test, held_out_protein=protein)
+
+
+def single_effect_summary(variants: pd.DataFrame) -> dict[str, float]:
+    """Describe how much signal the single mutants carry.
+
+    ``distinct`` counts unique single-mutant effects. A censored binding assay
+    can report every single mutant at the same floor value, which leaves the
+    singles-only protocol with nothing to fit and makes any rank metric on that
+    landscape pure noise.
+    """
+    wt_rows = variants.loc[variants["depth"] == 0, "fitness"]
+    if wt_rows.empty:
+        raise ValueError("variants must include the wild type")
+    wt = float(wt_rows.iloc[0])
+    effects = variants.loc[variants["depth"] == 1, "fitness"].to_numpy(dtype=float) - wt
+    effects = effects[np.isfinite(effects)]
+    if effects.size == 0:
+        return {"n_singles": 0.0, "distinct": 0.0, "std": 0.0}
+    return {
+        "n_singles": float(effects.size),
+        "distinct": float(np.unique(np.round(effects, 9)).size),
+        "std": float(np.std(effects)),
+    }
+
+
+def has_informative_singles(variants: pd.DataFrame) -> bool:
+    """Report whether a singles-only split can define a model at all."""
+    summary = single_effect_summary(variants)
+    return summary["n_singles"] >= 2.0 and summary["std"] > 1e-12
+
+
+def budget_split(
+    variants: pd.DataFrame,
+    budget: int,
+    *,
+    seed: int = 0,
+) -> MutationOrderSplit:
+    """Observe WT, singles, and a fixed sample of higher-order variants.
+
+    The held-out set drops every observed variant, so a measured combination
+    never appears on both sides. This mirrors a laboratory campaign that spends
+    a plate on multi-mutants before predicting the rest.
+    """
+    train = sample_observation_budget(variants, budget, seed=seed)
+    observed = {tuple(sorted(mutations.items())) for mutations in train["mutations"]}
+    depths = pd.to_numeric(variants["depth"], errors="raise")
+    unseen = variants["mutations"].map(
+        lambda mutations: tuple(sorted(mutations.items())) not in observed
+    )
+    test = variants.loc[unseen & (depths > 1)].reset_index(drop=True)
+    if test.empty:
+        raise ValueError(f"budget {budget} leaves no held-out variants")
+    return MutationOrderSplit(train.reset_index(drop=True), test, 1)

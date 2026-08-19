@@ -117,7 +117,7 @@ describe("landscape builder", () => {
         combinatorialUpside: 3,
         seed: 42,
       },
-      posteriorSettings: { priorId: "combinatorial-v1", oracleSeed: 42 },
+      posteriorSettings: { priorId: "combinatorial-v2", oracleSeed: 42 },
       createdAt: null,
     }
     globalThis.fetch = (async (input) => {
@@ -129,8 +129,8 @@ describe("landscape builder", () => {
             ? {
                 source: model,
                 prior: {
-                  id: "combinatorial-v1",
-                  name: "Combinatorial v1",
+                  id: "combinatorial-v2",
+                  name: "Combinatorial v2",
                   description: "Prior",
                   created: "2026-08-12",
                   maxInteractionOrder: 2,

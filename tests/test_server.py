@@ -94,13 +94,13 @@ def test_custom_draft_preview_publish_and_evaluate(tmp_path):
 
     posterior_detail = client.get("/api/v1/models/gb1_posterior").json()
     assert posterior_detail["kind"] == "posterior"
-    assert posterior_detail["posteriorSettings"]["priorId"] == "combinatorial-v1"
+    assert posterior_detail["posteriorSettings"]["priorId"] == "combinatorial-v2"
     compile(posterior_detail["examples"]["localPython"], "<posterior-example>", "exec")
     posterior_query = client.post(
         "/api/v1/posterior-queries",
         json={
             "source": {"kind": "reference", "id": "gb1_posterior"},
-            "priorId": "combinatorial-v1",
+            "priorId": "combinatorial-v2",
             "seed": 42,
             "ensembleSize": 8,
             "entries": [{"mutationLabel": "V39A+D40A"}],
@@ -148,7 +148,7 @@ def test_posterior_query_preview_publish_and_fixed_evaluation(tmp_path):
     client = TestClient(create_app(tmp_path / "web.sqlite3"))
     priors = client.get("/api/v1/priors")
     assert priors.status_code == 200
-    assert priors.json()["defaultPriorId"] == "combinatorial-v1"
+    assert priors.json()["defaultPriorId"] == "combinatorial-v2"
 
     draft = client.post(
         "/api/v1/drafts",
@@ -157,7 +157,7 @@ def test_posterior_query_preview_publish_and_fixed_evaluation(tmp_path):
     source = {"kind": "draft", "id": draft["id"]}
     query_payload = {
         "source": source,
-        "priorId": "combinatorial-v1",
+        "priorId": "combinatorial-v2",
         "seed": 17,
         "ensembleSize": 20,
         "entries": [{"mutationLabel": "A1V+C2D"}],
@@ -172,7 +172,7 @@ def test_posterior_query_preview_publish_and_fixed_evaluation(tmp_path):
         "/api/v1/posterior-previews",
         json={
             "source": source,
-            "priorId": "combinatorial-v1",
+            "priorId": "combinatorial-v2",
             "seed": 17,
             "ensembleSize": 12,
             "sample": {"size": 5, "depthWeights": {"1": 1, "2": 1}},
@@ -188,7 +188,7 @@ def test_posterior_query_preview_publish_and_fixed_evaluation(tmp_path):
             "name": "Posterior example",
             "parameters": {**PARAMETERS, "seed": 17},
             "modelType": "posterior",
-            "priorId": "combinatorial-v1",
+            "priorId": "combinatorial-v2",
             "oracleSeed": 17,
         },
     )

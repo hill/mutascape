@@ -796,7 +796,7 @@ def reference_catalogue_entries() -> list[dict[str, Any]]:
                 "wtCompact": "".join(config.wt_aa_at_position[p] for p in config.positions),
                 "parameters": _reference_parameters(config).as_public_json(),
                 "posteriorSettings": {
-                    "priorId": "combinatorial-v1",
+                    "priorId": "combinatorial-v2",
                     "oracleSeed": config.seed,
                 },
                 "createdAt": None,

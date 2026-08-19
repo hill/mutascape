@@ -3,8 +3,11 @@
 import pytest
 
 from mutascape.posterior_web import (
+    DEFAULT_PRIOR_ID,
     list_prior_metadata,
+    load_prior_bundle,
     posterior_from_source,
+    posterior_shape_summary,
     preview_posterior,
     query_posterior,
 )
@@ -27,12 +30,24 @@ def source():
 
 
 def test_bundled_prior_has_training_provenance():
-    prior = list_prior_metadata()[0]
+    priors = {prior["id"]: prior for prior in list_prior_metadata()}
+    prior = priors[DEFAULT_PRIOR_ID]
 
-    assert prior["id"] == "combinatorial-v1"
-    assert prior["nLandscapes"] == 30
+    # CR6261_H9_binding reports every single mutant at the assay floor, so it
+    # cannot anchor a normalised coefficient and never entered the prior.
+    assert prior["nLandscapes"] == 29
     assert prior["nProteins"] == 14
+    assert prior["excludedLandscapes"] == ["CR6261_H9_binding"]
     assert {source["name"] for source in prior["sources"]} == {"SSMuLA", "CombinGym"}
+
+
+def test_default_prior_shrinks_shallow_depth_shifts():
+    _, prior = load_prior_bundle()
+
+    # Proteins disagree about the depth-two residual far more than they agree on
+    # its size, so almost none of the pooled shift survives transfer.
+    assert prior.depth_shrinkage[2] < 0.05
+    assert abs(prior.depth_location[2]) < 0.05
 
 
 def test_query_preserves_observations_and_samples_unseen_combinations(source):
@@ -98,3 +113,23 @@ def test_posterior_preview_reports_uncertainty_in_rows_profiles_and_graph(source
     assert all("posteriorStd" in row for row in preview["sample"]["rows"])
     assert any(node["posteriorStd"] > 0 for node in preview["sample"]["graph"]["nodes"])
     assert "does not measure realism" in preview["notices"][1]
+
+
+def test_shape_summary_separates_posterior_from_an_additive_surrogate(source):
+    posterior, _ = posterior_from_source(source)
+    shape = posterior_shape_summary(posterior, seed=7)
+
+    assert shape is not None
+    # An additive surrogate carries no variance above interaction order one,
+    # which is the whole reason a smooth benchmark ranks search methods wrongly.
+    assert shape["additive"]["walshNonadditive"] < 1e-9
+    assert shape["posterior"]["walshNonadditive"] > 0.01
+
+
+def test_shape_summary_declines_an_unenumerable_domain(monkeypatch):
+    import mutascape.posterior_web as module
+
+    monkeypatch.setattr(module, "MAX_SHAPE_CUBE", 2)
+    parsed, _ = parse_custom_source(VARIANTS, FASTA)
+    posterior, _ = posterior_from_source(parsed)
+    assert posterior_shape_summary(posterior, seed=7) is None

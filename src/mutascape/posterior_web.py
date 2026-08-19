@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from itertools import product
 from pathlib import Path
 from typing import Any
 
@@ -15,9 +16,14 @@ from mutascape.landscape import _allocate_weighted_counts
 from mutascape.mutant import Mutant
 
 PRIOR_ROOT = Path(__file__).resolve().parent / "data" / "priors"
-DEFAULT_PRIOR_ID = "combinatorial-v1"
+DEFAULT_PRIOR_ID = "combinatorial-v2"
 MAX_POSTERIOR_COST = 2_000_000
 CANONICAL_AAS = set(AMINO_ACIDS)
+
+
+def _camel(name: str) -> str:
+    head, *rest = name.split("_")
+    return head + "".join(word.capitalize() for word in rest)
 
 
 def list_prior_metadata() -> list[dict[str, Any]]:
@@ -27,14 +33,15 @@ def list_prior_metadata() -> list[dict[str, Any]]:
         bundle = json.loads(path.read_text())
         parameters = LandscapePrior.from_dict(bundle["parameters"])
         priors.append(
-            {
-                key: value
-                for key, value in bundle.items()
-                if key != "parameters"
-            }
+            {key: value for key, value in bundle.items() if key != "parameters"}
             | {
                 "nLandscapes": parameters.n_landscapes,
                 "nProteins": parameters.n_proteins,
+                "globalEpistasis": True,
+                "depthShrinkage": {
+                    str(depth): round(weight, 4)
+                    for depth, weight in sorted(parameters.depth_shrinkage.items())
+                },
             }
         )
     return priors
@@ -50,6 +57,9 @@ def load_prior_bundle(prior_id: str = DEFAULT_PRIOR_ID) -> tuple[dict[str, Any],
     metadata = {key: value for key, value in bundle.items() if key != "parameters"}
     metadata["nLandscapes"] = prior.n_landscapes
     metadata["nProteins"] = prior.n_proteins
+    metadata["depthShrinkage"] = {
+        str(depth): round(weight, 4) for depth, weight in sorted(prior.depth_shrinkage.items())
+    }
     return metadata, prior
 
 
@@ -229,6 +239,7 @@ def preview_posterior(
         "prior": prior_metadata,
         "settings": {"seed": seed, "ensembleSize": ensemble_size},
         "profile": profile,
+        "shape": posterior_shape_summary(posterior, seed=seed),
         "sample": {
             "requested": sample_size,
             "returnedRows": len(rows),
@@ -294,8 +305,7 @@ def _parse_entries(
         ]
         if missing:
             text = ", ".join(
-                f"{wild_type[position]}{position}{amino_acid}"
-                for position, amino_acid in missing
+                f"{wild_type[position]}{position}{amino_acid}" for position, amino_acid in missing
             )
             raise ValueError(f"missing constituent single measurements for: {text}")
         variant = dict(mutant)
@@ -307,9 +317,7 @@ def _parse_entries(
 def _check_cost(variants: list[dict[int, str]], ensemble_size: int) -> None:
     cost = ensemble_size * sum(max(1, len(variant) ** 2) for variant in variants)
     if cost > MAX_POSTERIOR_COST:
-        raise ValueError(
-            f"posterior request cost {cost} exceeds the {MAX_POSTERIOR_COST} limit"
-        )
+        raise ValueError(f"posterior request cost {cost} exceeds the {MAX_POSTERIOR_COST} limit")
 
 
 def _additive_fitness(posterior: PosteriorLandscape, variant: dict[int, str]) -> float:
@@ -334,9 +342,7 @@ def _sample_supported_variants(
         alternatives.setdefault(position, []).append(amino_acid)
     alternatives = {position: sorted(set(values)) for position, values in alternatives.items()}
     weights = {
-        int(depth): float(weight)
-        for depth, weight in depth_weights.items()
-        if float(weight) > 0
+        int(depth): float(weight) for depth, weight in depth_weights.items() if float(weight) > 0
     }
     if not weights:
         raise ValueError("depth weights need at least one positive value")
@@ -358,8 +364,7 @@ def _sample_supported_variants(
         while accepted < target:
             chosen = rng.choice(positions, size=depth, replace=False)
             variant = {
-                int(position): str(rng.choice(alternatives[int(position)]))
-                for position in chosen
+                int(position): str(rng.choice(alternatives[int(position)])) for position in chosen
             }
             key = tuple(sorted(variant.items()))
             if key in seen:
@@ -414,10 +419,7 @@ def _posterior_graph(
         for position, _ in posterior.single_effects
     }
     node_mutations: dict[str, dict[int, str]] = {"wt": {}}
-    sampled_labels = {
-        Mutant.from_dict(variant, wild_type).label
-        for variant in sampled
-    }
+    sampled_labels = {Mutant.from_dict(variant, wild_type).label for variant in sampled}
     edges: set[tuple[str, str]] = set()
     for variant in sampled:
         current: dict[int, str] = {}
@@ -428,10 +430,7 @@ def _posterior_graph(
             node_mutations.setdefault(label, dict(current))
             edges.add((previous, label))
             previous = label
-    entries = [
-        {"mutationLabel": label, "compactSequence": None}
-        for label in node_mutations
-    ]
+    entries = [{"mutationLabel": label, "compactSequence": None} for label in node_mutations]
     query = query_posterior(
         posterior,
         entries,
@@ -462,10 +461,7 @@ def _wild_type_subset(
     posterior: PosteriorLandscape,
     variant: dict[int, str],
 ) -> dict[int, str]:
-    return {
-        position: posterior.wild_type_sequence[position - 1]
-        for position in variant
-    }
+    return {position: posterior.wild_type_sequence[position - 1] for position in variant}
 
 
 def _mutant_sequence(wild_type_sequence: str, variant: dict[int, str]) -> str:
@@ -473,3 +469,80 @@ def _mutant_sequence(wild_type_sequence: str, variant: dict[int, str]) -> str:
     for position, amino_acid in variant.items():
         sequence[position - 1] = amino_acid
     return "".join(sequence)
+
+
+# Enumerating a cube is only worth offering while it stays interactive.
+MAX_SHAPE_CUBE = 50_000
+
+
+def posterior_shape_summary(
+    posterior: PosteriorLandscape,
+    *,
+    seed: int,
+    draws: int = 5,
+) -> dict[str, Any] | None:
+    """Compare the shape of a posterior draw against an additive surrogate.
+
+    The additive surrogate is what a model fitted on singles alone produces. It
+    has one peak and carries no variance above interaction order one, so a
+    campaign simulated on it cannot rank search methods the way a rugged
+    landscape does. Returning both lets the studio show that difference.
+
+    Returns None when the supported domain is too large to enumerate.
+    """
+    from mutascape.benchmarks.topology import summarise
+
+    positions = sorted({position for position, _ in posterior.single_effects})
+    if not positions:
+        return None
+    alphabets = {
+        position: sorted(
+            {posterior.wild_type_sequence[position - 1]}
+            | {aa for site, aa in posterior.single_effects if site == position}
+        )
+        for position in positions
+    }
+    size = 1
+    for position in positions:
+        size *= len(alphabets[position])
+        if size > MAX_SHAPE_CUBE:
+            return None
+
+    wild_type = {position: posterior.wild_type_sequence[position - 1] for position in positions}
+    variants: list[dict[int, str]] = []
+    for combination in product(*(alphabets[position] for position in positions)):
+        variants.append(
+            {
+                position: amino_acid
+                for position, amino_acid in zip(positions, combination)
+                if amino_acid != wild_type[position]
+            }
+        )
+    shape = tuple(len(alphabets[position]) for position in positions)
+    wt = posterior.observations[()]
+
+    additive = np.asarray(
+        [_additive_fitness(posterior, variant) - wt for variant in variants], dtype=np.float64
+    )
+    posterior_summaries = [
+        summarise(
+            np.asarray(
+                posterior.sample(seed + index).evaluate_batch(variants), dtype=np.float64
+            ).reshape(shape)
+        )
+        for index in range(draws)
+    ]
+    keys = ("n_optima", "peak_fraction", "walsh_nonadditive")
+    return {
+        "cubeSize": size,
+        "draws": draws,
+        "additive": {
+            _camel(key): value
+            for key, value in summarise(additive.reshape(shape)).items()
+            if key in keys
+        },
+        "posterior": {
+            _camel(key): float(np.median([entry[key] for entry in posterior_summaries]))
+            for key in keys
+        },
+    }

@@ -35,6 +35,11 @@ from mutascape.benchmarks.figures import (
     plot_metric_fingerprint,
     plot_posterior_rank_histogram,
 )
+from mutascape.benchmarks.splits import (
+    budget_split,
+    has_informative_singles,
+    single_effect_summary,
+)
 from mutascape.completion import LandscapePrior, PosteriorLandscape
 
 
@@ -51,7 +56,26 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--samples", type=int, default=100)
     parser.add_argument("--seed", type=int, default=20260812)
     parser.add_argument("--limit", type=int, help="Limit held-out variants per landscape")
-    parser.add_argument("--c2st-permutations", type=int, default=100)
+    parser.add_argument("--c2st-permutations", type=int, default=1000)
+    parser.add_argument(
+        "--budget",
+        type=int,
+        nargs="*",
+        default=[],
+        help="Observed-variant budgets to evaluate alongside the singles-only arm",
+    )
+    parser.add_argument(
+        "--no-global-epistasis",
+        dest="global_epistasis",
+        action="store_false",
+        help="Sum raw measured singles instead of composing through a fitted readout",
+    )
+    parser.add_argument(
+        "--no-shrink-depth",
+        dest="shrink_depth",
+        action="store_false",
+        help="Apply the pooled depth residual at full strength, for ablation",
+    )
     return parser.parse_args()
 
 
@@ -73,11 +97,13 @@ def _metric_rows(
     *,
     n_train: int,
     n_test: int,
+    arm: str = "singles",
 ) -> list[dict[str, object]]:
     return [
         {
             "dataset": dataset,
             "protein": protein,
+            "arm": arm,
             "model": model,
             "metric": metric,
             "value": value,
@@ -86,6 +112,16 @@ def _metric_rows(
         }
         for metric, value in metrics.items()
     ]
+
+
+def _iter_arms(variants: pd.DataFrame, budgets: list[int], seed: int):
+    """Yield the singles-only arm, then one arm per observation budget."""
+    yield "singles", mutation_order_split(variants, max_train_depth=1)
+    for budget in budgets:
+        try:
+            yield f"budget_{budget}", budget_split(variants, budget, seed=seed)
+        except ValueError as error:
+            print(f"  budget {budget} unusable: {error}")
 
 
 def _finite_json(value):
@@ -113,110 +149,142 @@ def main() -> None:
     calibration_rows: list[pd.DataFrame] = []
     prediction_rows: list[pd.DataFrame] = []
 
+    skipped: list[dict[str, object]] = []
     for fold_index, fold in enumerate(iter_protein_holdouts(datasets)):
-        prior = LandscapePrior.fit(list(fold.train), max_order=args.max_order)
+        prior = LandscapePrior.fit(
+            list(fold.train),
+            max_order=args.max_order,
+            shrink_depth=args.shrink_depth,
+            global_epistasis=args.global_epistasis,
+        )
         for dataset_index, dataset in enumerate(fold.test):
-            split = mutation_order_split(dataset.variants, max_train_depth=1)
-            test = _supported_test(split.test, split.train)
-            if test.empty:
+            base = mutation_order_split(dataset.variants, max_train_depth=1)
+            if not has_informative_singles(base.train):
+                # Every single mutant reads at the same censored value, so a
+                # singles-only fit is undefined and any rank metric is noise.
+                summary = single_effect_summary(base.train)
+                skipped.append({"dataset": dataset.name, "protein": dataset.protein, **summary})
+                print(f"skipping {dataset.name}: singles carry no variance ({summary})")
                 continue
-            if args.limit is not None and len(test) > args.limit:
-                test = test.sample(args.limit, random_state=args.seed).reset_index(drop=True)
 
-            posterior = PosteriorLandscape.condition(
-                dataset.wild_type_sequence,
-                split.train,
-                prior,
-            )
-            evaluation = evaluate_posterior(
-                posterior,
-                test,
-                n_samples=args.samples,
-                seed=args.seed + 1000 * fold_index + dataset_index,
-            )
-            metric_rows.extend(
-                _metric_rows(
-                    dataset.name,
-                    dataset.protein,
-                    "posterior",
-                    evaluation.metrics,
-                    n_train=len(split.train),
-                    n_test=len(test),
+            for arm_index, (arm, split) in enumerate(
+                _iter_arms(dataset.variants, args.budget, args.seed)
+            ):
+                test = _supported_test(split.test, split.train)
+                if test.empty:
+                    continue
+                if not has_informative_singles(split.train):
+                    # Every single mutant reads at the same censored value, so a
+                    # singles-only fit is undefined and any rank metric is noise.
+                    summary = single_effect_summary(split.train)
+                    skipped.append({"dataset": dataset.name, "protein": dataset.protein, **summary})
+                    print(f"skipping {dataset.name}: singles carry no variance ({summary})")
+                    continue
+                if args.limit is not None and len(test) > args.limit:
+                    test = test.sample(args.limit, random_state=args.seed).reset_index(drop=True)
+
+                posterior = PosteriorLandscape.condition(
+                    dataset.wild_type_sequence,
+                    split.train,
+                    prior,
+                    global_epistasis=args.global_epistasis,
                 )
-            )
-
-            predictions = evaluation.predictions.copy()
-            predictions["dataset"] = dataset.name
-            predictions["protein"] = dataset.protein
-            predictions["variant"] = predictions["mutations"].map(
-                lambda value: ";".join(
-                    f"{position}:{amino_acid}" for position, amino_acid in value.items()
+                evaluation = evaluate_posterior(
+                    posterior,
+                    test,
+                    n_samples=args.samples,
+                    seed=args.seed + 1000 * fold_index + 10 * dataset_index + arm_index,
                 )
-            )
-            prediction_rows.append(predictions.drop(columns="mutations"))
-
-            calibration = evaluation.calibration.copy()
-            calibration["dataset"] = dataset.name
-            calibration["protein"] = dataset.protein
-            calibration["model"] = "posterior"
-            calibration_rows.append(calibration)
-
-            real_features = completion_fidelity_features(split.train, test)
-            synthetic_features = completion_fidelity_features(
-                split.train,
-                test,
-                evaluation.ensemble[0],
-            )
-            variant_groups = np.arange(len(test))
-            c2st = classifier_two_sample_test(
-                real_features.to_numpy(),
-                synthetic_features.to_numpy(),
-                real_groups=variant_groups,
-                synthetic_groups=variant_groups,
-                n_permutations=args.c2st_permutations,
-                seed=args.seed + 2000 * fold_index + dataset_index,
-            )
-            mmd = maximum_mean_discrepancy(
-                real_features.to_numpy(),
-                synthetic_features.to_numpy(),
-            )
-            metric_rows.extend(
-                _metric_rows(
-                    dataset.name,
-                    dataset.protein,
-                    "posterior",
-                    {
-                        "c2st_auc": c2st.auc,
-                        "c2st_pvalue": c2st.permutation_pvalue,
-                        "mmd_squared": mmd["mmd_squared"],
-                    },
-                    n_train=len(split.train),
-                    n_test=len(test),
-                )
-            )
-
-            for max_order, name in [(1, "ridge_additive"), (2, "ridge_pairwise")]:
-                baseline = RidgeLandscapeBaseline(max_order=max_order).fit(split.train)
-                predicted = baseline.predict(test["mutations"].tolist())
-                metrics = predictive_metrics(test["fitness"].to_numpy(dtype=float), predicted)
                 metric_rows.extend(
                     _metric_rows(
                         dataset.name,
                         dataset.protein,
-                        name,
-                        metrics,
+                        "posterior",
+                        evaluation.metrics,
                         n_train=len(split.train),
                         n_test=len(test),
+                        arm=arm,
                     )
                 )
 
-            safe_name = dataset.name.replace("/", "_")
-            for label, figure in [
-                ("prediction", plot_completion_predictions(evaluation.predictions)),
-                ("rank", plot_posterior_rank_histogram(evaluation.predictions)),
-            ]:
-                figure.savefig(figures / f"{safe_name}_{label}.pdf", bbox_inches="tight")
-                plt.close(figure)
+                predictions = evaluation.predictions.copy()
+                predictions["arm"] = arm
+                predictions["dataset"] = dataset.name
+                predictions["protein"] = dataset.protein
+                predictions["variant"] = predictions["mutations"].map(
+                    lambda value: ";".join(
+                        f"{position}:{amino_acid}" for position, amino_acid in value.items()
+                    )
+                )
+                prediction_rows.append(predictions.drop(columns="mutations"))
+
+                calibration = evaluation.calibration.copy()
+                calibration["arm"] = arm
+                calibration["dataset"] = dataset.name
+                calibration["protein"] = dataset.protein
+                calibration["model"] = "posterior"
+                calibration_rows.append(calibration)
+
+                real_features = completion_fidelity_features(split.train, test)
+                synthetic_features = completion_fidelity_features(
+                    split.train,
+                    test,
+                    evaluation.ensemble[0],
+                )
+                variant_groups = np.arange(len(test))
+                c2st = classifier_two_sample_test(
+                    real_features.to_numpy(),
+                    synthetic_features.to_numpy(),
+                    real_groups=variant_groups,
+                    synthetic_groups=variant_groups,
+                    n_permutations=args.c2st_permutations,
+                    seed=args.seed + 2000 * fold_index + 10 * dataset_index + arm_index,
+                )
+                mmd = maximum_mean_discrepancy(
+                    real_features.to_numpy(),
+                    synthetic_features.to_numpy(),
+                )
+                metric_rows.extend(
+                    _metric_rows(
+                        dataset.name,
+                        dataset.protein,
+                        "posterior",
+                        {
+                            "c2st_auc": c2st.auc,
+                            "c2st_pvalue": c2st.permutation_pvalue,
+                            "mmd_squared": mmd["mmd_squared"],
+                        },
+                        n_train=len(split.train),
+                        n_test=len(test),
+                        arm=arm,
+                    )
+                )
+
+                for max_order, name in [(1, "ridge_additive"), (2, "ridge_pairwise")]:
+                    baseline = RidgeLandscapeBaseline(max_order=max_order).fit(split.train)
+                    predicted = baseline.predict(test["mutations"].tolist())
+                    metrics = predictive_metrics(test["fitness"].to_numpy(dtype=float), predicted)
+                    metric_rows.extend(
+                        _metric_rows(
+                            dataset.name,
+                            dataset.protein,
+                            name,
+                            metrics,
+                            n_train=len(split.train),
+                            n_test=len(test),
+                            arm=arm,
+                        )
+                    )
+
+                if arm != "singles":
+                    continue
+                safe_name = dataset.name.replace("/", "_")
+                for label, figure in [
+                    ("prediction", plot_completion_predictions(evaluation.predictions)),
+                    ("rank", plot_posterior_rank_histogram(evaluation.predictions)),
+                ]:
+                    figure.savefig(figures / f"{safe_name}_{label}.pdf", bbox_inches="tight")
+                    plt.close(figure)
 
     metrics = pd.DataFrame(metric_rows)
     calibration = pd.concat(calibration_rows, ignore_index=True)
@@ -237,8 +305,13 @@ def main() -> None:
             "seed": args.seed,
             "posterior_samples": args.samples,
             "max_interaction_order": args.max_order,
+            "shrink_depth": args.shrink_depth,
+            "global_epistasis": args.global_epistasis,
+            "budgets": args.budget,
             "n_landscapes": len({row["dataset"] for row in metric_rows}),
             "n_proteins": len({row["protein"] for row in metric_rows}),
+            "skipped_landscapes": skipped,
+            "final_prior": prior.to_dict(),
             "median_metrics": (
                 metrics.groupby(["model", "metric"])["value"].median().unstack().to_dict("index")
             ),

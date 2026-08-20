@@ -58,6 +58,12 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, help="Limit held-out variants per landscape")
     parser.add_argument("--c2st-permutations", type=int, default=1000)
     parser.add_argument(
+        "--floor-policy",
+        choices=["always", "censored", "never"],
+        default="censored",
+        help="Clip at the worst single always, only on censoring evidence, or never",
+    )
+    parser.add_argument(
         "--budget",
         type=int,
         nargs="*",
@@ -188,6 +194,7 @@ def main() -> None:
                     split.train,
                     prior,
                     global_epistasis=args.global_epistasis,
+                    floor_policy=args.floor_policy,
                 )
                 evaluation = evaluate_posterior(
                     posterior,
@@ -307,6 +314,7 @@ def main() -> None:
             "max_interaction_order": args.max_order,
             "shrink_depth": args.shrink_depth,
             "global_epistasis": args.global_epistasis,
+            "floor_policy": args.floor_policy,
             "budgets": args.budget,
             "n_landscapes": len({row["dataset"] for row in metric_rows}),
             "n_proteins": len({row["protein"] for row in metric_rows}),

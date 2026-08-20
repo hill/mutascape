@@ -164,3 +164,28 @@ class TestTopologyAdapter:
         tensor, coverage = measured_tensor(dataset, cube)
         assert tensor.shape == (2, 2, 2, 2)
         assert 0.0 < coverage <= 1.0
+
+
+class TestReadoutScaleIsUnidentifiable:
+    def test_the_sigmoid_scale_cannot_change_any_output(self):
+        # g(z) = floor + span * sigmoid(z / s + tau), so the preimage of an
+        # effect carries a factor of s and the composition divides it back out.
+        # Anything that tries to tune saturation through the scale is a no-op,
+        # and only the floor and ceiling move the landscape.
+        from dataclasses import replace as replace_field
+
+        datasets = [_landscape(f"P{i}", _effects(1.0), interaction=0.05, seed=i) for i in range(3)]
+        base = LandscapePrior.fit(datasets, max_order=2)
+        target = _landscape("T", _effects(1.0), interaction=0.05, seed=7)
+        train = target.variants[target.variants["depth"] <= 1]
+        probes = [{1: "G", 2: "V"}, {1: "G", 3: "W"}, {2: "V", 3: "W", 4: "K"}]
+
+        reference = None
+        for ratio in (1.0, 2.5, 0.3):
+            prior = replace_field(base, readout_scale_ratio=ratio)
+            landscape = PosteriorLandscape.condition(WILD_TYPE, train, prior).sample(3)
+            values = landscape.evaluate_batch(probes)
+            if reference is None:
+                reference = values
+            else:
+                assert np.allclose(values, reference, atol=1e-12)

@@ -31,6 +31,14 @@ _MIN_DEPTH_LANDSCAPES = 3
 # Width of the band, as a fraction of the assay range, counted as sitting on the floor.
 _FLOOR_BAND = 0.02
 
+# Above this share of single mutants tied at the worst measured value, the assay
+# is treated as censored. Measured censored assays sit near 45 per cent and
+# uncensored ones near 6 per cent.
+_CENSORED_TIE_FRACTION = 0.15
+
+# Quantile grid used to carry the measured coefficient shape between proteins.
+_SHAPE_GRID = np.linspace(0.0, 1.0, 257)
+
 
 def _key(mutations: dict[int, str], wild_type_sequence: str) -> MutationKey:
     return tuple(
@@ -157,6 +165,55 @@ def _training_readout(
         return None
 
 
+def _refit_scale(readout, centred_fitness: NDArray[np.float64], *, cap: int = 5000) -> float | None:
+    """Refit only the saturation rate, holding the bounds fixed."""
+    finite = centred_fitness[np.isfinite(centred_fitness)]
+    if finite.size < 32:
+        return None
+    if finite.size > cap:
+        finite = np.random.default_rng(0).choice(finite, size=cap, replace=False)
+    values = {0: {str(index): float(value) for index, value in enumerate(finite)}}
+    try:
+        refitted = GlobalEpistasisSigmoid.fit_from_singles(
+            values, margin=0.05, floor=readout.floor, ceiling=readout.ceiling
+        )
+    except (ValueError, RuntimeError):
+        return None
+    return float(refitted.scale)
+
+
+def _magnitude_pairs(
+    variants: pd.DataFrame,
+    wild_type_sequence: str,
+    wild_type_fitness: float,
+    transform,
+    effects: dict[tuple[int, str], float],
+    scale: float,
+) -> list[tuple[float, float]]:
+    """Pair each measured order-two coefficient with its milder single effect.
+
+    Interaction magnitude is not constant across pairs. It tracks how strongly
+    the two mutations act on their own, so a prior with one scale for every pair
+    produces residuals that are too uniform to pass as measured ones.
+    """
+    observed = _observation_map(variants, wild_type_sequence)
+    latent = {key: float(transform(value - wild_type_fitness)) for key, value in observed.items()}
+    pairs: list[tuple[float, float]] = []
+    for genotype in latent:
+        if len(genotype) != 2:
+            continue
+        if any(subset not in latent for subset in _subsets(genotype)):
+            continue
+        if any(mutation not in effects for mutation in genotype):
+            continue
+        coefficient = sum(
+            (-1.0) ** (2 - len(subset)) * latent[subset] for subset in _subsets(genotype)
+        )
+        milder = min(abs(effects[mutation]) for mutation in genotype) / scale
+        pairs.append((milder, coefficient / scale))
+    return pairs
+
+
 def _latent_coefficients(
     variants: pd.DataFrame,
     wild_type_sequence: str,
@@ -201,6 +258,12 @@ class LandscapePrior:
     upper_bound: float
     depth_between: dict[int, float] = field(default_factory=dict)
     depth_shrinkage: dict[int, float] = field(default_factory=dict)
+    order_shape: dict[int, list[float]] = field(default_factory=dict)
+    readout_scale_ratio: float = 1.0
+    combinatorial_upside: float = 1.0
+    combinatorial_downside: float = 1.0
+    magnitude_edges: list[float] = field(default_factory=list)
+    magnitude_scale: list[float] = field(default_factory=list)
     texture_scale: float = 0.0
     texture_order: int = 3
     texture_iid_fraction: float = 0.3
@@ -239,6 +302,10 @@ class LandscapePrior:
         lower_bounds: list[float] = []
         upper_bounds: list[float] = []
         texture_scales: list[float] = []
+        scale_ratios: list[float] = []
+        upsides: list[float] = []
+        downsides: list[float] = []
+        magnitude_pairs: list[tuple[float, float]] = []
 
         for dataset in datasets:
             coefficients = interaction_coefficients(
@@ -275,6 +342,15 @@ class LandscapePrior:
             if global_epistasis:
                 readout = _training_readout(single_effects, finite_fitness - wt)
             if readout is not None:
+                # The saturation rate is what decides how fast stacked mutations
+                # approach the floor, and singles carry no information about it.
+                # Refitting the same readout against every measured variant gives
+                # the rate that landscape actually has, and the ratio between the
+                # two transfers even though neither value does.
+                full = _refit_scale(readout, finite_fitness - wt)
+                if full is not None and full > 1e-9:
+                    scale_ratios.append(float(readout.scale) / full)
+            if readout is not None:
                 transform = readout.inverse
                 effects = {key: float(transform(value)) for key, value in single_effects.items()}
                 coefficient_scale = _single_effect_scale(
@@ -300,6 +376,16 @@ class LandscapePrior:
                     transform,
                     tuple(by_order),
                 )
+                magnitude_pairs.extend(
+                    _magnitude_pairs(
+                        dataset.variants,
+                        dataset.wild_type_sequence,
+                        wt,
+                        transform,
+                        effects,
+                        coefficient_scale,
+                    )
+                )
                 for order in by_order:
                     by_order[order].extend(
                         value / coefficient_scale for value in latent.get(order, ())
@@ -309,6 +395,16 @@ class LandscapePrior:
             # The plateau is not flat, and its fine structure is what creates
             # local optima, so the prior carries its spread.
             centred = finite_fitness - wt
+            # Stacked mutations reach further than any single one does, and the
+            # bounds are the only part of the readout that controls how fast
+            # they saturate. How much further transfers between proteins.
+            singles_high = float(np.max(list(single_effects.values())))
+            singles_low = float(np.min(list(single_effects.values())))
+            if singles_high > 1e-9:
+                upsides.append(float(np.max(centred)) / singles_high)
+            if singles_low < -1e-9:
+                downsides.append(float(np.min(centred)) / singles_low)
+
             floor = float(np.min(centred))
             band = _FLOOR_BAND * float(np.max(centred) - floor)
             on_floor = centred[centred <= floor + band]
@@ -344,6 +440,7 @@ class LandscapePrior:
 
         locations: dict[int, float] = {}
         scales: dict[int, float] = {}
+        shapes: dict[int, list[float]] = {}
         previous_scale = 0.25
         for order in range(2, max_order + 1):
             values = np.asarray(by_order[order], dtype=np.float64)
@@ -352,6 +449,13 @@ class LandscapePrior:
                 scale = _robust_scale(values)
                 scales[order] = max(scale, 1e-6)
                 previous_scale = scales[order]
+                # A Student t is an assumption. The measured coefficients are
+                # available, and their shape is not a t. Carrying the quantile
+                # grid reproduces it without naming a family.
+                spread = float(np.std(values))
+                if values.size >= 64 and spread > 1e-12:
+                    standardised = (values - np.mean(values)) / spread
+                    shapes[order] = [float(q) for q in np.quantile(standardised, _SHAPE_GRID)]
             else:
                 locations[order] = 0.0
                 scales[order] = previous_scale * 0.5
@@ -388,6 +492,24 @@ class LandscapePrior:
             # and every interval then falls short of nominal.
             depth_scales[depth] = max(sqrt(float(np.mean(within**2)) + between**2), 1e-6)
 
+        magnitude_edges: list[float] = []
+        magnitude_scale: list[float] = []
+        if len(magnitude_pairs) >= 400:
+            sizes = np.asarray([item[0] for item in magnitude_pairs], dtype=np.float64)
+            values = np.asarray([item[1] for item in magnitude_pairs], dtype=np.float64)
+            edges = np.quantile(sizes, np.linspace(0.0, 1.0, 9))
+            spreads = []
+            for index in range(len(edges) - 1):
+                inside = (sizes >= edges[index]) & (sizes <= edges[index + 1])
+                spreads.append(float(np.std(values[inside])) if inside.sum() >= 30 else np.nan)
+            spread = np.asarray(spreads, dtype=np.float64)
+            if np.isfinite(spread).sum() >= 4:
+                mean_spread = float(np.nanmean(spread))
+                if mean_spread > 1e-9:
+                    spread = np.where(np.isfinite(spread), spread, mean_spread) / mean_spread
+                    magnitude_edges = [float(x) for x in edges]
+                    magnitude_scale = [float(x) for x in spread]
+
         lower_bound = float(np.median(lower_bounds)) if lower_bounds else -5.0
         upper_bound = float(np.median(upper_bounds)) if upper_bounds else 5.0
         if lower_bound >= upper_bound:
@@ -395,11 +517,17 @@ class LandscapePrior:
         return cls(
             order_location=locations,
             order_scale=scales,
+            order_shape=shapes,
             depth_location=depth_locations,
             depth_scale=depth_scales,
             depth_between=depth_between,
             depth_shrinkage=depth_shrinkage,
             texture_scale=float(np.median(texture_scales)) if texture_scales else 0.0,
+            readout_scale_ratio=float(np.median(scale_ratios)) if scale_ratios else 1.0,
+            combinatorial_upside=float(np.median(upsides)) if upsides else 1.0,
+            combinatorial_downside=float(np.median(downsides)) if downsides else 1.0,
+            magnitude_edges=magnitude_edges,
+            magnitude_scale=magnitude_scale,
             lower_bound=lower_bound,
             upper_bound=upper_bound,
             n_landscapes=len(datasets),
@@ -415,6 +543,12 @@ class LandscapePrior:
             "depth_scale": {str(k): v for k, v in self.depth_scale.items()},
             "depth_between": {str(k): v for k, v in self.depth_between.items()},
             "depth_shrinkage": {str(k): v for k, v in self.depth_shrinkage.items()},
+            "order_shape": {str(k): v for k, v in self.order_shape.items()},
+            "readout_scale_ratio": self.readout_scale_ratio,
+            "combinatorial_upside": self.combinatorial_upside,
+            "combinatorial_downside": self.combinatorial_downside,
+            "magnitude_edges": list(self.magnitude_edges),
+            "magnitude_scale": list(self.magnitude_scale),
             "texture_scale": self.texture_scale,
             "texture_order": self.texture_order,
             "texture_iid_fraction": self.texture_iid_fraction,
@@ -445,6 +579,15 @@ class LandscapePrior:
             },
             lower_bound=float(values["lower_bound"]),
             upper_bound=float(values["upper_bound"]),
+            order_shape={
+                int(k): [float(x) for x in v]
+                for k, v in dict(values.get("order_shape", {})).items()
+            },
+            readout_scale_ratio=float(values.get("readout_scale_ratio", 1.0)),
+            combinatorial_upside=float(values.get("combinatorial_upside", 1.0)),
+            combinatorial_downside=float(values.get("combinatorial_downside", 1.0)),
+            magnitude_edges=[float(x) for x in values.get("magnitude_edges", [])],
+            magnitude_scale=[float(x) for x in values.get("magnitude_scale", [])],
             texture_scale=float(values.get("texture_scale", 0.0)),
             texture_order=int(values.get("texture_order", 3)),
             texture_iid_fraction=float(values.get("texture_iid_fraction", 0.3)),
@@ -460,6 +603,7 @@ def _fit_readout(
     target_scale: float,
     *,
     margin: float = 0.05,
+    floor_policy: str = "censored",
 ) -> NonLinearity | None:
     """Fit a saturating readout for one target from its singles.
 
@@ -472,19 +616,30 @@ def _fit_readout(
     if effects.size < 2:
         return None
 
-    low = min(float(effects.min()), prior.lower_bound * target_scale)
-    high = max(float(effects.max()), prior.upper_bound * target_scale)
+    reach_low = float(effects.min()) * max(prior.combinatorial_downside, 1.0)
+    reach_high = float(effects.max()) * max(prior.combinatorial_upside, 1.0)
+    low = min(reach_low, prior.lower_bound * target_scale)
+    high = max(reach_high, prior.upper_bound * target_scale)
     span = high - low
     if not np.isfinite(span) or span <= 1e-12:
         return None
     floor = min(low - margin * span, -margin * span)
     ceiling = max(high + margin * span, margin * span)
 
-    # The worst measured single marks where the assay stops resolving. Clipping
-    # there reproduces the dead plateau a censored readout produces, which is
-    # most of a real combinatorial library.
+    # Clip only where the singles show the assay stops resolving. Several
+    # singles landing on the same worst value is that evidence. Clipping every
+    # assay instead put four fifths of a generated library on the floor where
+    # the measured one holds a quarter, and it flattened libraries whose
+    # combinations never reach the worst single at all.
     worst_single = float(effects.min())
-    floor_hard = worst_single if worst_single < 0 else None
+    span_effects = float(effects.max() - worst_single)
+    tied = float(np.mean(effects <= worst_single + _FLOOR_BAND * span_effects))
+    censored = span_effects > 0 and tied >= _CENSORED_TIE_FRACTION
+    if floor_policy == "always":
+        censored = True
+    elif floor_policy == "never":
+        censored = False
+    floor_hard = worst_single if censored and worst_single < 0 else None
 
     by_position: dict[int, dict[str, float]] = {}
     for (position, amino_acid), effect in single_effects.items():
@@ -496,6 +651,10 @@ def _fit_readout(
             floor=floor,
             ceiling=ceiling,
         )
+        # The readout scale cannot change anything here. Preimages carry a
+        # factor of the scale and the composition divides it straight back out,
+        # so only the floor and the ceiling set how fast stacking saturates.
+        # ``readout_scale_ratio`` stays on the prior as a measured diagnostic.
         return replace(fitted, floor_hard=floor_hard) if floor_hard is not None else fitted
     except (ValueError, RuntimeError):
         return None
@@ -523,6 +682,7 @@ class PosteriorLandscape:
         prior: LandscapePrior,
         *,
         global_epistasis: bool = True,
+        floor_policy: str = "censored",
     ) -> Self:
         """Condition the prior on WT, singles, and any supplied combinations.
 
@@ -568,7 +728,9 @@ class PosteriorLandscape:
         preimage_effects: dict[tuple[int, str], float] = {}
         preimage_scale = 1.0
         if global_epistasis:
-            nonlinearity = _fit_readout(single_effects, prior, target_scale)
+            nonlinearity = _fit_readout(
+                single_effects, prior, target_scale, floor_policy=floor_policy
+            )
         if nonlinearity is not None:
             preimage_effects = {
                 mutation: float(nonlinearity.inverse(effect))
@@ -666,6 +828,27 @@ class CompletedLandscape:
         parameters = np.asarray([values[int(item)] for item in depths], dtype=np.float64)
         return float(np.interp(depth, depths, parameters))
 
+    def _magnitude(self, interaction: MutationKey) -> float:
+        """Relative interaction spread for one mutation set.
+
+        Two mutations that each do little on their own rarely interact
+        strongly. Scaling the draw by the measured profile makes the residuals
+        heteroscedastic, which a single pooled scale cannot be.
+        """
+        prior = self.posterior.prior
+        if not prior.magnitude_edges or not prior.magnitude_scale:
+            return 1.0
+        posterior = self.posterior
+        effects = posterior.preimage_effects or posterior.single_effects
+        scale = posterior.preimage_scale if posterior.nonlinearity else posterior.target_scale
+        sizes = [abs(effects[m]) for m in interaction if m in effects]
+        if not sizes:
+            return 1.0
+        milder = min(sizes) / (scale if scale > 1e-12 else 1.0)
+        index = int(np.searchsorted(prior.magnitude_edges, milder, side="right")) - 1
+        index = min(max(index, 0), len(prior.magnitude_scale) - 1)
+        return float(prior.magnitude_scale[index])
+
     def _draw_coefficient(self, interaction: MutationKey) -> float:
         observed = self.posterior.coefficients.get(interaction)
         if observed is not None:
@@ -676,8 +859,12 @@ class CompletedLandscape:
         digest = hashlib.blake2b(payload, digest_size=16).digest()
         draw_seed = int.from_bytes(digest[:8], byteorder="little", signed=False)
         rng = np.random.default_rng(draw_seed)
-        df = prior.degrees_of_freedom
-        unit_variance_t = float(rng.standard_t(df) / sqrt(df / (df - 2.0)))
+        shape = prior.order_shape.get(order)
+        if shape:
+            unit_variance_t = float(np.interp(rng.random(), _SHAPE_GRID, shape))
+        else:
+            df = prior.degrees_of_freedom
+            unit_variance_t = float(rng.standard_t(df) / sqrt(df / (df - 2.0)))
         # The depth prior carries systematic residual location. Centring each
         # coefficient avoids multiplying an order median by every subset.
         scale = (
@@ -685,7 +872,7 @@ class CompletedLandscape:
             if self.posterior.nonlinearity is not None
             else self.posterior.target_scale
         )
-        return scale * prior.order_scale[order] * unit_variance_t
+        return scale * prior.order_scale[order] * self._magnitude(interaction) * unit_variance_t
 
     def evaluate(self, mutations: dict[int, str]) -> float:
         """Evaluate any genotype in the whole-protein mutation domain."""
@@ -721,7 +908,9 @@ class CompletedLandscape:
                 coefficient = posterior.coefficients.get(interaction)
                 if coefficient is None:
                     sampled_interaction += self._draw_coefficient(interaction)
-                    sampled_variance += posterior.prior.order_scale[order] ** 2
+                    sampled_variance += (
+                        posterior.prior.order_scale[order] * self._magnitude(interaction)
+                    ) ** 2
                 else:
                     observed_interaction += coefficient
 

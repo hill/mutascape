@@ -407,3 +407,42 @@ def maximum_mean_discrepancy(
     kernel_xy = np.exp(-gamma * cdist(real, synthetic, metric="sqeuclidean"))
     mmd_squared = float(np.mean(kernel_xx) + np.mean(kernel_yy) - 2.0 * np.mean(kernel_xy))
     return {"mmd_squared": max(0.0, mmd_squared), "bandwidth": bandwidth}
+
+
+def per_feature_c2st(
+    real_features: pd.DataFrame,
+    synthetic_features: pd.DataFrame,
+    *,
+    groups: NDArray | None = None,
+    n_splits: int = 5,
+    seed: int = 0,
+) -> dict[str, float]:
+    """Score each feature on its own, to locate what separates the samples.
+
+    A single AUC says two samples differ. It does not say which property
+    differs, and the fix depends entirely on that. Scoring one column at a time
+    against the same folds attributes the separation to a feature the model can
+    be changed to address.
+    """
+    if list(real_features.columns) != list(synthetic_features.columns):
+        raise ValueError("both feature frames must carry the same columns")
+    scores: dict[str, float] = {}
+    for column in real_features.columns:
+        left = real_features[[column]].to_numpy(dtype=np.float64)
+        right = synthetic_features[[column]].to_numpy(dtype=np.float64)
+        # A constant column carries no signal and would divide by zero in the
+        # scaler, so it scores as chance rather than raising.
+        if np.allclose(left, right):
+            scores[column] = 0.5
+            continue
+        result = classifier_two_sample_test(
+            left,
+            right,
+            real_groups=groups,
+            synthetic_groups=groups,
+            n_splits=n_splits,
+            n_permutations=0,
+            seed=seed,
+        )
+        scores[column] = result.auc
+    return scores

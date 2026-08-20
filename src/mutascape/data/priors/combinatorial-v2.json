@@ -2,7 +2,7 @@
   "id": "combinatorial-v2",
   "name": "Combinatorial landscape prior v2",
   "description": "Pooled pairwise interaction prior. Coefficients are normalised by the standard deviation of measured single effects, and the depth residual is shrunk towards zero by its between-protein spread.",
-  "created": "2026-08-19",
+  "created": "2026-08-20",
   "maxInteractionOrder": 2,
   "excludedLandscapes": [
     "CR6261_H9_binding"
@@ -26,7 +26,7 @@
       "2": 0.7433828059878198
     },
     "order_scale": {
-      "2": 2.0590150923110455
+      "2": 2.059015092311046
     },
     "depth_location": {
       "3": 0.04815068232816163,
@@ -92,6 +92,9 @@
       "13": 0.01204644188037019,
       "15": 0.0
     },
+    "texture_scale": 0.006279049515809734,
+    "texture_order": 3,
+    "texture_iid_fraction": 0.3,
     "lower_bound": -4.346750638888565,
     "upper_bound": 2.624420801011617,
     "degrees_of_freedom": 5.0,

@@ -9,7 +9,7 @@ for every genotype in the target mutation domain.
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from itertools import combinations
 from math import sqrt
 from typing import TYPE_CHECKING, Self
@@ -27,6 +27,9 @@ MutationKey = tuple[tuple[int, str], ...]
 
 # Below this many contributing landscapes a depth bin cannot support a transferred shift.
 _MIN_DEPTH_LANDSCAPES = 3
+
+# Width of the band, as a fraction of the assay range, counted as sitting on the floor.
+_FLOOR_BAND = 0.02
 
 
 def _key(mutations: dict[int, str], wild_type_sequence: str) -> MutationKey:
@@ -88,6 +91,13 @@ def interaction_coefficients(
             coefficient += (-1.0) ** (order - len(subset)) * observed[subset]
         coefficients[order].append(float(coefficient))
     return coefficients
+
+
+def _hash_normal(key: object, seed: int) -> float:
+    """Standard normal draw pinned to a key, so a genotype always gets the same one."""
+    payload = f"{seed!r}|{key!r}".encode()
+    digest = hashlib.blake2b(payload, digest_size=16).digest()
+    return float(np.random.default_rng(int.from_bytes(digest[:8], "little")).normal())
 
 
 def _single_effect_scale(values: NDArray[np.float64]) -> float:
@@ -191,6 +201,9 @@ class LandscapePrior:
     upper_bound: float
     depth_between: dict[int, float] = field(default_factory=dict)
     depth_shrinkage: dict[int, float] = field(default_factory=dict)
+    texture_scale: float = 0.0
+    texture_order: int = 3
+    texture_iid_fraction: float = 0.3
     degrees_of_freedom: float = 5.0
     n_landscapes: int = 0
     n_proteins: int = 0
@@ -225,6 +238,7 @@ class LandscapePrior:
         by_depth_scale: dict[int, list[float]] = {}
         lower_bounds: list[float] = []
         upper_bounds: list[float] = []
+        texture_scales: list[float] = []
 
         for dataset in datasets:
             coefficients = interaction_coefficients(
@@ -290,6 +304,16 @@ class LandscapePrior:
                     by_order[order].extend(
                         value / coefficient_scale for value in latent.get(order, ())
                     )
+
+            # A censored assay parks most of its library on the detection floor.
+            # The plateau is not flat, and its fine structure is what creates
+            # local optima, so the prior carries its spread.
+            centred = finite_fitness - wt
+            floor = float(np.min(centred))
+            band = _FLOOR_BAND * float(np.max(centred) - floor)
+            on_floor = centred[centred <= floor + band]
+            if on_floor.size >= 8:
+                texture_scales.append(_robust_scale(on_floor) / target_scale)
 
             supported_depths: list[int] = []
             supported_fitness: list[float] = []
@@ -375,6 +399,7 @@ class LandscapePrior:
             depth_scale=depth_scales,
             depth_between=depth_between,
             depth_shrinkage=depth_shrinkage,
+            texture_scale=float(np.median(texture_scales)) if texture_scales else 0.0,
             lower_bound=lower_bound,
             upper_bound=upper_bound,
             n_landscapes=len(datasets),
@@ -390,6 +415,9 @@ class LandscapePrior:
             "depth_scale": {str(k): v for k, v in self.depth_scale.items()},
             "depth_between": {str(k): v for k, v in self.depth_between.items()},
             "depth_shrinkage": {str(k): v for k, v in self.depth_shrinkage.items()},
+            "texture_scale": self.texture_scale,
+            "texture_order": self.texture_order,
+            "texture_iid_fraction": self.texture_iid_fraction,
             "lower_bound": self.lower_bound,
             "upper_bound": self.upper_bound,
             "degrees_of_freedom": self.degrees_of_freedom,
@@ -417,6 +445,9 @@ class LandscapePrior:
             },
             lower_bound=float(values["lower_bound"]),
             upper_bound=float(values["upper_bound"]),
+            texture_scale=float(values.get("texture_scale", 0.0)),
+            texture_order=int(values.get("texture_order", 3)),
+            texture_iid_fraction=float(values.get("texture_iid_fraction", 0.3)),
             degrees_of_freedom=float(values.get("degrees_of_freedom", 5.0)),
             n_landscapes=int(values.get("n_landscapes", 0)),
             n_proteins=int(values.get("n_proteins", 0)),
@@ -449,16 +480,23 @@ def _fit_readout(
     floor = min(low - margin * span, -margin * span)
     ceiling = max(high + margin * span, margin * span)
 
+    # The worst measured single marks where the assay stops resolving. Clipping
+    # there reproduces the dead plateau a censored readout produces, which is
+    # most of a real combinatorial library.
+    worst_single = float(effects.min())
+    floor_hard = worst_single if worst_single < 0 else None
+
     by_position: dict[int, dict[str, float]] = {}
     for (position, amino_acid), effect in single_effects.items():
         by_position.setdefault(int(position), {})[amino_acid] = float(effect)
     try:
-        return GlobalEpistasisSigmoid.fit_from_singles(
+        fitted = GlobalEpistasisSigmoid.fit_from_singles(
             by_position,
             margin=margin,
             floor=floor,
             ceiling=ceiling,
         )
+        return replace(fitted, floor_hard=floor_hard) if floor_hard is not None else fitted
     except (ValueError, RuntimeError):
         return None
 
@@ -698,6 +736,7 @@ class CompletedLandscape:
 
         wt = posterior.observations[()]
         value = wt + float(readout.forward(latent)) if readout is not None else wt + latent
+        value += self._floor_texture(genotype, value - wt)
 
         if self.clip_to_assay_range:
             lower = min(
@@ -711,6 +750,43 @@ class CompletedLandscape:
             if lower < upper:
                 value = float(np.clip(value, lower, upper))
         return float(value)
+
+    def _floor_texture(self, genotype: MutationKey, centred: float) -> float:
+        """Break the censored plateau into stable local topology.
+
+        A clipped readout maps a wide band of latent values onto one number, so
+        every dead variant ties with its neighbours and the landscape reports a
+        single optimum. Real censored assays still resolve fine differences
+        down there, and those differences carry the local optima that make a
+        landscape hard to search. The perturbation applies only on the floor,
+        so it never moves a variant the assay could actually resolve.
+        """
+        posterior = self.posterior
+        prior = posterior.prior
+        readout = posterior.nonlinearity
+        if readout is None or prior.texture_scale <= 0.0:
+            return 0.0
+        floor_hard = getattr(readout, "floor_hard", None)
+        if floor_hard is None:
+            return 0.0
+        band = _FLOOR_BAND * (float(readout.ceiling) - float(floor_hard))
+        if centred > float(floor_hard) + band:
+            return 0.0
+
+        order = int(prior.texture_order)
+        iid = _hash_normal(("texture-iid", genotype), self.seed)
+        if order <= 0 or len(genotype) < order:
+            ordered = 0.0
+        else:
+            groups = list(combinations(genotype, order))
+            ordered = float(
+                sum(_hash_normal(("texture-order", group), self.seed) for group in groups)
+                / sqrt(len(groups))
+            )
+        mix = min(max(float(prior.texture_iid_fraction), 0.0), 1.0)
+        denominator = sqrt((1.0 - mix) ** 2 + mix**2)
+        blended = ((1.0 - mix) * ordered + mix * iid) / denominator if denominator else 0.0
+        return prior.texture_scale * posterior.target_scale * blended
 
     def evaluate_batch(self, variants: list[dict[int, str]]) -> NDArray[np.float64]:
         """Evaluate a sequence of genotypes."""

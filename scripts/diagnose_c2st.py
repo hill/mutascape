@@ -46,6 +46,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--max-order", type=int, default=2)
     parser.add_argument("--limit", type=int, default=200)
     parser.add_argument("--seed", type=int, default=20260820)
+    parser.add_argument("--floor-policy", choices=["always", "censored", "never"], default="always")
     return parser.parse_args()
 
 

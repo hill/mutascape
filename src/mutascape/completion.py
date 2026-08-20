@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field, replace
+from functools import cached_property
 from itertools import combinations
 from math import sqrt
 from typing import TYPE_CHECKING, Self
@@ -673,6 +674,7 @@ class PosteriorLandscape:
     nonlinearity: NonLinearity | None = None
     preimage_effects: dict[tuple[int, str], float] = field(default_factory=dict)
     preimage_scale: float = 1.0
+    donors: tuple = ()
 
     @classmethod
     def condition(
@@ -683,6 +685,7 @@ class PosteriorLandscape:
         *,
         global_epistasis: bool = True,
         floor_policy: str = "censored",
+        donors: tuple = (),
     ) -> Self:
         """Condition the prior on WT, singles, and any supplied combinations.
 
@@ -763,6 +766,7 @@ class PosteriorLandscape:
             nonlinearity=nonlinearity,
             preimage_effects=preimage_effects,
             preimage_scale=preimage_scale,
+            donors=tuple(donors),
         )
 
     def sample(self, seed: int, *, clip_to_assay_range: bool = False) -> CompletedLandscape:
@@ -812,6 +816,15 @@ class CompletedLandscape:
     seed: int
     clip_to_assay_range: bool = False
 
+    @cached_property
+    def _transplant(self):
+        """Mapping onto one donor landscape, fixed by this sample's seed."""
+        if not self.posterior.donors:
+            return None
+        from mutascape.transplant import build_index
+
+        return build_index(list(self.posterior.donors), self.posterior.single_effects, self.seed)
+
     @property
     def wild_type(self) -> dict[int, str]:
         """One-based residue map, matching the ``Landscape`` tensor interface."""
@@ -855,6 +868,18 @@ class CompletedLandscape:
             return observed
         order = len(interaction)
         prior = self.posterior.prior
+        scale = (
+            self.posterior.preimage_scale
+            if self.posterior.nonlinearity is not None
+            else self.posterior.target_scale
+        )
+
+        index = self._transplant
+        if index is not None:
+            borrowed = index.coefficient(interaction)
+            if borrowed is not None:
+                return scale * borrowed
+
         payload = f"{self.seed}|{interaction!r}".encode()
         digest = hashlib.blake2b(payload, digest_size=16).digest()
         draw_seed = int.from_bytes(digest[:8], byteorder="little", signed=False)
@@ -867,11 +892,6 @@ class CompletedLandscape:
             unit_variance_t = float(rng.standard_t(df) / sqrt(df / (df - 2.0)))
         # The depth prior carries systematic residual location. Centring each
         # coefficient avoids multiplying an order median by every subset.
-        scale = (
-            self.posterior.preimage_scale
-            if self.posterior.nonlinearity is not None
-            else self.posterior.target_scale
-        )
         return scale * prior.order_scale[order] * self._magnitude(interaction) * unit_variance_t
 
     def evaluate(self, mutations: dict[int, str]) -> float:

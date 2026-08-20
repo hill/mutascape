@@ -41,6 +41,7 @@ from mutascape.benchmarks.splits import (
     single_effect_summary,
 )
 from mutascape.completion import LandscapePrior, PosteriorLandscape
+from mutascape.transplant import build_donors
 
 
 def _parse_args() -> argparse.Namespace:
@@ -57,6 +58,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=20260812)
     parser.add_argument("--limit", type=int, help="Limit held-out variants per landscape")
     parser.add_argument("--c2st-permutations", type=int, default=1000)
+    parser.add_argument(
+        "--transplant",
+        action="store_true",
+        help="Borrow measured interactions from a donor landscape instead of sampling",
+    )
     parser.add_argument(
         "--floor-policy",
         choices=["always", "censored", "never"],
@@ -157,6 +163,7 @@ def main() -> None:
 
     skipped: list[dict[str, object]] = []
     for fold_index, fold in enumerate(iter_protein_holdouts(datasets)):
+        donors = tuple(build_donors(list(fold.train))) if args.transplant else ()
         prior = LandscapePrior.fit(
             list(fold.train),
             max_order=args.max_order,
@@ -195,6 +202,7 @@ def main() -> None:
                     prior,
                     global_epistasis=args.global_epistasis,
                     floor_policy=args.floor_policy,
+                    donors=donors,
                 )
                 evaluation = evaluate_posterior(
                     posterior,
@@ -315,6 +323,7 @@ def main() -> None:
             "shrink_depth": args.shrink_depth,
             "global_epistasis": args.global_epistasis,
             "floor_policy": args.floor_policy,
+            "transplant": args.transplant,
             "budgets": args.budget,
             "n_landscapes": len({row["dataset"] for row in metric_rows}),
             "n_proteins": len({row["protein"] for row in metric_rows}),

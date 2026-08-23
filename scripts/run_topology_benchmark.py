@@ -28,6 +28,7 @@ from mutascape.benchmarks.search import (
     random_search,
     ridge_guided_search,
 )
+from mutascape.benchmarks.spectral import calibrate_order_scale
 from mutascape.benchmarks.splits import (
     has_informative_singles,
     iter_protein_holdouts,
@@ -65,6 +66,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--search-budget", type=int, default=96)
     parser.add_argument("--search-seeds", type=int, default=5)
     parser.add_argument("--max-cube", type=int, default=200_000)
+    parser.add_argument(
+        "--spectral",
+        action="store_true",
+        help="Match the per-order scale ratio to the training landscapes' Walsh spectra",
+    )
     return parser.parse_args()
 
 
@@ -112,6 +118,8 @@ def main() -> None:
         if not targets:
             continue
         prior = LandscapePrior.fit(list(fold.train), max_order=args.max_order)
+        if args.spectral:
+            prior = calibrate_order_scale(prior, list(fold.train), seed=args.seed + fold_index)
 
         for dataset_index, dataset in enumerate(targets):
             split = mutation_order_split(dataset.variants, max_train_depth=1)
@@ -213,6 +221,7 @@ def main() -> None:
 
     summary = {
         "seed": args.seed,
+        "spectral": args.spectral,
         "posterior_samples": args.samples,
         "search_budget": args.search_budget,
         "search_seeds": args.search_seeds,

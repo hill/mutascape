@@ -58,6 +58,18 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--only", nargs="*", default=None, help="Restrict to named landscapes")
     parser.add_argument("--methods", nargs="*", default=None, help="Restrict to named methods")
     parser.add_argument(
+        "--floor-policy",
+        choices=["always", "censored", "never"],
+        default="censored",
+        help="Clip at the worst single always, only on censoring evidence, or never",
+    )
+    parser.add_argument(
+        "--no-global-epistasis",
+        dest="global_epistasis",
+        action="store_false",
+        help="Sum raw measured singles instead of composing through a fitted readout",
+    )
+    parser.add_argument(
         "--generators",
         action="store_true",
         help="Add NK, Rough Mount Fuji and Potts arms to the audit",
@@ -88,7 +100,13 @@ def _score_landscape(dataset, prior, args, fold_index, dataset_index) -> list[di
     space = SearchSpace.from_cube(cube, mask)
     features = make_features(space)
     seed = args.seed + 1000 * fold_index + 10 * dataset_index
-    posterior = PosteriorLandscape.condition(dataset.wild_type_sequence, split.train, prior)
+    posterior = PosteriorLandscape.condition(
+        dataset.wild_type_sequence,
+        split.train,
+        prior,
+        floor_policy=args.floor_policy,
+        global_epistasis=args.global_epistasis,
+    )
 
     arms: dict[str, np.ndarray] = {
         "measured": space.arm_values(measured),
@@ -209,6 +227,8 @@ def main() -> None:
 
     summary = {
         "budget": args.budget,
+        "floor_policy": args.floor_policy,
+        "global_epistasis": args.global_epistasis,
         "seeds": args.seeds,
         "posterior_draws": args.draws,
         "acquisition_pool": 20_000,

@@ -105,13 +105,15 @@ def posterior_tensors(
     *,
     n_samples: int = 30,
     seed: int = 0,
+    roughness: float = 1.0,
 ):
     """Yield one complete cube per posterior draw."""
     variants, indices = cube.variants()
     shape = tuple(len(cube.alphabets[p]) for p in cube.positions)
     wt = posterior.observations[()]
     for index in range(n_samples):
-        values = posterior.sample(seed + index).evaluate_batch(variants) - wt
+        sample = posterior.sample(seed + index, roughness=roughness)
+        values = sample.evaluate_batch(variants) - wt
         yield _fill(np.empty(shape, dtype=np.float64), values, indices)
 
 

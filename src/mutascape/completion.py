@@ -769,16 +769,27 @@ class PosteriorLandscape:
             donors=tuple(donors),
         )
 
-    def sample(self, seed: int, *, clip_to_assay_range: bool = False) -> CompletedLandscape:
+    def sample(
+        self,
+        seed: int,
+        *,
+        clip_to_assay_range: bool = False,
+        roughness: float = 1.0,
+    ) -> CompletedLandscape:
         """Return one fixed oracle realisation.
 
         Clipping is optional because the latent fitness oracle and a censored
         assay readout represent different objects.
+
+        ``roughness`` scales every structure the model adds beyond the measured
+        singles and the readout. At zero the sample is the additive surrogate,
+        which traces the accuracy against realism frontier with one knob.
         """
         return CompletedLandscape(
             self,
             seed=int(seed),
             clip_to_assay_range=clip_to_assay_range,
+            roughness=float(roughness),
         )
 
     def predict(
@@ -815,6 +826,7 @@ class CompletedLandscape:
     posterior: PosteriorLandscape
     seed: int
     clip_to_assay_range: bool = False
+    roughness: float = 1.0
 
     @cached_property
     def _transplant(self):
@@ -940,7 +952,7 @@ class CompletedLandscape:
             sqrt(sampled_variance),
         )
         if sampled_variance > 0:
-            sampled_interaction *= desired_scale / sqrt(sampled_variance)
+            sampled_interaction *= self.roughness * desired_scale / sqrt(sampled_variance)
         latent += observed_interaction + sampled_interaction
 
         wt = posterior.observations[()]
@@ -973,7 +985,7 @@ class CompletedLandscape:
         posterior = self.posterior
         prior = posterior.prior
         readout = posterior.nonlinearity
-        if readout is None or prior.texture_scale <= 0.0:
+        if readout is None or prior.texture_scale <= 0.0 or self.roughness <= 0.0:
             return 0.0
         floor_hard = getattr(readout, "floor_hard", None)
         if floor_hard is None:
@@ -995,7 +1007,7 @@ class CompletedLandscape:
         mix = min(max(float(prior.texture_iid_fraction), 0.0), 1.0)
         denominator = sqrt((1.0 - mix) ** 2 + mix**2)
         blended = ((1.0 - mix) * ordered + mix * iid) / denominator if denominator else 0.0
-        return prior.texture_scale * posterior.target_scale * blended
+        return self.roughness * prior.texture_scale * posterior.target_scale * blended
 
     def evaluate_batch(self, variants: list[dict[int, str]]) -> NDArray[np.float64]:
         """Evaluate a sequence of genotypes."""

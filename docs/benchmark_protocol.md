@@ -1,66 +1,147 @@
-# Sparse-to-Complete Benchmark Protocol
+# Task-transfer benchmark protocol
 
 ## Research question
 
-Can sparse single-mutant or double-mutant DMS support a realistic, combinatorially complete whole-protein oracle?
+Can a synthetic oracle preserve method comparisons from measured combinatorial protein landscapes?
 
-Mutascape defines fitness for every sequence in a chosen whole-protein mutation domain. It materialises small libraries and queries larger domains lazily.
+The protocol does not test genotype prediction. It tests whether a synthetic benchmark supports similar search conclusions.
 
-## Data units
+## Generator input
 
-The benchmark combines 16 SSMuLA landscapes and 14 CombinGym assay landscapes. Related assays remain grouped by protein. This rule keeps TrpB libraries, antibody conditions, and fluorescent readouts within one fold.
+Each target supplies these fields.
 
-Each normalised table contains these fields.
+- A wild-type sequence.
+- Wild-type fitness.
+- One measured fitness for each supported substitution.
+- Optional measured combinations.
+- A declared position alphabet.
 
-- `sequence` stores the full sequence or mutable-site sequence.
-- `fitness` preserves the source assay value.
-- `depth` stores Hamming distance from the library wild type.
-- `mutations` maps one-based positions in the stored sequence to mutant amino acids.
+An unseen query is valid only when every constituent single was measured. A supplied combination keeps its measured value.
 
-Each manifest entry records the source URL, source revision, phenotype, schema, positions, and wild type.
+## Generator
 
-## Evaluation splits
+The primary arm is `dms-pairwise-v1` with coupling `0.1`.
 
-The outer split holds out one protein. Mutascape learns its interaction prior from every other protein.
+The generator composes measured singles through a fitted saturating readout. Stable baseline-corrected random pair tables add local variation. A seed fixes one lazy oracle draw.
 
-The primary target split exposes wild type and all single mutants. Every supported higher-order variant remains hidden. A secondary split adds a fixed total budget of 96 or 384 observations.
+An ensemble measures sensitivity across benchmark instances. It does not represent calibrated biological uncertainty.
 
-A target variant enters evaluation only after the benchmark measures each constituent single mutation. Reports state this support fraction.
+## Development split
 
-## Completion model
+The development panel contains 16 SSMuLA landscapes. Related landscapes share a protein group.
 
-The first model uses an empirical Bayes random-effects decomposition.
+Each target exposes wild type and all supported singles. Every higher-order value remains hidden until search scoring. Readout calibration excludes the target protein group.
 
-1. Measured WT and single effects define the additive component.
-2. Measured doubles or triples fix exact Möbius interaction coefficients.
-3. Training proteins define interaction scales for each order.
-4. Training proteins also define residual location and variance by mutation depth.
-5. A seed fixes all missing interaction draws for one oracle realisation.
+The coupling was selected through a small four-method development sweep. All 12-method confirmation runs keep it fixed.
 
-The random component shares coefficients across related genotypes. This choice creates local correlation in the completed landscape. Depth-specific scaling prevents raw interaction counts from causing uncontrolled variance.
+## External split
 
-Latent fitness remains separate from assay censoring. Users can request an assay-range-clipped oracle when the assay model supports that choice.
+The external manifest contains seven GraphFLA protein landscapes. Each belongs to a different protein family and contains at least 512 complete variants.
 
-## Metrics
+The panel contains HisA-HisF, LamB, influenza haemagglutinin, Hsp90, ParB, beta-lactamase, and SARS-CoV-2 RBD landscapes.
 
-Prediction uses Spearman correlation, absolute error, Wasserstein distance, NDCG, and top-variant recall.
+Promoter, DNA binding-site, and RNA landscapes are excluded from the protein claim. No external target enters coupling selection or prior fitting.
 
-Uncertainty uses CRPS, posterior ranks, interval width, and coverage at 50, 80, and 95 per cent.
+## Search methods
 
-Topology uses Walsh or multiallelic ANOVA spectra, local optima, basins, accessible paths, roughness-to-slope, and graph diffusion ruggedness.
+The primary comparison contains 12 methods.
 
-Distribution tests use C2ST and MMD on local graph-patch features. C2ST splits by protein or disconnected sequence regions. Real replicate comparisons define the empirical lower bound.
+- Random search.
+- Greedy local search.
+- Simulated annealing.
+- Genetic search.
+- Ridge greedy acquisition.
+- Ridge upper confidence bound.
+- Gaussian process expected improvement.
+- Gaussian process upper confidence bound.
+- Random forest greedy acquisition.
+- Random forest Thompson sampling.
+- Multilayer perceptron upper confidence bound.
+- AdaLead.
 
-Search transfer uses matched query budgets for random, greedy, and ridge-guided search. Later work will add established ALDE methods. Kendall correlation compares optimiser ranks on real and synthetic oracles.
+Every method receives the same candidates, query budget, feature encoding, and trial seeds.
 
-## Pilot status
+## Search protocol
 
-A bounded pilot used 200 hidden variants from each of 30 landscapes. It held out 14 protein groups and drew 100 posterior samples.
+The primary budget is 96 queries. Development uses 20 search trials and five generator draws. External validation uses 10 trials and three draws.
 
-The posterior reached median Spearman 0.144 and NDCG 0.912. Additive ridge reached 0.238 and 0.888. Median 80 per cent coverage was 0.915.
+The acquisition pool contains at most 20,000 candidates. Normalised simple regret is
 
-Grouped C2ST reached median AUC 0.895. Median MMD squared was 0.353. The classifier can therefore separate current posterior samples from measured variants.
+`(global best - best found) / (global best - global worst)`.
 
-The posterior improved design ranking but lost point accuracy and produced broad intervals. These results guide model changes. They do not support the final claim.
+Trial-level output records target, protein, arm, method, trial, best fitness, regret, space size, coverage, and runtime.
 
-Generated pilots live under `notebooks/validation/output_completion_*` and remain outside Git.
+## Primary metrics
+
+### Method-rank transfer
+
+Average regret across trials for each method. Calculate Kendall agreement between measured and synthetic method rankings within each landscape. Report the median across landscapes.
+
+### Reliable pairwise winners
+
+Pair measured trials by seed. Bootstrap each method-pair regret difference 1,000 times. Score a pair only when its 95 per cent interval excludes zero.
+
+Winner accuracy is the share of reliable pairs whose synthetic and measured winner agrees. A synthetic tie counts as a miss.
+
+### Measured reliability floor
+
+Split measured trials into two halves 500 times. Calculate Kendall agreement between the two method rankings.
+
+The fifth percentile is the landscape reliability floor. A synthetic arm passes when its transfer reaches that floor.
+
+## Secondary diagnostics
+
+Secondary checks include these measures.
+
+- Walsh or multiallelic interaction-order variance.
+- Strict local optima and peak fraction.
+- Beneficial fraction relative to wild type.
+- Greedy peak percentile and regret.
+- Fitness Wasserstein distance.
+- C2ST and MMD when provenance controls are valid.
+
+These metrics diagnose failures. No one measure establishes benchmark validity.
+
+## Baselines
+
+The required controls are additive, Potts, Rough Mount Fuji, NK, and pairwise ridge. The previous empirical prior model remains an ablation.
+
+Potts is the closest baseline because it combines measured fields with random pair tables. Mutascape adds the fitted readout and strict baseline correction.
+
+## Acceptance rule
+
+The default supports a method-ranking claim when it meets both conditions.
+
+1. Pairwise winner accuracy exceeds 90 per cent on development and external panels.
+2. The reliability pass rate exceeds 80 per cent on both panels.
+
+Median rank transfer provides a graded companion result. Potts performance must appear beside Mutascape.
+
+The current default meets this method-ranking rule. It does not meet a global topology rule.
+
+## Reporting checklist
+
+Every benchmark report should state these items.
+
+- Target positions, alphabets, wild type, and maximum depth.
+- Measured and imputed substitutions as separate counts.
+- Generator version, coupling, and draw seeds.
+- Search methods, budget, trials, and candidate pool.
+- Trial-level regret or an accessible result table.
+- Method-rank transfer and pairwise winner intervals.
+- Known topology gaps.
+
+## Reproduction
+
+Run the development panel with this command.
+
+```bash
+uv run python scripts/run_search_transfer.py \
+  --ssmula-root .mutascape/benchmark-data/ssmula \
+  --combingym-root .mutascape/benchmark-data/combingym \
+  --output notebooks/iclr/output_search_transfer \
+  --budget 96 --seeds 20 --draws 5 --generators \
+  --dms-pairwise-coupling 0.1
+```
+
+Add `--graphfla-root` for the fixed external panel. Source manifests pin the required revisions.

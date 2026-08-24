@@ -8,12 +8,18 @@ generator on the same domain and the same metric.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
 from mutascape.benchmarks.baselines import RidgeLandscapeBaseline
 from mutascape.benchmarks.topology import CubeSpec
+from mutascape.completion import dms_pairwise_unit_coefficient
+
+if TYPE_CHECKING:
+    from mutascape.completion import PosteriorLandscape
 
 
 def _shape(cube: CubeSpec) -> tuple[int, ...]:
@@ -129,6 +135,64 @@ def potts_tensor(
     return tensor
 
 
+def dms_pairwise_readout_tensor(
+    cube: CubeSpec,
+    posterior: PosteriorLandscape,
+    *,
+    coupling: float,
+    seed: int,
+) -> NDArray[np.float64]:
+    """Measured singles plus baseline-corrected random pairs and the fitted readout.
+
+    The pair table is zero whenever either residue is wild type. Wild type and
+    every measured single therefore stay exact. This is the smallest generator
+    that combines the best simple search-transfer arm with the readout that the
+    ablation identified as necessary.
+    """
+    shape = _shape(cube)
+    readout = posterior.nonlinearity
+    effects = posterior.preimage_effects if readout is not None else posterior.single_effects
+    scale = posterior.preimage_scale if readout is not None else posterior.target_scale
+    fields = [
+        np.asarray(
+            [
+                0.0
+                if residue == cube.wild_type[position]
+                else effects[(position, residue)]
+                for residue in cube.alphabets[position]
+            ],
+            dtype=np.float64,
+        )
+        for position in cube.positions
+    ]
+    tensor = _additive(cube, fields)
+    for first, first_position in enumerate(cube.positions):
+        for second in range(first + 1, len(cube.positions)):
+            second_position = cube.positions[second]
+            table = np.asarray(
+                [
+                    [
+                        dms_pairwise_unit_coefficient(
+                            (first_position, first_residue),
+                            (second_position, second_residue),
+                            posterior.wild_type_sequence,
+                            seed,
+                        )
+                        for second_residue in cube.alphabets[second_position]
+                    ]
+                    for first_residue in cube.alphabets[first_position]
+                ],
+                dtype=np.float64,
+            )
+            broadcast = table.reshape(
+                [shape[index] if index in (first, second) else 1 for index in range(len(shape))]
+            )
+            tensor = tensor + coupling * scale * broadcast
+    if readout is not None:
+        tensor = np.asarray(readout.forward(tensor), dtype=np.float64)
+    return tensor
+
+
 def ridge_pairwise_tensor(cube: CubeSpec, train: pd.DataFrame) -> NDArray[np.float64]:
     """Pairwise ridge fitted on the same singles, as a learned smooth surrogate."""
     baseline = RidgeLandscapeBaseline(max_order=2).fit(train)
@@ -145,9 +209,12 @@ def build_generators(
     train: pd.DataFrame,
     *,
     seed: int,
+    posterior: PosteriorLandscape | None = None,
+    dms_pairwise_coupling: float = 0.1,
+    dms_pairwise_draws: int = 1,
 ) -> dict[str, NDArray[np.float64]]:
     """Every comparator generator, built on one cube from wild type and singles."""
-    return {
+    generators = {
         "nk_k1": nk_tensor(cube, k=1, seed=seed),
         "nk_k2": nk_tensor(cube, k=2, seed=seed + 1),
         "rmf_low": rough_mount_fuji_tensor(cube, train, roughness=0.25, seed=seed + 2),
@@ -156,3 +223,12 @@ def build_generators(
         "potts_high": potts_tensor(cube, train, coupling=1.0, seed=seed + 5),
         "ridge_pairwise": ridge_pairwise_tensor(cube, train),
     }
+    if posterior is not None:
+        for draw in range(dms_pairwise_draws):
+            generators[f"dms_pairwise_{draw}"] = dms_pairwise_readout_tensor(
+                cube,
+                posterior,
+                coupling=dms_pairwise_coupling,
+                seed=seed + 6 + draw,
+            )
+    return generators

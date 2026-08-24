@@ -17,7 +17,7 @@ FASTA = ">WT\nAC\n"
 VARIANTS = """variant,fitness
 WT,1.0
 A1G,1.5
-A1V,0.8
+A1V,1.2
 C2D,0.5
 A1G+C2D,2.1
 """
@@ -112,7 +112,10 @@ def test_posterior_preview_reports_uncertainty_in_rows_profiles_and_graph(source
     assert {point["depth"] for point in preview["profile"]} == {1, 2}
     assert all("posteriorStd" in row for row in preview["sample"]["rows"])
     assert any(node["posteriorStd"] > 0 for node in preview["sample"]["graph"]["nodes"])
-    assert "does not measure realism" in preview["notices"][1]
+    assert preview["settings"]["generatorKind"] == "dms-pairwise-v1"
+    assert preview["benchmarkValidity"]["nLandscapes"] == 16
+    assert preview["benchmarkValidity"]["external"]["nLandscapes"] == 7
+    assert "single mutants exact" in preview["notices"][1]
 
 
 def test_shape_summary_separates_posterior_from_an_additive_surrogate(source):

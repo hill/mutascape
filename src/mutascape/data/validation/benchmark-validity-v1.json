@@ -1,0 +1,56 @@
+{
+  "id": "benchmark-validity-v1",
+  "panel": "SSMuLA development panel",
+  "nLandscapes": 16,
+  "nMethods": 12,
+  "budget": 96,
+  "trials": 20,
+  "measuredReliabilityFloor": 0.387931,
+  "external": {
+    "panel": "GraphFLA protein panel",
+    "nLandscapes": 7,
+    "nMethods": 12,
+    "budget": 96,
+    "trials": 10,
+    "kendallTau": 0.606061,
+    "pairwiseAccuracy": 0.826667,
+    "reliabilityPassRate": 0.857143
+  },
+  "methods": [
+    {
+      "id": "dms_pairwise_mean",
+      "label": "Mutascape",
+      "kendallTau": 0.625097,
+      "pairwiseAccuracy": 0.844948,
+      "reliabilityPassRate": 0.8125
+    },
+    {
+      "id": "potts_low",
+      "label": "Potts",
+      "kendallTau": 0.560606,
+      "pairwiseAccuracy": 0.836237,
+      "reliabilityPassRate": 0.75
+    },
+    {
+      "id": "rmf_high",
+      "label": "RMF",
+      "kendallTau": 0.51375,
+      "pairwiseAccuracy": 0.796167,
+      "reliabilityPassRate": 0.6875
+    },
+    {
+      "id": "posterior_mean",
+      "label": "Prior model",
+      "kendallTau": 0.403083,
+      "pairwiseAccuracy": 0.74216,
+      "reliabilityPassRate": 0.625
+    },
+    {
+      "id": "additive",
+      "label": "Additive",
+      "kendallTau": 0.254878,
+      "pairwiseAccuracy": 0.665505,
+      "reliabilityPassRate": 0.375
+    }
+  ]
+}

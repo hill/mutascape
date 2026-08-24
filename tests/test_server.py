@@ -16,7 +16,7 @@ FASTA = ">WT\nAC\n"
 VARIANT_DMS = """variant,fitness
 WT,1.0
 A1G,1.5
-A1V,0.8
+A1V,1.2
 C2D,0.5
 A1G+C2D,2.1
 """
@@ -237,6 +237,8 @@ def test_frontend_routes_support_direct_loading(tmp_path):
         response = client.get(path)
         assert response.status_code == 200
         assert '<div id="root"></div>' in response.text
+        assert 'href="/dist/main.css"' in response.text
+        assert 'src="/dist/main.js"' in response.text
 
 
 def test_leaderboard_create_and_add_result(tmp_path):

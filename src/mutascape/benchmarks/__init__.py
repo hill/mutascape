@@ -2,10 +2,12 @@
 
 from mutascape.benchmarks.datasets import (
     COMBINGYM_MANIFEST,
+    GRAPHFLA_EXTERNAL_MANIFEST,
     SSMULA_MANIFEST,
     LandscapeDataset,
     LandscapeSpec,
     load_combingym_landscapes,
+    load_graphfla_landscapes,
     load_landscape,
     load_ssmula_landscapes,
 )
@@ -39,6 +41,7 @@ from mutascape.benchmarks.splits import (
 
 __all__ = [
     "COMBINGYM_MANIFEST",
+    "GRAPHFLA_EXTERNAL_MANIFEST",
     "SSMULA_MANIFEST",
     "C2STResult",
     "CompletionEvaluation",
@@ -55,6 +58,7 @@ __all__ = [
     "greedy_search",
     "iter_protein_holdouts",
     "load_combingym_landscapes",
+    "load_graphfla_landscapes",
     "load_landscape",
     "load_ssmula_landscapes",
     "interval_calibration",

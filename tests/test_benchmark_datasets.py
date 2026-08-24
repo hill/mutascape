@@ -82,3 +82,56 @@ def test_full_sequence_loader_rejects_missing_wild_type(tmp_path: Path):
 
     with pytest.raises(ValueError, match="depth-zero"):
         load_landscape(tmp_path, spec)
+
+
+def test_load_graphfla_complete_categorical_landscape(tmp_path: Path):
+    table = pd.DataFrame(
+        {
+            "sequences": [0, 1, 10, 11],
+            "pos1": [0, 0, 1, 1],
+            "pos2": [0, 1, 0, 1],
+            "fitness": [1.0, 0.7, 1.4, 0.9],
+        }
+    )
+    path = tmp_path / "toy.csv"
+    table.to_csv(path, index=False)
+    spec = LandscapeSpec(
+        name="toy",
+        protein="toy-protein",
+        source="graphfla",
+        relative_path=path.name,
+        fitness_column="fitness",
+        sequence_column="sequences",
+        depth_column=None,
+    )
+
+    dataset = load_landscape(tmp_path, spec)
+
+    assert dataset.wild_type_sequence == "AA"
+    assert dataset.variants["sequence"].tolist() == ["AA", "AC", "CA", "CC"]
+    assert dataset.variants.loc[3, "mutations"] == {1: "C", 2: "C"}
+    assert dataset.alphabets == {1: ("A", "C"), 2: ("A", "C")}
+
+
+def test_graphfla_loader_rejects_incomplete_space(tmp_path: Path):
+    table = pd.DataFrame(
+        {
+            "pos1": [0, 0, 1],
+            "pos2": [0, 1, 0],
+            "fitness": [1.0, 0.7, 1.4],
+        }
+    )
+    path = tmp_path / "toy.csv"
+    table.to_csv(path, index=False)
+    spec = LandscapeSpec(
+        name="toy",
+        protein="toy-protein",
+        source="graphfla",
+        relative_path=path.name,
+        fitness_column="fitness",
+        sequence_column="sequences",
+        depth_column=None,
+    )
+
+    with pytest.raises(ValueError, match="complete Cartesian"):
+        load_landscape(tmp_path, spec)

@@ -109,6 +109,33 @@ def _hash_normal(key: object, seed: int) -> float:
     return float(np.random.default_rng(int.from_bytes(digest[:8], "little")).normal())
 
 
+def dms_pairwise_unit_coefficient(
+    first: tuple[int, str],
+    second: tuple[int, str],
+    wild_type_sequence: str,
+    seed: int,
+) -> float:
+    """Draw one baseline-corrected pair coefficient on a stable hash key."""
+    if first[0] == second[0]:
+        raise ValueError("a pair interaction needs two distinct positions")
+    first, second = sorted((first, second))
+    first_wt = wild_type_sequence[first[0] - 1]
+    second_wt = wild_type_sequence[second[0] - 1]
+
+    def cell(first_aa: str, second_aa: str) -> float:
+        return _hash_normal(
+            ("dms-pairwise-cell", first[0], first_aa, second[0], second_aa),
+            seed,
+        )
+
+    return (
+        cell(first[1], second[1])
+        - cell(first[1], second_wt)
+        - cell(first_wt, second[1])
+        + cell(first_wt, second_wt)
+    )
+
+
 def _single_effect_scale(values: NDArray[np.float64]) -> float:
     """Normalise one landscape's coefficients onto a transferable scale.
 
@@ -792,6 +819,17 @@ class PosteriorLandscape:
             roughness=float(roughness),
         )
 
+    def sample_dms_pairwise(
+        self,
+        seed: int,
+        *,
+        coupling: float = 0.1,
+    ) -> DMSPairwiseLandscape:
+        """Return the task-validated DMS-pairwise oracle."""
+        if coupling < 0:
+            raise ValueError("coupling must be non-negative")
+        return DMSPairwiseLandscape(self, seed=int(seed), coupling=float(coupling))
+
     def predict(
         self,
         variants: list[dict[int, str]],
@@ -1011,4 +1049,44 @@ class CompletedLandscape:
 
     def evaluate_batch(self, variants: list[dict[int, str]]) -> NDArray[np.float64]:
         """Evaluate a sequence of genotypes."""
+        return np.asarray([self.evaluate(variant) for variant in variants], dtype=np.float64)
+
+
+@dataclass(frozen=True)
+class DMSPairwiseLandscape:
+    """One lazy oracle with measured singles, random pairs, and a readout."""
+
+    generator: PosteriorLandscape
+    seed: int
+    coupling: float = 0.1
+
+    def evaluate(self, mutations: dict[int, str]) -> float:
+        """Evaluate one genotype without enumerating the mutation domain."""
+        generator = self.generator
+        genotype = _key(mutations, generator.wild_type_sequence)
+        if genotype in generator.observations:
+            return generator.observations[genotype]
+        missing = [mutation for mutation in genotype if mutation not in generator.single_effects]
+        if missing:
+            labels = ", ".join(f"{position}{amino_acid}" for position, amino_acid in missing)
+            raise ValueError(f"missing single-mutant measurements for: {labels}")
+
+        readout = generator.nonlinearity
+        effects = generator.preimage_effects if readout is not None else generator.single_effects
+        scale = generator.preimage_scale if readout is not None else generator.target_scale
+        latent = sum(effects[mutation] for mutation in genotype)
+        latent += self.coupling * scale * sum(
+            dms_pairwise_unit_coefficient(
+                first,
+                second,
+                generator.wild_type_sequence,
+                self.seed,
+            )
+            for first, second in combinations(genotype, 2)
+        )
+        centred = float(readout.forward(latent)) if readout is not None else float(latent)
+        return float(generator.observations[()] + centred)
+
+    def evaluate_batch(self, variants: list[dict[int, str]]) -> NDArray[np.float64]:
+        """Evaluate genotypes in input order."""
         return np.asarray([self.evaluate(variant) for variant in variants], dtype=np.float64)

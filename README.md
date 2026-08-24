@@ -4,9 +4,11 @@
 
 # mutascape
 
-Synthetic combinatorially complete protein fitness landscapes with tuneable, structurally informed epistasis.
+Task-validated synthetic combinatorial protein fitness oracles for ML-assisted directed evolution benchmarks.
 
-Mutascape combines single-site DMS effects, structural contacts, and a swappable pairwise epistasis model. A `Landscape` oracle returns fitness for any `Mutant` combination. Tune ruggedness with `alpha`, then choose random, sign-consistent, or MSA-derived epistasis. Add global epistasis and Gaussian noise for a more realistic readout.
+Mutascape turns wild type and measured single mutants into a stable, lazy fitness oracle. The default generator adds baseline-corrected random pair interactions and a saturating readout. It preserves every supplied observation exactly.
+
+Mutascape targets benchmark behaviour. It does not predict an unknown protein's combinatorial landscape.
 
 ## Installation
 
@@ -20,78 +22,61 @@ uv sync --extra dev  # + pytest/ruff
 ## Quick start
 
 ```python
-from mutascape import Landscape, ContactMap, Mutant, RandomEpistasis
+import pandas as pd
 
-# Contact map from a PDB file (or predicted from sequence with ESMFold)
-contacts = ContactMap.from_pdb("structure.pdb", threshold=8.0)
+from mutascape import PosteriorLandscape
+from mutascape.posterior_web import load_prior_bundle
 
-# Build a synthetic landscape grounded in DMS singles + structural contacts
-landscape = Landscape.from_dms(
-    dms_path="dms_data.csv",
-    wt_sequence="MAEQLA...",
-    contact_map=contacts,
-    epistasis=RandomEpistasis(sigma=0.3, seed=42),
-    alpha=1.0,
+wt_sequence = "DQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"
+
+observations = pd.DataFrame(
+    {
+        "mutations": [{}, {39: "A"}, {40: "W"}, {54: "F"}],
+        "fitness": [1.0, 0.58, 1.14, 0.73],
+        "depth": [0, 1, 1, 1],
+    }
 )
+_, prior = load_prior_bundle()
+generator = PosteriorLandscape.condition(wt_sequence, observations, prior)
 
-# Query the oracle by mutant label or composed Mutant objects
-landscape["A29H"]
-landscape[Mutant("A29H") + Mutant("R60D")]
-landscape[Mutant("A29H") + Mutant("R60D") + Mutant("K93T")]
-```
-
-## Posterior whole-protein completion
-
-The research API learns interaction priors from complete empirical landscapes. It then conditions a whole-protein oracle on WT, singles, and optional doubles.
-
-```python
-from mutascape import LandscapePrior, PosteriorLandscape
-from mutascape.benchmarks import (
-    iter_protein_holdouts,
-    load_combingym_landscapes,
-    mutation_order_split,
-)
-
-datasets = load_combingym_landscapes(".mutascape/benchmark-data/combingym")
-fold = next(fold for fold in iter_protein_holdouts(datasets) if fold.protein == "GB1")
-prior = LandscapePrior.fit(list(fold.train), max_order=3)
-
-target = next(dataset for dataset in fold.test if dataset.name == "GB1_binding")
-split = mutation_order_split(target.variants, max_train_depth=1)
-posterior = PosteriorLandscape.condition(
-    target.wild_type_sequence,
-    split.train,
-    prior,
-)
-
-# One seed defines one stable whole-protein oracle.
-oracle = posterior.sample(seed=42)
+# One seed fixes one benchmark instance.
+oracle = generator.sample_dms_pairwise(seed=42, coupling=0.1)
 fitness = oracle.evaluate({39: "A", 40: "W", 54: "F"})
-
-# An ensemble exposes uncertainty in the unmeasured combination.
-summary = posterior.predict(
-    [{39: "A", 40: "W", 54: "F"}],
-    n_samples=100,
-    seed=42,
-)
 ```
 
-Fetch the pinned benchmark sources and run grouped evaluation with these commands.
+The oracle accepts a genotype only when every constituent substitution has a measured single effect. A supplied multi-mutant returns its measured value.
+
+## What real enough means
+
+Mutascape uses task-relative validity. A useful search benchmark should preserve conclusions about which optimisation method performs better.
+
+The current frozen result uses 16 complete SSMuLA landscapes, 12 search methods, a 96-query budget, 20 trials, and five oracle draws.
+
+- Median Kendall method-rank transfer is 0.625.
+- Reliable pairwise winner accuracy is 84.5 per cent. A synthetic tie counts as a miss.
+- The measured-reliability pass rate is 81.3 per cent.
+
+On seven external GraphFLA protein landscapes, winner accuracy is 82.7 per cent. Median rank transfer is 0.606.
+
+The default fails a stricter topology test. It has fewer local optima and less Walsh non-additive variance than measured landscapes. Use it for method-ranking studies within the tested protocol. Do not use it for claims about peak counts or molecular epistasis.
+
+## Reproduce the task-transfer result
 
 ```bash
 just benchmark-data
-just benchmark-completion \
+uv run python scripts/run_search_transfer.py \
   --ssmula-root .mutascape/benchmark-data/ssmula \
-  --combingym-root .mutascape/benchmark-data/combingym
+  --combingym-root .mutascape/benchmark-data/combingym \
+  --output notebooks/iclr/output_search_transfer \
+  --budget 96 --seeds 20 --draws 5 --generators \
+  --dms-pairwise-coupling 0.1
 ```
 
-See [the benchmark protocol](docs/benchmark_protocol.md) for splits, metrics, and current pilot status.
+The runner writes trial-level regret, rank transfer, paired winners, and measured split-half reliability. Source manifests pin upstream revisions.
 
-### Posterior web studio
+## Browser studio
 
-The studio exposes the posterior as a queryable model. One seed fixes a stable oracle draw. An ensemble reports uncertainty for unseen combinations.
-
-The bundled `combinatorial-v1` prior pools 30 complete landscapes from SSMuLA and CombinGym. Its metadata records source revisions, proteins, and fitted scales.
+The studio exposes the same DMS-pairwise oracle. It shows the frozen task-transfer result, fitness by mutation depth, a genotype graph, and exact queries.
 
 Upload DMS data with either supported CSV schema. Both schemas require a matching FASTA sequence.
 
@@ -109,7 +94,13 @@ V39A,0.58
 V39A:D40W,0.91
 ```
 
-Run the studio and API locally with `just dev`. Posterior routes are available at `/api/v1/priors`, `/api/v1/posterior-queries`, and `/api/v1/posterior-previews`.
+Run the studio and API locally with `uv sync --extra dev --extra web` and `just dev`. The local address is `http://localhost:8000`.
+
+The API keeps its existing posterior route names for compatibility. Studio labels describe oracle draws and variation rather than biological uncertainty.
+
+## Legacy structure-aware generator
+
+The earlier `Landscape` API remains available for experiments with structural contacts, MSA couplings, and genotype-stable noise. These arms are outside the current default claim.
 
 ## Loading landscapes
 
@@ -240,9 +231,9 @@ landscape = Landscape.from_dms(
 )
 ```
 
-## Reference benchmark landscapes
+## Archival reference landscapes
 
-For benchmarking work, mutascape ships two named reference configurations calibrated against the complete factorial GB1 and TrpB landscapes. Use these when you want a published, regression-tested benchmark landscape rather than building one from scratch.
+Mutascape still ships the earlier GB1 and TrpB reference configurations. They support regression tests and comparison with the first manuscript. They are outside the new task-transfer default.
 
 ```python
 from mutascape.validation.reference_configs import GB1_HEADLINE, TRPB_HEADLINE
@@ -254,9 +245,9 @@ gb1["V39A"]
 trpb[Mutant("V183A") + Mutant("F184I")]
 ```
 
-At the shared defaults, GB1 reaches `walsh_L1=0.317`, `fitness_W1=0.036`, and `n_optima=200`. TrpB reaches `0.105`, `0.027`, and `843` for those metrics. The real landscapes have `n_optima=182` and `802`.
+These frozen outputs preserve the earlier Walsh and local-optima results. They should not be mixed with the DMS-pairwise task-transfer claim.
 
-## Reproducing the published outputs
+## Reproduce archival outputs
 
 ```bash
 ./.venv/bin/python scripts/rebuild_reference_outputs.py
@@ -268,14 +259,16 @@ The rebuild script regenerates the GB1 / TrpB sweep CSVs and the headline figure
 
 ## Known limitations
 
-- GB1 still shows an order-1 / order-3 Walsh mismatch.
-- Complete combinatorial references calibrate the censored readout texture. For unvalidated proteins, treat it as a tunable topology parameter rather than a universal default.
-- Sparse full-protein GFP remains smoother than the real landscape under the same default settings. The structural pairwise term (`alpha > 0`), MSA-derived couplings, and Contact-NK higher-order terms are the supported routes for closing this gap.
-- Functional-contact overrides should only be used when a ligand/cofactor or annotated active-site mechanism justifies them.
-- Posterior intervals describe uncertainty under the fitted prior. They do not prove that an unmeasured landscape matches biology.
+- Validation depends on the method set, query budget, and candidate domain.
+- The coupling was selected on the SSMuLA development panel.
+- The external protein panel contains seven landscapes.
+- The default underestimates measured local optima and non-additive Walsh variance.
+- Oracle ensembles measure benchmark sensitivity. They are not calibrated biological intervals.
+- Whole-protein queries require measured singles for every constituent substitution.
 
 ## Docs
 
 - [Project status](docs/project_status.md)
-- [Global-epistasis function design](docs/nonlinearity_design.md), current mechanism with historical validation notes
-- [Design document](docs/design.md), historical design background
+- [Benchmark protocol](docs/benchmark_protocol.md)
+- [Global-epistasis design](docs/nonlinearity_design.md)
+- [Historical design document](docs/design.md)

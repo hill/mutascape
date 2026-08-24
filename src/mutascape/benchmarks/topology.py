@@ -137,6 +137,54 @@ def summarise(tensor: NDArray[np.float64]) -> dict[str, float]:
     return summary
 
 
+def navigability_summary(tensor: NDArray[np.float64], cube: CubeSpec) -> dict[str, float]:
+    """Summarise the uphill route reached from wild type by steepest ascent."""
+    values = np.asarray(tensor, dtype=np.float64)
+    current = tuple(
+        cube.alphabets[position].index(cube.wild_type[position]) for position in cube.positions
+    )
+    path_length = 0
+    while True:
+        current_value = float(values[current])
+        neighbours: list[tuple[int, ...]] = []
+        for site, size in enumerate(values.shape):
+            for residue in range(size):
+                if residue == current[site]:
+                    continue
+                candidate = list(current)
+                candidate[site] = residue
+                neighbours.append(tuple(candidate))
+        finite = [candidate for candidate in neighbours if np.isfinite(values[candidate])]
+        if not finite:
+            break
+        best = max(finite, key=lambda candidate: float(values[candidate]))
+        if float(values[best]) <= current_value:
+            break
+        current = best
+        path_length += 1
+
+    finite_values = values[np.isfinite(values)]
+    peak = float(values[current])
+    minimum = float(np.min(finite_values))
+    maximum = float(np.max(finite_values))
+    span = maximum - minimum
+    regret = (maximum - peak) / span if span > 0 else 0.0
+    wild_type = float(
+        values[
+            tuple(
+                cube.alphabets[position].index(cube.wild_type[position])
+                for position in cube.positions
+            )
+        ]
+    )
+    return {
+        "beneficial_fraction": float(np.mean(finite_values > wild_type)),
+        "greedy_peak_percentile": float(np.mean(finite_values <= peak)),
+        "greedy_normalised_regret": float(regret),
+        "greedy_path_length": float(path_length),
+    }
+
+
 def walsh_l1(reference: dict[str, float], candidate: dict[str, float]) -> float:
     """L1 distance between two order-wise Walsh spectra."""
     orders = sorted(

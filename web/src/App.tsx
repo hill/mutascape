@@ -64,6 +64,7 @@ import {
   runPreview,
 } from "./api"
 import {
+  benchmarkValidityOptions,
   fitnessProfileOptions,
   landscapeGraphOptions,
   posteriorProfileOptions,
@@ -313,7 +314,7 @@ export default function App({
       id: created.id,
       name: "Custom draft",
       kind: "posterior",
-      description: "Temporary posterior landscape grounded in sparse DMS.",
+      description: "Temporary DMS-pairwise benchmark oracle.",
       positions: summary.positions,
       wtCompact: summary.wtCompact,
       parameters: DEFAULT_PARAMETERS,
@@ -961,11 +962,11 @@ function ExactQueryPanel({
               <strong>{latestPosterior.fixedOracleFitness.toFixed(4)}</strong>
             </div>
             <div>
-              <span>Posterior mean</span>
+              <span>Ensemble mean</span>
               <strong>{latestPosterior.posteriorMean.toFixed(4)}</strong>
             </div>
             <div>
-              <span>Posterior SD</span>
+              <span>Oracle spread</span>
               <strong>{latestPosterior.posteriorStd.toFixed(4)}</strong>
             </div>
             <div>
@@ -985,7 +986,7 @@ function ExactQueryPanel({
             </div>
             <div className="embedded-chart">
               <Text bold size="sm">
-                Latest posterior distribution
+                Latest oracle distribution
               </Text>
               <PosteriorDistributionPlot result={latestPosterior} />
             </div>
@@ -1009,7 +1010,7 @@ function PosteriorQueryPlot({ results }: { results: PosteriorQueryResult[] }) {
   const range = maximum - minimum || 1
   const position = (value: number) => `${((value - minimum) / range) * 100}%`
   return (
-    <div className="interval-plot" role="img" aria-label="Posterior intervals for queried variants">
+    <div className="interval-plot" role="img" aria-label="Oracle ranges for queried variants">
       {results.map((result) => (
         <div className="interval-row" key={result.mutationLabel}>
           <span className="mono-value">{result.mutationLabel}</span>
@@ -1055,7 +1056,7 @@ function PosteriorDistributionPlot({ result }: { result: PosteriorQueryResult })
     <div
       className="histogram"
       role="img"
-      aria-label={`Posterior distribution for ${result.mutationLabel}`}
+      aria-label={`Oracle distribution for ${result.mutationLabel}`}
     >
       <div className="histogram-bars">
         {bins.map((bin) => (
@@ -1196,10 +1197,10 @@ function PosteriorParameterPanel({
       <div className="panel-heading">
         <div>
           <Text variant="heading3" as="h2">
-            Posterior ensemble
+            Oracle ensemble
           </Text>
           <Text variant="secondary" size="sm">
-            Set the transferred interaction prior, stable oracle seed, and uncertainty sample.
+            Set the readout calibration, stable oracle seed, and ensemble size.
           </Text>
         </div>
         {locked && <Badge variant="neutral">Fixed oracle</Badge>}
@@ -1207,7 +1208,7 @@ function PosteriorParameterPanel({
       <div className="field-grid">
         <Select
           size="sm"
-          label="Interaction prior"
+          label="Readout calibration"
           value={priorId}
           items={{ "combinatorial-v2": "Combinatorial v2" }}
           disabled={locked}
@@ -1224,8 +1225,8 @@ function PosteriorParameterPanel({
         />
         <Input
           size="sm"
-          label="Posterior draws"
-          labelTooltip="More draws give smoother interval estimates and take longer."
+          label="Oracle draws"
+          labelTooltip="More draws give smoother ensemble ranges and take longer."
           type="number"
           min={2}
           max={200}
@@ -1446,16 +1447,42 @@ function PosteriorPreviewResults({
         size="sm"
         variant="secondary"
         title={preview.prior.name}
-        description={`Pairwise prior fitted to ${preview.prior.nLandscapes} landscapes across ${preview.prior.nProteins} proteins.`}
+        description={`The readout calibration uses ${preview.prior.nLandscapes} landscapes across ${preview.prior.nProteins} proteins. Each draw adds stable random pair interactions at coupling ${preview.settings.coupling}.`}
       />
       <LayerCard className="panel-card chart-card">
         <div className="panel-heading">
           <div>
             <Text variant="heading3" as="h2">
-              Fitness and uncertainty by mutation depth
+              Does the benchmark rank search methods correctly?
             </Text>
             <Text variant="secondary" size="sm">
-              Bands pool posterior draws. Lines compare the stable oracle and additive model.
+              {preview.benchmarkValidity.nMethods} methods, budget{" "}
+              {preview.benchmarkValidity.budget}, across {preview.benchmarkValidity.nLandscapes}{" "}
+              complete development landscapes.
+            </Text>
+          </div>
+          <Badge variant="green">Task transfer</Badge>
+        </div>
+        <Chart
+          echarts={echarts}
+          options={benchmarkValidityOptions(preview.benchmarkValidity)}
+          height={360}
+        />
+        <Banner
+          size="sm"
+          variant="secondary"
+          title={`${preview.benchmarkValidity.external.nLandscapes}-landscape external protein panel`}
+          description={`Rank transfer ${preview.benchmarkValidity.external.kendallTau.toFixed(3)}, pairwise winner accuracy ${(100 * preview.benchmarkValidity.external.pairwiseAccuracy).toFixed(1)}%, reliability pass rate ${(100 * preview.benchmarkValidity.external.reliabilityPassRate).toFixed(1)}%.`}
+        />
+      </LayerCard>
+      <LayerCard className="panel-card chart-card">
+        <div className="panel-heading">
+          <div>
+            <Text variant="heading3" as="h2">
+              Fitness variation by mutation depth
+            </Text>
+            <Text variant="secondary" size="sm">
+              Bands pool fixed oracle draws. Lines compare one oracle with the additive model.
             </Text>
           </div>
           <Badge variant="purple">{preview.settings.ensembleSize} draws</Badge>
@@ -1467,10 +1494,10 @@ function PosteriorPreviewResults({
         <div className="panel-heading">
           <div>
             <Text variant="heading3" as="h2">
-              Posterior landscape map
+              Synthetic landscape map
             </Text>
             <Text variant="secondary" size="sm">
-              Colour shows fixed-draw fitness. Larger purple borders show greater uncertainty.
+              Colour shows fitness. Larger purple borders show greater variation across draws.
             </Text>
           </div>
           <Badge variant="neutral">{preview.sample.graph.nodes.length} variants</Badge>
@@ -1499,7 +1526,7 @@ function PosteriorSampleTable({ preview }: { preview: PosteriorPreviewResponse }
       <div className="panel-heading">
         <div>
           <Text variant="heading3" as="h2">
-            Posterior sample explorer
+            Oracle sample explorer
           </Text>
           <Text variant="secondary" size="sm">
             Showing {preview.sample.returnedRows} rows from {preview.sample.requested} sampled
@@ -1514,8 +1541,8 @@ function PosteriorSampleTable({ preview }: { preview: PosteriorPreviewResponse }
               <Table.Head>Variant</Table.Head>
               <Table.Head>Depth</Table.Head>
               <Table.Head>Fixed</Table.Head>
-              <Table.Head>Mean</Table.Head>
-              <Table.Head>SD</Table.Head>
+              <Table.Head>Ensemble mean</Table.Head>
+              <Table.Head>Spread</Table.Head>
               <Table.Head>80% interval</Table.Head>
               <Table.Head>Additive</Table.Head>
               <Table.Head>Sequence</Table.Head>

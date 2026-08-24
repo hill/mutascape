@@ -16,9 +16,21 @@ from mutascape.landscape import _allocate_weighted_counts
 from mutascape.mutant import Mutant
 
 PRIOR_ROOT = Path(__file__).resolve().parent / "data" / "priors"
+VALIDATION_ROOT = Path(__file__).resolve().parent / "data" / "validation"
 DEFAULT_PRIOR_ID = "combinatorial-v2"
+DEFAULT_ORACLE_COUPLING = 0.1
+DEFAULT_ORACLE_KIND = "dms-pairwise-v1"
 MAX_POSTERIOR_COST = 2_000_000
 CANONICAL_AAS = set(AMINO_ACIDS)
+
+
+def _oracle(posterior: PosteriorLandscape, seed: int):
+    return posterior.sample_dms_pairwise(seed, coupling=DEFAULT_ORACLE_COUPLING)
+
+
+def benchmark_validity_summary() -> dict[str, Any]:
+    """Return the frozen task-transfer result shown in the studio."""
+    return json.loads((VALIDATION_ROOT / "benchmark-validity-v1.json").read_text())
 
 
 def _camel(name: str) -> str:
@@ -117,7 +129,10 @@ def query_posterior(
     )
     _check_cost(variants, ensemble_size)
     ensemble = np.vstack(
-        [posterior.sample(seed + index).evaluate_batch(variants) for index in range(ensemble_size)]
+        [
+            _oracle(posterior, seed + index).evaluate_batch(variants)
+            for index in range(ensemble_size)
+        ]
     )
     additive = np.asarray([_additive_fitness(posterior, variant) for variant in variants])
     intervals = {
@@ -166,7 +181,7 @@ def fixed_posterior_entries(
         positions=positions,
         wild_type=wild_type,
     )
-    values = posterior.sample(seed).evaluate_batch(variants)
+    values = _oracle(posterior, seed).evaluate_batch(variants)
     return [
         {"index": index, "mutationLabel": label, "fitness": float(value)}
         for index, (label, value) in enumerate(zip(labels, values))
@@ -237,8 +252,14 @@ def preview_posterior(
     return {
         "source": source_summary,
         "prior": prior_metadata,
-        "settings": {"seed": seed, "ensembleSize": ensemble_size},
+        "settings": {
+            "seed": seed,
+            "ensembleSize": ensemble_size,
+            "generatorKind": DEFAULT_ORACLE_KIND,
+            "coupling": DEFAULT_ORACLE_COUPLING,
+        },
         "profile": profile,
+        "benchmarkValidity": benchmark_validity_summary(),
         "shape": posterior_shape_summary(posterior, seed=seed),
         "sample": {
             "requested": sample_size,
@@ -248,8 +269,8 @@ def preview_posterior(
             "graph": graph,
         },
         "notices": [
-            "Intervals show uncertainty from unmeasured interactions.",
-            "No hidden observations are available here, so this view does not measure realism.",
+            "Bands show variation across fixed synthetic oracle draws.",
+            "Each oracle keeps the measured wild type and single mutants exact.",
         ],
     }
 
@@ -527,7 +548,7 @@ def posterior_shape_summary(
     posterior_summaries = [
         summarise(
             np.asarray(
-                posterior.sample(seed + index).evaluate_batch(variants), dtype=np.float64
+                _oracle(posterior, seed + index).evaluate_batch(variants), dtype=np.float64
             ).reshape(shape)
         )
         for index in range(draws)

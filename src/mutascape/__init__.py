@@ -1,19 +1,11 @@
-"""Synthetic combinatorial protein fitness landscapes for MLDE/ALDE benchmarks.
+"""Task-validated synthetic protein fitness oracles for search benchmarks."""
 
-The publication reference pipeline is exposed through frozen validation configs:
-
->>> from mutascape.validation.reference_configs import GB1_HEADLINE, evaluate_reference_config
->>> result = evaluate_reference_config(GB1_HEADLINE)
->>> result.walsh_l1
-
-Lower-level APIs still support custom landscapes from DMS, structure-derived
-contact maps, optional pairwise couplings, ESM2 single-site scoring, and fitted
-global-epistasis functions. Those features are useful for larger benchmark
-candidates, but the validated headline GB1/TrpB configs keep pairwise couplings
-off by setting ``sigma = 0``.
-"""
-
-from mutascape.completion import CompletedLandscape, LandscapePrior, PosteriorLandscape
+from mutascape.completion import (
+    CompletedLandscape,
+    DMSPairwiseLandscape,
+    LandscapePrior,
+    PosteriorLandscape,
+)
 from mutascape.contacts import ContactMap
 from mutascape.epistasis import (
     AMINO_ACIDS,
@@ -51,6 +43,7 @@ __all__ = [
     "AMINO_ACIDS",
     "ContactMap",
     "CompletedLandscape",
+    "DMSPairwiseLandscape",
     "CouplingTensor",
     "ESM2Scorer",
     "EpistasisModel",

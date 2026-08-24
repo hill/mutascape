@@ -1,6 +1,7 @@
 import type { KumoChartOption } from "@cloudflare/kumo"
 import type { SeriesOption } from "echarts"
 import type {
+  BenchmarkValidity,
   LandscapeGraph,
   PosteriorProfilePoint,
   PosteriorQueryResult,
@@ -244,7 +245,7 @@ export function posteriorProfileOptions(points: PosteriorProfilePoint[]): KumoCh
     aria: { enabled: true },
     color: [SYNTHETIC, "#7c3aed", "#64748b"],
     grid: { left: 54, right: 24, top: 44, bottom: 48 },
-    legend: { data: ["Posterior median", "Fixed oracle", "Additive"] },
+    legend: { data: ["Ensemble median", "Fixed oracle", "Additive"] },
     tooltip: { trigger: "axis" },
     xAxis: {
       type: "category",
@@ -255,7 +256,7 @@ export function posteriorProfileOptions(points: PosteriorProfilePoint[]): KumoCh
     },
     yAxis: { type: "value", name: "Fitness", scale: true },
     series: [
-      ...bandSeries("Posterior median", SYNTHETIC, depths, points),
+      ...bandSeries("Ensemble median", SYNTHETIC, depths, points),
       {
         name: "Fixed oracle",
         type: "line",
@@ -275,6 +276,51 @@ export function posteriorProfileOptions(points: PosteriorProfilePoint[]): KumoCh
   }
 }
 
+export function benchmarkValidityOptions(result: BenchmarkValidity): KumoChartOption {
+  return {
+    animationDuration: 350,
+    aria: { enabled: true },
+    color: [SYNTHETIC, "#2563eb", "#10b981"],
+    grid: { left: 58, right: 24, top: 54, bottom: 58 },
+    legend: { data: ["Rank transfer", "Pairwise winners", "Reliability pass rate"] },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      valueFormatter: (value: unknown) =>
+        typeof value === "number" ? value.toFixed(3) : String(value),
+    },
+    xAxis: {
+      type: "category",
+      data: result.methods.map((method) => method.label),
+      axisLabel: { interval: 0 },
+    },
+    yAxis: { type: "value", name: "Score", min: 0, max: 1 },
+    series: [
+      {
+        name: "Rank transfer",
+        type: "bar",
+        data: result.methods.map((method) => method.kendallTau),
+        markLine: {
+          symbol: "none",
+          label: { formatter: "Measured reliability floor" },
+          lineStyle: { color: "#64748b", type: "dashed" },
+          data: [{ yAxis: result.measuredReliabilityFloor }],
+        },
+      },
+      {
+        name: "Pairwise winners",
+        type: "bar",
+        data: result.methods.map((method) => method.pairwiseAccuracy),
+      },
+      {
+        name: "Reliability pass rate",
+        type: "bar",
+        data: result.methods.map((method) => method.reliabilityPassRate),
+      },
+    ],
+  }
+}
+
 export function posteriorQueryOptions(results: PosteriorQueryResult[]): KumoChartOption {
   const lower = results.map((result) => result.intervals["80"].lower)
   const upper = results.map((result) => result.intervals["80"].upper)
@@ -282,7 +328,7 @@ export function posteriorQueryOptions(results: PosteriorQueryResult[]): KumoChar
     animationDuration: 250,
     aria: { enabled: true },
     grid: { left: 58, right: 24, top: 44, bottom: 64 },
-    legend: { data: ["Posterior mean", "Fixed oracle", "Additive"] },
+    legend: { data: ["Ensemble mean", "Fixed oracle", "Additive"] },
     tooltip: { trigger: "axis" },
     xAxis: {
       type: "category",
@@ -312,7 +358,7 @@ export function posteriorQueryOptions(results: PosteriorQueryResult[]): KumoChar
         silent: true,
       },
       {
-        name: "Posterior mean",
+        name: "Ensemble mean",
         type: "line",
         data: results.map((result) => result.posteriorMean),
         symbol: "circle",
@@ -362,7 +408,7 @@ export function posteriorDistributionOptions(result: PosteriorQueryResult): Kumo
     yAxis: { type: "value", name: "Draws", minInterval: 1 },
     series: [
       {
-        name: "Posterior draws",
+        name: "Oracle draws",
         type: "bar",
         data: counts,
         itemStyle: { color: SYNTHETIC },

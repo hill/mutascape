@@ -25,7 +25,7 @@ from typing import Literal
 
 import pandas as pd
 
-Source = Literal["ssmula", "combingym"]
+Source = Literal["ssmula", "combingym", "graphfla"]
 
 
 @dataclass(frozen=True)
@@ -71,6 +71,7 @@ class LandscapeDataset:
 
 _SSMULA_REVISION = "4926b8e614d426ca567159988834482c23da13a3"
 _COMBINGYM_REVISION = "e635a959731d2a14f90269245ccbec4bf2645324"
+_GRAPHFLA_REVISION = "9f86def1a12db76d26af16077ba28cb61ee0af5f"
 
 
 def _ssmula_spec(
@@ -183,6 +184,33 @@ COMBINGYM_MANIFEST: tuple[LandscapeSpec, ...] = (
 )
 
 
+def _graphfla_spec(filename: str, protein: str) -> LandscapeSpec:
+    return LandscapeSpec(
+        name=f"GraphFLA_{Path(filename).stem}",
+        protein=protein,
+        source="graphfla",
+        relative_path=f"data/BioSequence/{filename}",
+        fitness_column="fitness",
+        sequence_column="sequences",
+        depth_column=None,
+        source_url="https://github.com/COLA-Laboratory/GraphFLA",
+        source_revision=_GRAPHFLA_REVISION,
+    )
+
+
+# One condition per protein family, selected before the external transfer run.
+# Each table is a complete Cartesian landscape with at least 512 variants.
+GRAPHFLA_EXTERNAL_MANIFEST: tuple[LandscapeSpec, ...] = (
+    _graphfla_spec("Lunzer2005_fitness.csv", "HisA-HisF"),
+    _graphfla_spec("Michael2024_LamB.csv", "LamB"),
+    _graphfla_spec("Wu2020_Bk79.csv", "H3N2-haemagglutinin"),
+    _graphfla_spec("Bank2016a.csv", "Hsp90"),
+    _graphfla_spec("Schulz2025.csv", "ParB"),
+    _graphfla_spec("Poelwijk2019.csv", "beta-lactamase"),
+    _graphfla_spec("Moulana2023_S309.csv", "SARS-CoV-2-RBD"),
+)
+
+
 def _read_table(path: Path) -> pd.DataFrame:
     suffix = path.suffix.lower()
     if suffix == ".csv":
@@ -282,18 +310,86 @@ def _normalise_site_sequences(raw: pd.DataFrame, spec: LandscapeSpec) -> Landsca
     return LandscapeDataset(spec, variants, spec.wild_type, mutable_positions, alphabets)
 
 
+def _normalise_graphfla(raw: pd.DataFrame, spec: LandscapeSpec) -> LandscapeDataset:
+    """Normalise a complete GraphFLA categorical table around its reference row."""
+    position_columns = [column for column in raw if column.startswith("pos")]
+    if not position_columns:
+        raise ValueError(f"{spec.name} has no position columns")
+    finite = raw[position_columns + [spec.fitness_column]].dropna()
+    finite = finite.drop_duplicates(position_columns, keep="first").reset_index(drop=True)
+    if finite.empty:
+        raise ValueError(f"{spec.name} has no finite variants")
+
+    expected = 1
+    for column in position_columns:
+        expected *= int(finite[column].nunique())
+    if len(finite) != expected:
+        raise ValueError(f"{spec.name} is not a complete Cartesian landscape")
+
+    symbols = "ACDEFGHIKLMNPQRSTVWY"
+    encodings: list[dict[object, str]] = []
+    kept_columns: list[str] = []
+    for column in position_columns:
+        states = list(pd.unique(finite[column]))
+        if len(states) <= 1:
+            continue
+        if len(states) > len(symbols):
+            raise ValueError(f"{spec.name} position {column} has more than 20 states")
+        reference = finite.loc[0, column]
+        ordered = [reference, *sorted((state for state in states if state != reference), key=str)]
+        encodings.append(dict(zip(ordered, symbols)))
+        kept_columns.append(column)
+
+    if not kept_columns:
+        raise ValueError(f"{spec.name} has no mutable positions")
+    wild_type = "A" * len(kept_columns)
+    rows: list[dict[str, object]] = []
+    for values in finite[kept_columns + [spec.fitness_column]].itertuples(index=False, name=None):
+        sequence = "".join(
+            encoding[value] for encoding, value in zip(encodings, values[:-1])
+        )
+        mutations = {
+            position: residue
+            for position, residue in enumerate(sequence, start=1)
+            if residue != "A"
+        }
+        rows.append(
+            {
+                "sequence": sequence,
+                "fitness": float(values[-1]),
+                "depth": len(mutations),
+                "mutations": mutations,
+            }
+        )
+
+    variants = pd.DataFrame(rows)
+    alphabets = {
+        position: tuple(symbols[: len(encoding)])
+        for position, encoding in enumerate(encodings, start=1)
+    }
+    mutable_positions = tuple(alphabets)
+    expected_singles = sum(len(alphabet) - 1 for alphabet in alphabets.values())
+    if int((variants["depth"] == 1).sum()) != expected_singles:
+        raise ValueError(f"{spec.name} reference row lacks a complete single-mutant shell")
+    return LandscapeDataset(spec, variants, wild_type, mutable_positions, alphabets)
+
+
 def load_landscape(root: str | Path, spec: LandscapeSpec) -> LandscapeDataset:
     """Load one landscape from an SSMuLA or CombinGym checkout."""
     path = Path(root) / spec.relative_path
     if not path.exists():
         raise FileNotFoundError(f"missing {spec.name} source table: {path}")
     raw = _read_table(path)
-    required = {spec.sequence_column, spec.fitness_column}
+    required = {spec.fitness_column}
+    if spec.source != "graphfla":
+        required.add(spec.sequence_column)
     if spec.depth_column is not None:
         required.add(spec.depth_column)
     missing = sorted(required - set(raw.columns))
     if missing:
         raise ValueError(f"{spec.name} is missing columns: {', '.join(missing)}")
+    if spec.source == "graphfla":
+        return _normalise_graphfla(raw, spec)
     if spec.source == "ssmula":
         return _normalise_site_sequences(raw, spec)
     return _normalise_full_sequences(raw, spec)
@@ -323,3 +419,8 @@ def load_ssmula_landscapes(root: str | Path, *, strict: bool = True) -> list[Lan
 def load_combingym_landscapes(root: str | Path, *, strict: bool = True) -> list[LandscapeDataset]:
     """Load the fourteen CombinGym assay landscapes from a checkout."""
     return _load_manifest(root, COMBINGYM_MANIFEST, strict=strict)
+
+
+def load_graphfla_landscapes(root: str | Path, *, strict: bool = True) -> list[LandscapeDataset]:
+    """Load the fixed external GraphFLA validation panel from a checkout."""
+    return _load_manifest(root, GRAPHFLA_EXTERNAL_MANIFEST, strict=strict)

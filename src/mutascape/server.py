@@ -647,7 +647,7 @@ def _public_model(model: dict[str, Any]) -> dict[str, Any]:
         "name": model["name"],
         "kind": "posterior" if is_posterior else "custom",
         "description": (
-            "Published posterior landscape ensemble grounded in sparse DMS."
+            "Published DMS-pairwise benchmark oracle."
             if is_posterior
             else "Published custom single-site DMS benchmark oracle."
         ),
@@ -708,7 +708,7 @@ def _examples(
             'prior = LandscapePrior.from_dict(prior_parameters)\n'
             'observations = pd.DataFrame(observation_rows)\n'
             'posterior = PosteriorLandscape.condition(wt_sequence, observations, prior)\n'
-            f'oracle = posterior.sample(seed={seed})\n'
+            f'oracle = posterior.sample_dms_pairwise(seed={seed}, coupling=0.1)\n'
             f"fitness = oracle.evaluate({{{positions[0]}: {mutant!r}}})"
         )
     elif model_id.endswith("_headline"):

@@ -249,11 +249,46 @@ export interface PosteriorSampleRow {
   upper80: number
 }
 
+export interface BenchmarkValidityMethod {
+  id: string
+  label: string
+  kendallTau: number
+  pairwiseAccuracy: number
+  reliabilityPassRate: number
+}
+
+export interface BenchmarkValidity {
+  id: string
+  panel: string
+  nLandscapes: number
+  nMethods: number
+  budget: number
+  trials: number
+  measuredReliabilityFloor: number
+  external: {
+    panel: string
+    nLandscapes: number
+    nMethods: number
+    budget: number
+    trials: number
+    kendallTau: number
+    pairwiseAccuracy: number
+    reliabilityPassRate: number
+  }
+  methods: BenchmarkValidityMethod[]
+}
+
 export interface PosteriorPreviewResponse {
   source: Pick<ModelSummary, "id" | "name" | "kind" | "positions" | "wtCompact">
   prior: PriorMetadata
-  settings: { seed: number; ensembleSize: number }
+  settings: {
+    seed: number
+    ensembleSize: number
+    generatorKind: string
+    coupling: number
+  }
   profile: PosteriorProfilePoint[]
+  benchmarkValidity: BenchmarkValidity
   sample: {
     requested: number
     returnedRows: number

@@ -102,7 +102,7 @@ describe("landscape builder", () => {
     expect(await screen.findByText("0.7310")).toBeTruthy()
   })
 
-  test("shows posterior uncertainty for an exact query", async () => {
+  test("shows oracle variation for an exact query", async () => {
     const model = {
       id: "gb1_posterior",
       name: "GB1 posterior",
@@ -171,9 +171,9 @@ describe("landscape builder", () => {
     await userEvent.type(await screen.findByRole("textbox", { name: "Mutation set" }), "V39A+D40G")
     await userEvent.click(screen.getByRole("button", { name: "Score variant" }))
 
-    expect(await screen.findByText("Posterior SD")).toBeTruthy()
+    expect(await screen.findByText("Oracle spread")).toBeTruthy()
     expect(screen.getByText("0.3000")).toBeTruthy()
-    expect(screen.getByText("Latest posterior distribution")).toBeTruthy()
+    expect(screen.getByText("Latest oracle distribution")).toBeTruthy()
   })
 
   test("shows stored leaderboard results", async () => {

@@ -22,6 +22,7 @@ import pandas as pd
 from scipy.stats import kendalltau
 
 from mutascape.benchmarks.datasets import load_combingym_landscapes, load_ssmula_landscapes
+from mutascape.benchmarks.generators import dms_pairwise_readout_tensor
 from mutascape.benchmarks.search import (
     TabularOracle,
     greedy_search,
@@ -37,6 +38,7 @@ from mutascape.benchmarks.splits import (
 from mutascape.benchmarks.topology import (
     additive_tensor,
     measured_tensor,
+    navigability_summary,
     posterior_tensors,
     summarise,
     supported_cube,
@@ -65,7 +67,9 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=20260820)
     parser.add_argument("--search-budget", type=int, default=96)
     parser.add_argument("--search-seeds", type=int, default=5)
+    parser.add_argument("--skip-search", action="store_true")
     parser.add_argument("--max-cube", type=int, default=200_000)
+    parser.add_argument("--dms-pairwise-coupling", type=float, default=0.1)
     parser.add_argument(
         "--spectral",
         action="store_true",
@@ -142,6 +146,15 @@ def main() -> None:
             arms: dict[str, list[np.ndarray]] = {
                 "measured": [measured],
                 "additive": [additive_tensor(split.train, cube)],
+                "dms_pairwise": [
+                    dms_pairwise_readout_tensor(
+                        cube,
+                        posterior,
+                        coupling=args.dms_pairwise_coupling,
+                        seed=seed + 10_000 + draw,
+                    )
+                    for draw in range(args.samples)
+                ],
                 "posterior": list(
                     posterior_tensors(posterior, cube, n_samples=args.samples, seed=seed)
                 ),
@@ -158,9 +171,14 @@ def main() -> None:
                         "cube_size": cube.size,
                         "measured_coverage": coverage,
                         **summarise(tensor),
+                        **navigability_summary(tensor, cube),
                     }
                     row["walsh_l1_vs_measured"] = walsh_l1(reference, row)
                     topology_rows.append(row)
+
+            if args.skip_search:
+                print(f"  {dataset.name}: cube {cube.size}, coverage {coverage:.3f}")
+                continue
 
             # Every arm searches the same candidates, so a ranking difference
             # can only come from the landscape and not from the domain.
@@ -176,6 +194,8 @@ def main() -> None:
             }
             for draw, tensor in enumerate(arms["posterior"][:5]):
                 oracles[f"posterior_{draw}"] = _oracle(cube, tensor)
+            for draw, tensor in enumerate(arms["dms_pairwise"][:5]):
+                oracles[f"dms_pairwise_{draw}"] = _oracle(cube, tensor)
 
             for arm, oracle in oracles.items():
                 scores = _search_scores(
@@ -201,7 +221,8 @@ def main() -> None:
     # Rank fidelity: does a method's standing on a synthetic cube match its
     # standing on the measured one?
     rank_rows: list[dict[str, object]] = []
-    for dataset_name, group in search.groupby("dataset"):
+    grouped_search = search.groupby("dataset") if "dataset" in search else []
+    for dataset_name, group in grouped_search:
         pivot = group.pivot_table(index="method", columns="arm", values="best_fitness")
         if "measured" not in pivot:
             continue
@@ -212,7 +233,13 @@ def main() -> None:
             rank_rows.append(
                 {
                     "dataset": dataset_name,
-                    "arm": "posterior" if arm.startswith("posterior") else arm,
+                    "arm": (
+                        "posterior"
+                        if arm.startswith("posterior")
+                        else "dms_pairwise"
+                        if arm.startswith("dms_pairwise")
+                        else arm
+                    ),
                     "kendall_tau": float(tau) if np.isfinite(tau) else float("nan"),
                 }
             )
@@ -222,6 +249,7 @@ def main() -> None:
     summary = {
         "seed": args.seed,
         "spectral": args.spectral,
+        "dms_pairwise_coupling": args.dms_pairwise_coupling,
         "posterior_samples": args.samples,
         "search_budget": args.search_budget,
         "search_seeds": args.search_seeds,
@@ -229,7 +257,16 @@ def main() -> None:
         "skipped": skipped,
         "median_topology": (
             topology.groupby("arm")[
-                ["n_optima", "peak_fraction", "walsh_nonadditive", "walsh_l1_vs_measured"]
+                [
+                    "n_optima",
+                    "peak_fraction",
+                    "walsh_nonadditive",
+                    "walsh_l1_vs_measured",
+                    "beneficial_fraction",
+                    "greedy_peak_percentile",
+                    "greedy_normalised_regret",
+                    "greedy_path_length",
+                ]
             ]
             .median()
             .to_dict("index")

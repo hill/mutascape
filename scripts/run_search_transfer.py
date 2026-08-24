@@ -26,6 +26,7 @@ from scipy.stats import kendalltau, pearsonr, spearmanr
 from mutascape.benchmarks import (
     iter_protein_holdouts,
     load_combingym_landscapes,
+    load_graphfla_landscapes,
     load_ssmula_landscapes,
     mutation_order_split,
 )
@@ -39,6 +40,11 @@ from mutascape.benchmarks.topology import (
     posterior_tensors,
     supported_cube,
 )
+from mutascape.benchmarks.validity import (
+    measured_rank_reliability,
+    pairwise_winner_transfer,
+    reliability_adjusted_transfer,
+)
 from mutascape.completion import LandscapePrior, PosteriorLandscape
 
 
@@ -46,6 +52,11 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ssmula-root", type=Path, required=True)
     parser.add_argument("--combingym-root", type=Path)
+    parser.add_argument(
+        "--graphfla-root",
+        type=Path,
+        help="Score the fixed external GraphFLA panel using a prior fitted on the other sources",
+    )
     parser.add_argument(
         "--output", type=Path, default=Path("notebooks/iclr/output_search_transfer")
     )
@@ -73,6 +84,12 @@ def _parse_args() -> argparse.Namespace:
         "--generators",
         action="store_true",
         help="Add NK, Rough Mount Fuji and Potts arms to the audit",
+    )
+    parser.add_argument(
+        "--dms-pairwise-coupling",
+        type=float,
+        default=0.1,
+        help="Interaction scale for the DMS-pairwise generator",
     )
     return parser.parse_args()
 
@@ -117,7 +134,14 @@ def _score_landscape(dataset, prior, args, fold_index, dataset_index) -> list[di
     ):
         arms[f"posterior_{draw}"] = space.arm_values(tensor)
     if args.generators:
-        for name, tensor in build_generators(cube, split.train, seed=seed).items():
+        for name, tensor in build_generators(
+            cube,
+            split.train,
+            seed=seed,
+            posterior=posterior,
+            dms_pairwise_coupling=args.dms_pairwise_coupling,
+            dms_pairwise_draws=args.draws,
+        ).items():
             arms[name] = space.arm_values(tensor)
 
     names = args.methods or list(METHODS)
@@ -168,6 +192,16 @@ def _fold_rows(fold, fold_index, cube_names, args) -> list[dict[str, object]]:
     return rows
 
 
+def _external_rows(dataset, prior, index, args) -> list[dict[str, object]]:
+    started = time.perf_counter()
+    rows = _score_landscape(dataset, prior, args, index, 0)
+    print(
+        f"  {dataset.name}: {len(rows)} runs in {time.perf_counter() - started:.1f}s",
+        flush=True,
+    )
+    return rows
+
+
 def _transfer(scores: pd.DataFrame) -> pd.DataFrame:
     """Rank and value agreement between each synthetic arm and the measured cube."""
     rows: list[dict[str, object]] = []
@@ -176,11 +210,12 @@ def _transfer(scores: pd.DataFrame) -> pd.DataFrame:
         pivot = group.pivot(index="method", columns="arm", values="regret")
         if "measured" not in pivot:
             continue
-        draws = [column for column in pivot.columns if column.startswith("posterior_")]
-        if draws:
-            # One draw is a benchmark instance. Their mean is what a user who
-            # runs the whole ensemble actually sees.
-            pivot["posterior_mean"] = pivot[draws].mean(axis=1)
+        for prefix in ("posterior", "dms_pairwise"):
+            draws = [column for column in pivot.columns if column.startswith(f"{prefix}_")]
+            if draws:
+                # One draw is a benchmark instance. Their mean is what a user who
+                # runs the whole ensemble actually sees.
+                pivot[f"{prefix}_mean"] = pivot[draws].mean(axis=1)
         real = pivot["measured"]
         for arm in pivot.columns:
             if arm == "measured":
@@ -202,33 +237,75 @@ def _transfer(scores: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _with_ensemble_arms(scores: pd.DataFrame) -> pd.DataFrame:
+    """Add expected-regret rows for generator ensembles."""
+    frames = [scores]
+    for prefix in ("posterior", "dms_pairwise"):
+        selected = scores.loc[scores["arm"].str.startswith(f"{prefix}_")]
+        if selected.empty:
+            continue
+        ensemble = (
+            selected.groupby(["dataset", "protein", "method", "trial"], as_index=False)["regret"]
+            .mean()
+            .assign(arm=f"{prefix}_mean")
+        )
+        frames.append(ensemble)
+    return pd.concat(frames, ignore_index=True, sort=False)
+
+
 def main() -> None:
     args = _parse_args()
-    datasets = load_ssmula_landscapes(args.ssmula_root, strict=False)
-    cube_names = {dataset.name for dataset in datasets}
+    training_datasets = load_ssmula_landscapes(args.ssmula_root, strict=False)
     if args.combingym_root is not None:
-        datasets = datasets + load_combingym_landscapes(args.combingym_root, strict=False)
-    if args.only:
-        cube_names = {name for name in cube_names if name in set(args.only)}
+        training_datasets = training_datasets + load_combingym_landscapes(
+            args.combingym_root, strict=False
+        )
 
     args.output.mkdir(parents=True, exist_ok=True)
-    folds = list(iter_protein_holdouts(datasets))
     started = time.perf_counter()
-    batches = Parallel(n_jobs=args.jobs, verbose=10)(
-        delayed(_fold_rows)(fold, index, cube_names, args) for index, fold in enumerate(folds)
-    )
+    if args.graphfla_root is not None:
+        targets = load_graphfla_landscapes(args.graphfla_root, strict=False)
+        if args.only:
+            targets = [dataset for dataset in targets if dataset.name in set(args.only)]
+        prior = LandscapePrior.fit(training_datasets, max_order=args.max_order)
+        batches = Parallel(n_jobs=args.jobs, verbose=10)(
+            delayed(_external_rows)(dataset, prior, index, args)
+            for index, dataset in enumerate(targets)
+        )
+        validation_panel = "graphfla_external"
+    else:
+        cube_names = {
+            dataset.name for dataset in training_datasets if dataset.spec.source == "ssmula"
+        }
+        if args.only:
+            cube_names = {name for name in cube_names if name in set(args.only)}
+        folds = list(iter_protein_holdouts(training_datasets))
+        batches = Parallel(n_jobs=args.jobs, verbose=10)(
+            delayed(_fold_rows)(fold, index, cube_names, args)
+            for index, fold in enumerate(folds)
+        )
+        validation_panel = "protein_holdout"
     scores = pd.DataFrame([row for batch in batches for row in batch])
     if scores.empty:
         raise SystemExit("no landscapes scored")
 
     transfer = _transfer(scores)
+    validity_scores = _with_ensemble_arms(scores)
+    pairwise = pairwise_winner_transfer(validity_scores, seed=args.seed)
+    reliability = measured_rank_reliability(validity_scores, seed=args.seed)
+    adjusted = reliability_adjusted_transfer(transfer, reliability)
     scores.to_csv(args.output / "scores.csv", index=False)
     transfer.to_csv(args.output / "transfer.csv", index=False)
+    pairwise.to_csv(args.output / "pairwise_transfer.csv", index=False)
+    reliability.to_csv(args.output / "measured_reliability.csv", index=False)
+    adjusted.to_csv(args.output / "reliability_adjusted_transfer.csv", index=False)
 
     summary = {
         "budget": args.budget,
+        "validation_panel": validation_panel,
         "floor_policy": args.floor_policy,
         "global_epistasis": args.global_epistasis,
+        "dms_pairwise_coupling": args.dms_pairwise_coupling,
         "seeds": args.seeds,
         "posterior_draws": args.draws,
         "acquisition_pool": 20_000,
@@ -242,6 +319,22 @@ def main() -> None:
         "median_transfer": transfer.groupby("arm")[["kendall_tau", "spearman", "pearson"]]
         .median()
         .to_dict("index"),
+        "pairwise_winner_accuracy": (
+            pairwise.groupby("arm")[["correct_pairs", "scored_pairs"]]
+            .sum()
+            .assign(accuracy=lambda frame: frame["correct_pairs"] / frame["scored_pairs"])[
+                "accuracy"
+            ]
+            .to_dict()
+        ),
+        "reliability_pass_rate": (
+            adjusted.groupby("arm")["meets_reliability_floor"].mean().to_dict()
+        ),
+        "measured_split_half_tau": {
+            "median": float(reliability["split_half_median"].median()),
+            "lower": float(reliability["split_half_lower"].median()),
+            "upper": float(reliability["split_half_upper"].median()),
+        },
     }
     (args.output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary["median_transfer"], indent=2))

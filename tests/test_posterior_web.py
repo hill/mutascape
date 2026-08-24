@@ -115,6 +115,8 @@ def test_posterior_preview_reports_uncertainty_in_rows_profiles_and_graph(source
     assert preview["settings"]["generatorKind"] == "dms-pairwise-v1"
     assert preview["benchmarkValidity"]["nLandscapes"] == 16
     assert preview["benchmarkValidity"]["external"]["nLandscapes"] == 7
+    assert preview["benchmarkValidity"]["budgetCurve"]["budgets"] == [48, 96, 192, 384]
+    assert len(preview["benchmarkValidity"]["budgetCurve"]["series"]) == 3
     assert "single mutants exact" in preview["notices"][1]
 
 

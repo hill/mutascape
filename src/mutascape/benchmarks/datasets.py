@@ -41,6 +41,7 @@ class LandscapeSpec:
     depth_column: str | None
     positions: tuple[int, ...] | None = None
     wild_type: str | None = None
+    reference_sequence: str | None = None
     phenotype: str | None = None
     source_url: str = ""
     source_revision: str = ""
@@ -184,7 +185,7 @@ COMBINGYM_MANIFEST: tuple[LandscapeSpec, ...] = (
 )
 
 
-def _graphfla_spec(filename: str, protein: str) -> LandscapeSpec:
+def _graphfla_spec(filename: str, protein: str, reference_sequence: str) -> LandscapeSpec:
     return LandscapeSpec(
         name=f"GraphFLA_{Path(filename).stem}",
         protein=protein,
@@ -193,6 +194,7 @@ def _graphfla_spec(filename: str, protein: str) -> LandscapeSpec:
         fitness_column="fitness",
         sequence_column="sequences",
         depth_column=None,
+        reference_sequence=reference_sequence,
         source_url="https://github.com/COLA-Laboratory/GraphFLA",
         source_revision=_GRAPHFLA_REVISION,
     )
@@ -201,13 +203,13 @@ def _graphfla_spec(filename: str, protein: str) -> LandscapeSpec:
 # One condition per protein family, selected before the external transfer run.
 # Each table is a complete Cartesian landscape with at least 512 variants.
 GRAPHFLA_EXTERNAL_MANIFEST: tuple[LandscapeSpec, ...] = (
-    _graphfla_spec("Lunzer2005_fitness.csv", "HisA-HisF"),
-    _graphfla_spec("Michael2024_LamB.csv", "LamB"),
-    _graphfla_spec("Wu2020_Bk79.csv", "H3N2-haemagglutinin"),
-    _graphfla_spec("Bank2016a.csv", "Hsp90"),
-    _graphfla_spec("Schulz2025.csv", "ParB"),
-    _graphfla_spec("Poelwijk2019.csv", "beta-lactamase"),
-    _graphfla_spec("Moulana2023_S309.csv", "SARS-CoV-2-RBD"),
+    _graphfla_spec("Lunzer2005_fitness.csv", "HisA-HisF", "DDFAGR"),
+    _graphfla_spec("Michael2024_LamB.csv", "LamB", "000000000"),
+    _graphfla_spec("Wu2020_Bk79.csv", "H3N2-haemagglutinin", "EEFDFA"),
+    _graphfla_spec("Bank2016a.csv", "Hsp90", "QFGFSAAAE"),
+    _graphfla_spec("Schulz2025.csv", "ParB", "0000000000"),
+    _graphfla_spec("Poelwijk2019.csv", "beta-lactamase", "0000000000000"),
+    _graphfla_spec("Moulana2023_S309.csv", "SARS-CoV-2-RBD", "000000000000000"),
 )
 
 
@@ -311,10 +313,17 @@ def _normalise_site_sequences(raw: pd.DataFrame, spec: LandscapeSpec) -> Landsca
 
 
 def _normalise_graphfla(raw: pd.DataFrame, spec: LandscapeSpec) -> LandscapeDataset:
-    """Normalise a complete GraphFLA categorical table around its reference row."""
-    position_columns = [column for column in raw if column.startswith("pos")]
+    """Normalise a complete GraphFLA table around its declared reference genotype."""
+    position_columns = sorted(
+        (column for column in raw if column.startswith("pos") and column[3:].isdigit()),
+        key=lambda column: int(column[3:]),
+    )
     if not position_columns:
         raise ValueError(f"{spec.name} has no position columns")
+    if spec.reference_sequence is None:
+        raise ValueError(f"{spec.name} has no declared reference sequence")
+    if len(spec.reference_sequence) != len(position_columns):
+        raise ValueError(f"{spec.name} reference length does not match its position columns")
     finite = raw[position_columns + [spec.fitness_column]].dropna()
     finite = finite.drop_duplicates(position_columns, keep="first").reset_index(drop=True)
     if finite.empty:
@@ -326,16 +335,27 @@ def _normalise_graphfla(raw: pd.DataFrame, spec: LandscapeSpec) -> LandscapeData
     if len(finite) != expected:
         raise ValueError(f"{spec.name} is not a complete Cartesian landscape")
 
+    reference_values: list[object] = []
+    reference_mask = pd.Series(True, index=finite.index)
+    for column, reference_symbol in zip(position_columns, spec.reference_sequence):
+        matches = finite[column].map(str) == reference_symbol
+        if not bool(matches.any()):
+            raise ValueError(f"{spec.name} reference state is absent at {column}")
+        reference_value = finite.loc[matches, column].iloc[0]
+        reference_values.append(reference_value)
+        reference_mask &= finite[column] == reference_value
+    if int(reference_mask.sum()) != 1:
+        raise ValueError(f"{spec.name} reference genotype is not unique")
+
     symbols = "ACDEFGHIKLMNPQRSTVWY"
     encodings: list[dict[object, str]] = []
     kept_columns: list[str] = []
-    for column in position_columns:
+    for column, reference in zip(position_columns, reference_values):
         states = list(pd.unique(finite[column]))
         if len(states) <= 1:
             continue
         if len(states) > len(symbols):
             raise ValueError(f"{spec.name} position {column} has more than 20 states")
-        reference = finite.loc[0, column]
         ordered = [reference, *sorted((state for state in states if state != reference), key=str)]
         encodings.append(dict(zip(ordered, symbols)))
         kept_columns.append(column)

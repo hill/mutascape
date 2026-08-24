@@ -243,7 +243,6 @@ def annealing_search(space, oracle, features, seed) -> None:
     rng = np.random.default_rng(seed)
     current = space.start_row(rng)
     current_value = float(oracle.query([current])[0])
-    scale = max(abs(current_value), 1e-3)
     # A Metropolis walk revisits, and a revisit is free, so the budget alone
     # would not end the loop once the walk settles into a basin.
     idle = 0
@@ -257,7 +256,6 @@ def annealing_search(space, oracle, features, seed) -> None:
             current_value = float(oracle.query([current])[0])
             idle = 0
             continue
-        temperature = max(scale * 0.5 * (0.997**step), 1e-6)
         neighbours = space.neighbours(current)
         if not neighbours:
             break
@@ -267,7 +265,11 @@ def annealing_search(space, oracle, features, seed) -> None:
         idle = 0 if oracle.spent > before else idle + 1
         if value == -np.inf:
             break
-        if value >= current_value or rng.random() < np.exp((value - current_value) / temperature):
+        gap = value - current_value
+        observed_scale = float(np.std(oracle.observed))
+        scale = max(observed_scale, abs(gap), np.finfo(float).eps)
+        temperature = max(0.5 * (0.997**step), np.finfo(float).eps)
+        if gap >= 0 or rng.random() < np.exp(gap / (scale * temperature)):
             current, current_value = proposal, value
 
 
@@ -338,18 +340,22 @@ def _gp_acquire(kind: str):
 
 def _forest_acquire(kind: str):
     def acquire(pool, rows, values, features, rng, take):
+        order = np.argsort(values, kind="stable")
+        targets = np.empty(len(values), dtype=np.float64)
+        targets[order] = np.linspace(0.0, 1.0, len(values))
         forest = RandomForestRegressor(
             n_estimators=32, min_samples_leaf=2, n_jobs=1, random_state=int(rng.integers(1 << 31))
-        ).fit(features.one_hot(rows), values)
+        ).fit(features.one_hot(rows), targets)
         design = features.one_hot(pool)
         if kind == "greedy":
-            return _top_rows(pool, forest.predict(design), take)
+            scores = np.round(forest.predict(design), decimals=12)
+            return _top_rows(pool, scores, take)
         # Thompson sampling: each pick follows a different tree's belief.
         chosen: list[int] = []
         trees = rng.choice(len(forest.estimators_), size=take, replace=True)
         available = set(range(len(pool)))
         for index in trees:
-            scores = forest.estimators_[int(index)].predict(design)
+            scores = np.round(forest.estimators_[int(index)].predict(design), decimals=12)
             order = np.argsort(scores)[::-1]
             for offset in order:
                 if int(offset) in available:
@@ -365,14 +371,19 @@ def _mlp_acquire(pool, rows, values, features, rng, take):
     """Ensemble of small networks with an upper confidence bound. This is MLDE."""
     design = features.one_hot(rows)
     candidates = features.one_hot(pool)
+    target_scale = float(np.std(values)) or 1.0
+    targets = (values - float(np.mean(values))) / target_scale
     predictions = []
     for member in range(4):
         network = MLPRegressor(
             hidden_layer_sizes=(64,),
-            max_iter=600,
+            max_iter=1200,
             random_state=int(rng.integers(1 << 31)) + member,
-            early_stopping=False,
-        ).fit(design, values)
+            early_stopping=True,
+            validation_fraction=0.2,
+            n_iter_no_change=20,
+            tol=1e-3,
+        ).fit(design, targets)
         predictions.append(network.predict(candidates))
     stacked = np.stack(predictions)
     return _top_rows(pool, stacked.mean(axis=0) + 1.5 * stacked.std(axis=0), take)

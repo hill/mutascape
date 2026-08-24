@@ -4,7 +4,7 @@
 
 # mutascape
 
-Task-validated synthetic combinatorial protein fitness oracles for ML-assisted directed evolution benchmarks.
+Task-relative synthetic combinatorial protein fitness oracles for ML-assisted directed evolution benchmarks.
 
 Mutascape turns wild type and measured single mutants into a stable, lazy fitness oracle. The default generator adds baseline-corrected random pair interactions and a saturating readout. It preserves every supplied observation exactly.
 
@@ -50,13 +50,15 @@ The oracle accepts a genotype only when every constituent substitution has a mea
 
 Mutascape uses task-relative validity. A useful search benchmark should preserve conclusions about which optimisation method performs better.
 
-The current frozen result uses 16 complete SSMuLA landscapes, 12 search methods, a 96-query budget, 20 trials, and five oracle draws.
+The frozen study uses 16 complete SSMuLA landscapes, seven external GraphFLA protein landscapes, and 12 search methods. It tests budgets of 48, 96, 192, and 384 queries with ten trials and three matched generator draws.
 
-- Median Kendall method-rank transfer is 0.625.
-- Reliable pairwise winner accuracy is 84.5 per cent. A synthetic tie counts as a miss.
-- The measured-reliability pass rate is 81.3 per cent.
+- At 48 queries, development Kendall transfer is 0.529 and reliable winner accuracy is 88.5 per cent.
+- Mutascape passes the measured-reliability floor on 14 of 16 development landscapes.
+- External winner accuracy is 86.4 per cent, with a reliability pass on all seven landscapes.
 
-On seven external GraphFLA protein landscapes, winner accuracy is 82.7 per cent. Median rank transfer is 0.606.
+The browser retains 96 queries as its reference. At that budget, development Kendall transfer is 0.454 and winner accuracy is 78.7 per cent. External Kendall transfer is 0.644 and winner accuracy is 74.2 per cent.
+
+No generator leads every metric at later budgets. High-budget external rank transfer also saturates for several generators. Treat validity as relative to the method set, budget, and decision measure.
 
 The default fails a stricter topology test. It has fewer local optima and less Walsh non-additive variance than measured landscapes. Use it for method-ranking studies within the tested protocol. Do not use it for claims about peak counts or molecular epistasis.
 
@@ -64,12 +66,14 @@ The default fails a stricter topology test. It has fewer local optima and less W
 
 ```bash
 just benchmark-data
-uv run python scripts/run_search_transfer.py \
-  --ssmula-root .mutascape/benchmark-data/ssmula \
-  --combingym-root .mutascape/benchmark-data/combingym \
-  --output notebooks/iclr/output_search_transfer \
-  --budget 96 --seeds 20 --draws 5 --generators \
-  --dms-pairwise-coupling 0.1
+for budget in 48 96 192 384; do
+  uv run python scripts/run_search_transfer.py \
+    --ssmula-root .mutascape/benchmark-data/ssmula \
+    --combingym-root .mutascape/benchmark-data/combingym \
+    --output "notebooks/iclr/output_validity_b${budget}_primary" \
+    --budget "$budget" --seeds 10 --draws 3 \
+    --generators primary --dms-pairwise-coupling 0.1
+done
 ```
 
 The runner writes trial-level regret, rank transfer, paired winners, and measured split-half reliability. Source manifests pin upstream revisions.

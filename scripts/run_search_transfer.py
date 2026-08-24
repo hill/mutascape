@@ -30,7 +30,7 @@ from mutascape.benchmarks import (
     load_ssmula_landscapes,
     mutation_order_split,
 )
-from mutascape.benchmarks.generators import build_generators
+from mutascape.benchmarks.generators import build_generators, build_primary_generators
 from mutascape.benchmarks.library import SearchSpace
 from mutascape.benchmarks.methods import METHODS, make_features, run_method
 from mutascape.benchmarks.splits import has_informative_singles
@@ -82,8 +82,10 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--generators",
-        action="store_true",
-        help="Add NK, Rough Mount Fuji and Potts arms to the audit",
+        nargs="?",
+        const="full",
+        choices=["primary", "full"],
+        help="Add matched main comparators, or the full exploratory generator set",
     )
     parser.add_argument(
         "--dms-pairwise-coupling",
@@ -103,6 +105,21 @@ def _regret(values: np.ndarray, best: float) -> float:
     return (top - best) / (top - bottom)
 
 
+def _validate_scores(scores: pd.DataFrame, *, expected_trials: int) -> None:
+    """Reject incomplete or invalid trial tables before aggregation."""
+    key = ["dataset", "arm", "method", "trial"]
+    if bool(scores.duplicated(key).any()):
+        raise ValueError("score table has duplicate trial rows")
+    numeric = scores[["best_fitness", "regret"]].to_numpy(dtype=float)
+    if not bool(np.isfinite(numeric).all()):
+        raise ValueError("score table has non-finite fitness or regret")
+    if bool(((scores["regret"] < 0) | (scores["regret"] > 1)).any()):
+        raise ValueError("score table has regret outside zero to one")
+    trial_counts = scores.groupby(["dataset", "arm", "method"])["trial"].nunique()
+    if not bool((trial_counts == expected_trials).all()):
+        raise ValueError("score table has an incomplete trial group")
+
+
 def _score_landscape(dataset, prior, args, fold_index, dataset_index) -> list[dict[str, object]]:
     """Run every method on every arm of one landscape."""
     split = mutation_order_split(dataset.variants, max_train_depth=1)
@@ -111,7 +128,7 @@ def _score_landscape(dataset, prior, args, fold_index, dataset_index) -> list[di
     cube = supported_cube(dataset, split.train)
     measured, coverage = measured_tensor(dataset, cube)
     mask = np.isfinite(measured)
-    if int(mask.sum()) < 4 * args.budget:
+    if int(mask.sum()) < 4:
         return []
 
     space = SearchSpace.from_cube(cube, mask)
@@ -134,14 +151,25 @@ def _score_landscape(dataset, prior, args, fold_index, dataset_index) -> list[di
     ):
         arms[f"posterior_{draw}"] = space.arm_values(tensor)
     if args.generators:
-        for name, tensor in build_generators(
-            cube,
-            split.train,
-            seed=seed,
-            posterior=posterior,
-            dms_pairwise_coupling=args.dms_pairwise_coupling,
-            dms_pairwise_draws=args.draws,
-        ).items():
+        if args.generators == "primary":
+            generators = build_primary_generators(
+                cube,
+                split.train,
+                seed=seed,
+                posterior=posterior,
+                coupling=args.dms_pairwise_coupling,
+                draws=args.draws,
+            )
+        else:
+            generators = build_generators(
+                cube,
+                split.train,
+                seed=seed,
+                posterior=posterior,
+                dms_pairwise_coupling=args.dms_pairwise_coupling,
+                dms_pairwise_draws=args.draws,
+            )
+        for name, tensor in generators.items():
             arms[name] = space.arm_values(tensor)
 
     names = args.methods or list(METHODS)
@@ -210,7 +238,7 @@ def _transfer(scores: pd.DataFrame) -> pd.DataFrame:
         pivot = group.pivot(index="method", columns="arm", values="regret")
         if "measured" not in pivot:
             continue
-        for prefix in ("posterior", "dms_pairwise"):
+        for prefix in ("posterior", "dms_pairwise", "potts_low", "rmf_high"):
             draws = [column for column in pivot.columns if column.startswith(f"{prefix}_")]
             if draws:
                 # One draw is a benchmark instance. Their mean is what a user who
@@ -224,6 +252,18 @@ def _transfer(scores: pd.DataFrame) -> pd.DataFrame:
             keep = real.notna() & other.notna()
             if int(keep.sum()) < 4:
                 continue
+            if real[keep].nunique() < 2 or other[keep].nunique() < 2:
+                rows.append(
+                    {
+                        "dataset": dataset,
+                        "arm": arm,
+                        "n_methods": int(keep.sum()),
+                        "kendall_tau": float("nan"),
+                        "spearman": float("nan"),
+                        "pearson": float("nan"),
+                    }
+                )
+                continue
             rows.append(
                 {
                     "dataset": dataset,
@@ -234,13 +274,23 @@ def _transfer(scores: pd.DataFrame) -> pd.DataFrame:
                     "pearson": float(pearsonr(real[keep], other[keep]).statistic),
                 }
             )
-    return pd.DataFrame(rows)
+    return pd.DataFrame(
+        rows,
+        columns=[
+            "dataset",
+            "arm",
+            "n_methods",
+            "kendall_tau",
+            "spearman",
+            "pearson",
+        ],
+    )
 
 
 def _with_ensemble_arms(scores: pd.DataFrame) -> pd.DataFrame:
     """Add expected-regret rows for generator ensembles."""
     frames = [scores]
-    for prefix in ("posterior", "dms_pairwise"):
+    for prefix in ("posterior", "dms_pairwise", "potts_low", "rmf_high"):
         selected = scores.loc[scores["arm"].str.startswith(f"{prefix}_")]
         if selected.empty:
             continue
@@ -288,6 +338,7 @@ def main() -> None:
     scores = pd.DataFrame([row for batch in batches for row in batch])
     if scores.empty:
         raise SystemExit("no landscapes scored")
+    _validate_scores(scores, expected_trials=args.seeds)
 
     transfer = _transfer(scores)
     validity_scores = _with_ensemble_arms(scores)
@@ -307,6 +358,7 @@ def main() -> None:
         "global_epistasis": args.global_epistasis,
         "dms_pairwise_coupling": args.dms_pairwise_coupling,
         "seeds": args.seeds,
+        "generator_draws": args.draws,
         "posterior_draws": args.draws,
         "acquisition_pool": 20_000,
         "n_landscapes": int(scores["dataset"].nunique()),

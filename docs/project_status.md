@@ -1,6 +1,6 @@
 # Project status
 
-Checkpoint date is 2026-08-24.
+Checkpoint date is 2026-08-25.
 
 ## Publication claim
 
@@ -22,32 +22,24 @@ The model has no structural contact filter, donor transplant, depth residual, fl
 
 ## Current evidence
 
-The development panel uses 16 complete SSMuLA landscapes. It compares 12 search methods at 96 queries, with 20 search trials and five oracle draws.
+The development panel uses 16 complete SSMuLA landscapes. The external panel uses seven GraphFLA protein landscapes. Both compare 12 search methods at budgets of 48, 96, 192, and 384 queries. Each run uses ten search trials and three matched generator draws.
 
-- Median Kendall method-rank transfer is `0.625` in the confirmation run.
-- Reliable pairwise winner accuracy is `0.845`.
-- The measured-reliability pass rate is `0.813`.
-- Median measured split-half Kendall agreement is `0.592`.
+- At 48 queries, development rank transfer is `0.529`.
+- Development winner accuracy is `0.885`.
+- The development reliability pass rate is `0.875`, or 14 of 16 landscapes.
+- External rank transfer is `0.439`.
+- External winner accuracy is `0.864`.
+- The external reliability pass rate is `1.000`, or seven of seven landscapes.
 
-The external panel uses seven complete GraphFLA protein landscapes. It compares the same 12 methods at 96 queries.
+The browser keeps 96 queries as the frozen reference. Mutascape reaches `0.454` development rank transfer and `0.787` winner accuracy there. External rank transfer is `0.644`, and winner accuracy is `0.742`.
 
-- Median rank transfer is `0.606`.
-- Reliable pairwise winner accuracy is `0.827`.
-- The measured-reliability pass rate is `0.857`.
+No generator leads every budget and metric. Potts and RMF remain strong controls. At 384 external queries, several rank coefficients reach one because many methods find the optimum. This is search saturation, not evidence of full landscape recovery.
 
-Potts remains the strongest external rank baseline at `0.683`. RMF has the highest external winner accuracy at `0.867`. Mutascape does not establish superiority on that panel.
+The current positive claim is a low-budget decision-transfer result. The wider result shows that task validity depends on budget and decision measure.
 
 ## Known failure
 
-The task-validated default remains too smooth by global topology measures.
-
-- Measured landscapes have a median 67 strict local optima.
-- Mutascape and additive both have a median one.
-- Measured median non-additive Walsh share is `0.824`.
-- Mutascape reaches `0.150`.
-- The earlier empirical prior model reaches `0.669`.
-
-The current claim therefore covers method-ranking studies. It excludes claims about peak counts, adaptive paths, or molecular epistasis.
+The current claim covers method-ranking studies. It excludes claims about peak counts, adaptive paths, genotype values, or molecular epistasis. Walsh spectra, local optima, Wasserstein distance, and two-sample tests remain diagnostics.
 
 ## Keep
 
@@ -84,15 +76,16 @@ These components remain useful for ablations. They are outside the default gener
 
 ## Next experiments
 
-1. Repeat task transfer at budgets 48, 192, and 384.
-2. Measure the coupling trade-off between rank transfer and global topology.
-3. Add a new source-held-out protein panel before changing the default.
-4. Test whether structure-aware pair scales improve the external panel.
-5. Register the next panel and metric before further tuning.
+1. Freeze `dms-pairwise-v1` without further tuning on the current panels.
+2. Register one new source-held-out protein panel before changing the generator.
+3. Increase trial counts for the 48-query and 96-query confirmatory runs.
+4. Report uncertainty for panel medians and reliable winner accuracy.
+5. Keep structure-aware and higher-order models outside the main paper until they improve task transfer on new data.
 
 ## Reproducibility hooks
 
 - `scripts/run_search_transfer.py` runs the primary task test.
+- `scripts/freeze_benchmark_validity.py` checks and freezes the four-budget result.
 - `scripts/run_topology_benchmark.py` runs secondary shape checks.
 - `scripts/plot_benchmark_validity.py` builds the manuscript figures.
 - `src/mutascape/data/validation/benchmark-validity-v1.json` drives the studio chart.
@@ -108,5 +101,5 @@ These components remain useful for ablations. They are outside the default gener
 - `[ready]` browser visualisations
 - `[ready]` v1 manuscript draft
 - `[known gap]` global topology fidelity
-- `[pending]` budget sensitivity
+- `[ready]` four-budget sensitivity study
 - `[pending]` registered second external source

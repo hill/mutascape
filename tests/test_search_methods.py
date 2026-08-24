@@ -89,3 +89,39 @@ def test_every_method_finds_the_peak_with_a_full_budget(space: SearchSpace, name
     features = make_features(space)
     best = run_method(name, space, values, features, budget=space.size, seed=5)
     assert best == pytest.approx(float(values.max()))
+
+
+@pytest.mark.parametrize("name", sorted(METHODS))
+def test_every_method_is_invariant_to_positive_affine_fitness(name: str) -> None:
+    cube = CubeSpec(
+        positions=(1, 2, 3, 4),
+        alphabets={position: ["A", "C", "D"] for position in range(1, 5)},
+        wild_type={position: "A" for position in range(1, 5)},
+    )
+    space = SearchSpace.from_cube(cube, np.ones((3, 3, 3, 3), dtype=bool))
+    rng = np.random.default_rng(11)
+    values = rng.normal(size=space.size)
+    transformed = 17.0 + 8.5 * values
+    first = BudgetedOracle(values, budget=48)
+    second = BudgetedOracle(transformed, budget=48)
+
+    METHODS[name](space, first, make_features(space), 13)
+    METHODS[name](space, second, make_features(space), 13)
+
+    np.testing.assert_array_equal(first.rows, second.rows)
+
+
+@pytest.mark.filterwarnings("error::sklearn.exceptions.ConvergenceWarning")
+def test_mlp_stops_without_a_convergence_warning() -> None:
+    cube = CubeSpec(
+        positions=(1, 2, 3, 4, 5),
+        alphabets={position: ["A", "C", "D"] for position in range(1, 6)},
+        wild_type={position: "A" for position in range(1, 6)},
+    )
+    space = SearchSpace.from_cube(cube, np.ones((3, 3, 3, 3, 3), dtype=bool))
+    values = np.random.default_rng(17).normal(size=space.size)
+    oracle = BudgetedOracle(values, budget=192)
+
+    METHODS["mlp_ucb"](space, oracle, make_features(space), 19)
+
+    assert oracle.spent == 192

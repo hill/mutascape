@@ -64,6 +64,7 @@ import {
   runPreview,
 } from "./api"
 import {
+  benchmarkBudgetOptions,
   benchmarkValidityOptions,
   fitnessProfileOptions,
   landscapeGraphOptions,
@@ -1475,6 +1476,27 @@ function PosteriorPreviewResults({
           description={`Rank transfer ${preview.benchmarkValidity.external.kendallTau.toFixed(3)}, pairwise winner accuracy ${(100 * preview.benchmarkValidity.external.pairwiseAccuracy).toFixed(1)}%, reliability pass rate ${(100 * preview.benchmarkValidity.external.reliabilityPassRate).toFixed(1)}%.`}
         />
       </LayerCard>
+      {preview.benchmarkValidity.budgetCurve && (
+        <LayerCard className="panel-card chart-card">
+          <div className="panel-heading">
+            <div>
+              <Text variant="heading3" as="h2">
+                Do reliable method decisions persist as the query budget grows?
+              </Text>
+              <Text variant="secondary" size="sm">
+                Solid lines show the development panel. Dashed lines show the external protein
+                panel. Accuracy pools method pairs with a reliable measured winner.
+              </Text>
+            </div>
+            <Badge variant="blue">Budget sensitivity</Badge>
+          </div>
+          <Chart
+            echarts={echarts}
+            options={benchmarkBudgetOptions(preview.benchmarkValidity)}
+            height={380}
+          />
+        </LayerCard>
+      )}
       <LayerCard className="panel-card chart-card">
         <div className="panel-heading">
           <div>

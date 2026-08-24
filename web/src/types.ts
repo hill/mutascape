@@ -257,6 +257,15 @@ export interface BenchmarkValidityMethod {
   reliabilityPassRate: number
 }
 
+export interface BenchmarkBudgetSeries {
+  id: string
+  label: string
+  developmentKendall: number[]
+  externalKendall: number[]
+  developmentWinners: number[]
+  externalWinners: number[]
+}
+
 export interface BenchmarkValidity {
   id: string
   panel: string
@@ -264,6 +273,7 @@ export interface BenchmarkValidity {
   nMethods: number
   budget: number
   trials: number
+  draws?: number
   measuredReliabilityFloor: number
   external: {
     panel: string
@@ -271,11 +281,16 @@ export interface BenchmarkValidity {
     nMethods: number
     budget: number
     trials: number
+    draws?: number
     kendallTau: number
     pairwiseAccuracy: number
     reliabilityPassRate: number
   }
   methods: BenchmarkValidityMethod[]
+  budgetCurve?: {
+    budgets: number[]
+    series: BenchmarkBudgetSeries[]
+  }
 }
 
 export interface PosteriorPreviewResponse {

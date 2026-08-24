@@ -4,53 +4,149 @@
   "nLandscapes": 16,
   "nMethods": 12,
   "budget": 96,
-  "trials": 20,
-  "measuredReliabilityFloor": 0.387931,
+  "trials": 10,
+  "draws": 3,
+  "measuredReliabilityFloor": 0.249096,
   "external": {
     "panel": "GraphFLA protein panel",
     "nLandscapes": 7,
     "nMethods": 12,
     "budget": 96,
     "trials": 10,
-    "kendallTau": 0.606061,
-    "pairwiseAccuracy": 0.826667,
-    "reliabilityPassRate": 0.857143
+    "draws": 3,
+    "kendallTau": 0.644061,
+    "pairwiseAccuracy": 0.741935,
+    "reliabilityPassRate": 0.571429
   },
   "methods": [
     {
       "id": "dms_pairwise_mean",
       "label": "Mutascape",
-      "kendallTau": 0.625097,
-      "pairwiseAccuracy": 0.844948,
-      "reliabilityPassRate": 0.8125
+      "kendallTau": 0.45407,
+      "pairwiseAccuracy": 0.786948,
+      "reliabilityPassRate": 0.6875
     },
     {
-      "id": "potts_low",
+      "id": "potts_low_mean",
       "label": "Potts",
-      "kendallTau": 0.560606,
-      "pairwiseAccuracy": 0.836237,
-      "reliabilityPassRate": 0.75
+      "kendallTau": 0.401156,
+      "pairwiseAccuracy": 0.758157,
+      "reliabilityPassRate": 0.625
     },
     {
-      "id": "rmf_high",
+      "id": "rmf_high_mean",
       "label": "RMF",
-      "kendallTau": 0.51375,
-      "pairwiseAccuracy": 0.796167,
+      "kendallTau": 0.457599,
+      "pairwiseAccuracy": 0.823417,
       "reliabilityPassRate": 0.6875
     },
     {
       "id": "posterior_mean",
       "label": "Prior model",
-      "kendallTau": 0.403083,
-      "pairwiseAccuracy": 0.74216,
-      "reliabilityPassRate": 0.625
+      "kendallTau": 0.248097,
+      "pairwiseAccuracy": 0.714012,
+      "reliabilityPassRate": 0.5625
     },
     {
       "id": "additive",
       "label": "Additive",
-      "kendallTau": 0.254878,
-      "pairwiseAccuracy": 0.665505,
-      "reliabilityPassRate": 0.375
+      "kendallTau": 0.292655,
+      "pairwiseAccuracy": 0.698656,
+      "reliabilityPassRate": 0.5
     }
-  ]
+  ],
+  "budgetCurve": {
+    "budgets": [
+      48,
+      96,
+      192,
+      384
+    ],
+    "series": [
+      {
+        "id": "dms_pairwise_mean",
+        "label": "Mutascape",
+        "developmentKendall": [
+          0.529109,
+          0.45407,
+          0.505293,
+          0.462002
+        ],
+        "externalKendall": [
+          0.439388,
+          0.644061,
+          0.656508,
+          1.0
+        ],
+        "developmentWinners": [
+          0.885481,
+          0.786948,
+          0.737194,
+          0.644501
+        ],
+        "externalWinners": [
+          0.863874,
+          0.741935,
+          0.848485,
+          0.640449
+        ]
+      },
+      {
+        "id": "potts_low_mean",
+        "label": "Potts",
+        "developmentKendall": [
+          0.446113,
+          0.401156,
+          0.550279,
+          0.498202
+        ],
+        "externalKendall": [
+          0.336528,
+          0.641689,
+          0.603269,
+          1.0
+        ],
+        "developmentWinners": [
+          0.811861,
+          0.758157,
+          0.706013,
+          0.644501
+        ],
+        "externalWinners": [
+          0.764398,
+          0.780645,
+          0.838384,
+          0.662921
+        ]
+      },
+      {
+        "id": "rmf_high_mean",
+        "label": "RMF",
+        "developmentKendall": [
+          0.515416,
+          0.457599,
+          0.341686,
+          0.325748
+        ],
+        "externalKendall": [
+          0.230283,
+          0.387702,
+          0.431788,
+          0.60553
+        ],
+        "developmentWinners": [
+          0.865031,
+          0.823417,
+          0.728285,
+          0.680307
+        ],
+        "externalWinners": [
+          0.748691,
+          0.787097,
+          0.959596,
+          0.910112
+        ]
+      }
+    ]
+  }
 }

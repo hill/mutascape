@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import {
+  benchmarkBudgetOptions,
   fitnessProfileOptions,
   landscapeGraphOptions,
   posteriorDistributionOptions,
@@ -7,7 +8,12 @@ import {
   posteriorQueryOptions,
   walshOptions,
 } from "./charts"
-import type { PosteriorProfilePoint, PosteriorQueryResult, ProfilePoint } from "./types"
+import type {
+  BenchmarkValidity,
+  PosteriorProfilePoint,
+  PosteriorQueryResult,
+  ProfilePoint,
+} from "./types"
 
 const point = (depth: number, median: number): ProfilePoint => ({
   depth,
@@ -51,6 +57,55 @@ test("walshOptions keeps interaction order", () => {
   const xAxis = options.xAxis as { data: string[] }
 
   expect(xAxis.data).toEqual(["Order 1", "Order 2", "Order 3", "Order 4"])
+})
+
+test("benchmarkBudgetOptions keeps matched development and external series", () => {
+  const result = {
+    id: "benchmark-validity-v1",
+    panel: "development",
+    nLandscapes: 16,
+    nMethods: 12,
+    budget: 96,
+    trials: 10,
+    measuredReliabilityFloor: 0.25,
+    external: {
+      panel: "external",
+      nLandscapes: 7,
+      nMethods: 12,
+      budget: 96,
+      trials: 10,
+      kendallTau: 0.64,
+      pairwiseAccuracy: 0.74,
+      reliabilityPassRate: 0.57,
+    },
+    methods: [],
+    budgetCurve: {
+      budgets: [48, 96, 192, 384],
+      series: [
+        {
+          id: "dms_pairwise_mean",
+          label: "Mutascape",
+          developmentKendall: [0.53, 0.45, 0.51, 0.46],
+          externalKendall: [0.44, 0.64, 0.66, 1],
+          developmentWinners: [0.89, 0.79, 0.74, 0.64],
+          externalWinners: [0.86, 0.74, 0.85, 0.64],
+        },
+      ],
+    },
+  } satisfies BenchmarkValidity
+
+  const options = benchmarkBudgetOptions(result)
+  const xAxis = options.xAxis as { data: number[] }
+  const series = options.series as Array<{
+    name: string
+    data: number[]
+    lineStyle: { type?: string }
+  }>
+
+  expect(xAxis.data).toEqual([48, 96, 192, 384])
+  expect(series.map((item) => item.name)).toEqual(["Mutascape, development", "Mutascape, external"])
+  expect(series[0].data).toEqual([0.89, 0.79, 0.74, 0.64])
+  expect(series[1].lineStyle.type).toBe("dashed")
 })
 
 test("landscapeGraphOptions makes the mutation paths interactive", () => {

@@ -321,6 +321,52 @@ export function benchmarkValidityOptions(result: BenchmarkValidity): KumoChartOp
   }
 }
 
+export function benchmarkBudgetOptions(result: BenchmarkValidity): KumoChartOption {
+  const curve = result.budgetCurve
+  if (!curve) return {}
+  const colours = [SYNTHETIC, "#2563eb", "#10b981"]
+  const series: SeriesOption[] = curve.series.flatMap((method, index) => [
+    {
+      name: `${method.label}, development`,
+      type: "line",
+      data: method.developmentWinners,
+      symbol: "circle",
+      symbolSize: 7,
+      lineStyle: { color: colours[index], width: method.id === "dms_pairwise_mean" ? 3 : 2 },
+      itemStyle: { color: colours[index] },
+    },
+    {
+      name: `${method.label}, external`,
+      type: "line",
+      data: method.externalWinners,
+      symbol: "diamond",
+      symbolSize: 6,
+      lineStyle: { color: colours[index], width: 2, type: "dashed" },
+      itemStyle: { color: colours[index] },
+    },
+  ])
+  return {
+    animationDuration: 350,
+    aria: { enabled: true },
+    grid: { left: 58, right: 24, top: 78, bottom: 58 },
+    legend: { type: "scroll", top: 0 },
+    tooltip: {
+      trigger: "axis",
+      valueFormatter: (value: unknown) =>
+        typeof value === "number" ? value.toFixed(3) : String(value),
+    },
+    xAxis: {
+      type: "category",
+      data: curve.budgets,
+      name: "Query budget",
+      nameLocation: "middle",
+      nameGap: 30,
+    },
+    yAxis: { type: "value", name: "Winner accuracy", min: 0.5, max: 1 },
+    series,
+  }
+}
+
 export function posteriorQueryOptions(results: PosteriorQueryResult[]): KumoChartOption {
   const lower = results.map((result) => result.intervals["80"].lower)
   const upper = results.map((result) => result.intervals["80"].upper)

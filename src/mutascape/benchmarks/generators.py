@@ -128,6 +128,16 @@ def potts_tensor(
     for first in range(n_sites):
         for second in range(first + 1, n_sites):
             table = rng.normal(size=(shape[first], shape[second]))
+            first_position = cube.positions[first]
+            second_position = cube.positions[second]
+            first_wild_type = cube.alphabets[first_position].index(
+                cube.wild_type[first_position]
+            )
+            second_wild_type = cube.alphabets[second_position].index(
+                cube.wild_type[second_position]
+            )
+            table[first_wild_type, :] = 0.0
+            table[:, second_wild_type] = 0.0
             broadcast = table.reshape(
                 [shape[index] if index in (first, second) else 1 for index in range(n_sites)]
             )
@@ -231,4 +241,39 @@ def build_generators(
                 coupling=dms_pairwise_coupling,
                 seed=seed + 6 + draw,
             )
+    return generators
+
+
+def build_primary_generators(
+    cube: CubeSpec,
+    train: pd.DataFrame,
+    *,
+    seed: int,
+    posterior: PosteriorLandscape,
+    coupling: float = 0.1,
+    draws: int = 1,
+) -> dict[str, NDArray[np.float64]]:
+    """Build matched draws for the three generators in the main comparison."""
+    if draws <= 0:
+        raise ValueError("draws must be positive")
+    generators: dict[str, NDArray[np.float64]] = {}
+    for draw in range(draws):
+        generators[f"dms_pairwise_{draw}"] = dms_pairwise_readout_tensor(
+            cube,
+            posterior,
+            coupling=coupling,
+            seed=seed + draw,
+        )
+        generators[f"potts_low_{draw}"] = potts_tensor(
+            cube,
+            train,
+            coupling=0.25,
+            seed=seed + 10_000 + draw,
+        )
+        generators[f"rmf_high_{draw}"] = rough_mount_fuji_tensor(
+            cube,
+            train,
+            roughness=1.0,
+            seed=seed + 20_000 + draw,
+        )
     return generators

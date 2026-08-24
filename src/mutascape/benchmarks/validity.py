@@ -94,7 +94,7 @@ def measured_rank_reliability(
     measured_scores = scores.loc[scores["arm"] == "measured"]
     for dataset, group in measured_scores.groupby("dataset"):
         pivot = group.pivot(index="trial", columns="method", values="regret").dropna()
-        if len(pivot) < 4:
+        if len(pivot) < 4 or pivot.shape[1] < 2:
             continue
         values = pivot.to_numpy(dtype=float)
         taus: list[float] = []

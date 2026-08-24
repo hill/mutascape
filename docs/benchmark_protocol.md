@@ -59,11 +59,11 @@ The primary comparison contains 12 methods.
 - Multilayer perceptron upper confidence bound.
 - AdaLead.
 
-Every method receives the same candidates, query budget, feature encoding, and trial seeds.
+Every method receives the same candidates, query budget, feature encoding, and trial seeds. Search decisions are invariant to a positive affine change in fitness units.
 
 ## Search protocol
 
-The primary budget is 96 queries. Development uses 20 search trials and five generator draws. External validation uses 10 trials and three draws.
+The budget study uses 48, 96, 192, and 384 queries. Every panel uses 10 search trials and three matched generator draws.
 
 The acquisition pool contains at most 20,000 candidates. Normalised simple regret is
 
@@ -104,20 +104,17 @@ These metrics diagnose failures. No one measure establishes benchmark validity.
 
 ## Baselines
 
-The required controls are additive, Potts, Rough Mount Fuji, NK, and pairwise ridge. The previous empirical prior model remains an ablation.
+The main controls are additive, Potts, and Rough Mount Fuji. The previous empirical prior model remains an ablation. NK and pairwise ridge remain exploratory controls.
 
-Potts is the closest baseline because it combines measured fields with random pair tables. Mutascape adds the fitted readout and strict baseline correction.
+Potts is the closest baseline because it combines measured fields with random pair tables. Its pair tables use the same wild-type baseline correction as Mutascape. Both keep wild type and singles exact. Mutascape adds the fitted readout.
 
-## Acceptance rule
+## Interpretation rule
 
-The default supports a method-ranking claim when it meets both conditions.
+Task transfer is graded and budget-specific. The report must show all three primary metrics beside matched Potts, Rough Mount Fuji, and additive controls.
 
-1. Pairwise winner accuracy exceeds 90 per cent on development and external panels.
-2. The reliability pass rate exceeds 80 per cent on both panels.
+No single cut-off establishes realism. A positive Kendall coefficient can coexist with poor winner accuracy. High winner accuracy can also hide a wrong global ranking.
 
-Median rank transfer provides a graded companion result. Potts performance must appear beside Mutascape.
-
-The current default meets this method-ranking rule. It does not meet a global topology rule.
+A claim is limited to the tested methods, candidates, and query budget. Global topology needs a separate test.
 
 ## Reporting checklist
 
@@ -133,15 +130,17 @@ Every benchmark report should state these items.
 
 ## Reproduction
 
-Run the development panel with this command.
+Run the development budget study with these commands.
 
 ```bash
-uv run python scripts/run_search_transfer.py \
-  --ssmula-root .mutascape/benchmark-data/ssmula \
-  --combingym-root .mutascape/benchmark-data/combingym \
-  --output notebooks/iclr/output_search_transfer \
-  --budget 96 --seeds 20 --draws 5 --generators \
-  --dms-pairwise-coupling 0.1
+for budget in 48 96 192 384; do
+  uv run python scripts/run_search_transfer.py \
+    --ssmula-root .mutascape/benchmark-data/ssmula \
+    --combingym-root .mutascape/benchmark-data/combingym \
+    --output "notebooks/iclr/output_validity_b${budget}_primary" \
+    --budget "$budget" --seeds 10 --draws 3 \
+    --generators primary --dms-pairwise-coupling 0.1
+done
 ```
 
 Add `--graphfla-root` for the fixed external panel. Source manifests pin the required revisions.

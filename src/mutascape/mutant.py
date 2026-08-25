@@ -61,8 +61,7 @@ class Mutant(dict[int, str]):
             match = re.fullmatch(r"([A-Z])(\d+)([A-Z])", part)
             if not match:
                 raise ValueError(
-                    f"Cannot parse mutation '{part}'. "
-                    "Expected a label such as 'A5G' or 'A5G+L10V'"
+                    f"Cannot parse mutation '{part}'. Expected a label such as 'A5G' or 'A5G+L10V'"
                 )
             wt_aa, pos_str, mut_aa = match.groups()
             pos = _position(pos_str)

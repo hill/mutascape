@@ -56,9 +56,7 @@ def main() -> None:
 
     shape = tuple(len(alphabets[p]) for p in POSITIONS)
     index_lookup = [{aa: i for i, aa in enumerate(alphabets[p])} for p in POSITIONS]
-    wt_idx = tuple(
-        index_lookup[i][wt_sequence[p - 1]] for i, p in enumerate(POSITIONS)
-    )
+    wt_idx = tuple(index_lookup[i][wt_sequence[p - 1]] for i, p in enumerate(POSITIONS))
 
     # Enumerate every variant in the 4-site product space.
     variants = []
@@ -106,18 +104,18 @@ def main() -> None:
             remaining = (len(variants) - start - len(batch_seqs)) / max(rate, 1e-9)
             print(
                 f"  {start}/{len(variants)} ({pct:.1f}%) "
-                f"{rate:.0f} v/s  ETA {remaining/60:.1f} min"
+                f"{rate:.0f} v/s  ETA {remaining / 60:.1f} min"
             )
 
     total_time = time.time() - t0
-    print(f"\nscored {len(variants)} variants in {total_time/60:.1f} min")
+    print(f"\nscored {len(variants)} variants in {total_time / 60:.1f} min")
 
     # Calibrate pLM raw scores to DMS fitness via linear regression on singles.
     singles = load_single_site_effects(DATA / "gb1.csv")
     single_pairs = []  # (plm_score, dms_fitness)
     for i, mutations in enumerate(mutations_list):
         if len(mutations) == 1:
-            (p, aa), = mutations.items()
+            ((p, aa),) = mutations.items()
             if p in singles and aa in singles[p]:
                 single_pairs.append((scores[i], singles[p][aa]))
 
@@ -141,9 +139,9 @@ def main() -> None:
     np.savez(
         OUTPUT,
         tensor=tensor,
-        raw_scores=np.array([
-            (idx[0], idx[1], idx[2], idx[3], s) for idx, s in zip(indices, scores)
-        ]),
+        raw_scores=np.array(
+            [(idx[0], idx[1], idx[2], idx[3], s) for idx, s in zip(indices, scores)]
+        ),
         calibration_a=a,
         calibration_b=b,
         model_name=MODEL_NAME,

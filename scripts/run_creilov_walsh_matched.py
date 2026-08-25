@@ -55,10 +55,26 @@ TRUNCATIONS = (2, 3, 5, None)
 CACHE_NPZ = OUTPUT_DIR / "creilov_walsh_matched_cache.npz"  # per-variant evals
 
 THREE_TO_ONE = {
-    "Ala": "A", "Arg": "R", "Asn": "N", "Asp": "D", "Cys": "C", "Gln": "Q",
-    "Glu": "E", "Gly": "G", "His": "H", "Ile": "I", "Leu": "L", "Lys": "K",
-    "Met": "M", "Phe": "F", "Pro": "P", "Ser": "S", "Thr": "T", "Trp": "W",
-    "Tyr": "Y", "Val": "V",
+    "Ala": "A",
+    "Arg": "R",
+    "Asn": "N",
+    "Asp": "D",
+    "Cys": "C",
+    "Gln": "Q",
+    "Glu": "E",
+    "Gly": "G",
+    "His": "H",
+    "Ile": "I",
+    "Leu": "L",
+    "Lys": "K",
+    "Met": "M",
+    "Phe": "F",
+    "Pro": "P",
+    "Ser": "S",
+    "Thr": "T",
+    "Trp": "W",
+    "Tyr": "Y",
+    "Val": "V",
 }
 MUTATION_RE = re.compile(r"p\.([A-Z][a-z]{2})(\d+)([A-Z][a-z]{2})")
 
@@ -81,7 +97,7 @@ def binary_index(mutations: list[tuple[int, str, str]]) -> int:
     idx = 0
     for i, pos in enumerate(CHEN_POSITIONS):
         if pos in mut_positions:
-            idx |= (1 << i)
+            idx |= 1 << i
     return idx
 
 
@@ -98,18 +114,29 @@ def evaluate_landscape_on_variants(landscape, mutations_list) -> np.ndarray:
 
 def _build_v1():
     return build_landscape(
-        DMS_CSV, DISTANCES_NPZ, WT_FASTA,
-        alpha=1.5, sigma=0.0, seed=SEED,
-        nonlinearity="fit", combinatorial_upside=3.0, noise_sigma=0.0,
+        DMS_CSV,
+        DISTANCES_NPZ,
+        WT_FASTA,
+        alpha=1.5,
+        sigma=0.0,
+        seed=SEED,
+        nonlinearity="fit",
+        combinatorial_upside=3.0,
+        noise_sigma=0.0,
     )
 
 
 def _build_v2(msa_scale: float):
     eps = MSACouplingsEpistasis.from_npz(MSA_COUPLINGS_NPZ, scale=msa_scale)
     return build_landscape(
-        DMS_CSV, DISTANCES_NPZ, WT_FASTA,
-        alpha=1.5, seed=SEED,
-        nonlinearity="fit", combinatorial_upside=3.0, noise_sigma=0.0,
+        DMS_CSV,
+        DISTANCES_NPZ,
+        WT_FASTA,
+        alpha=1.5,
+        seed=SEED,
+        nonlinearity="fit",
+        combinatorial_upside=3.0,
+        noise_sigma=0.0,
         msa_couplings=eps,
     )
 
@@ -173,8 +200,10 @@ def main() -> None:
     real_values, cell_idx, synth_by_config = _load_or_evaluate()
 
     _, real_spectrum_full = binary_cube_spectrum(real_values, cell_idx, L)
-    print("\nReal spectrum (full data): "
-          f"{', '.join(f'O{k}={real_spectrum_full[k]:.3f}' for k in range(1, 7))}")
+    print(
+        "\nReal spectrum (full data): "
+        f"{', '.join(f'O{k}={real_spectrum_full[k]:.3f}' for k in range(1, 7))}"
+    )
 
     # Full-data point estimates on the near-complete cube (99.6% coverage) are
     # the trustworthy answer. A variant-resampling bootstrap or held-out split is
@@ -230,20 +259,18 @@ def main() -> None:
     order_rows = []
     for label in ["real"] + [c for c, _ in CONFIGS]:
         for k in range(1, L + 1):
-            order_rows.append(
-                {"config": label, "order": k, "var_frac": bar_spectra[label][k]}
-            )
-    pd.DataFrame(order_rows).to_csv(
-        OUTPUT_DIR / "creilov_walsh_matched_orders.csv", index=False
-    )
+            order_rows.append({"config": label, "order": k, "var_frac": bar_spectra[label][k]})
+    pd.DataFrame(order_rows).to_csv(OUTPUT_DIR / "creilov_walsh_matched_orders.csv", index=False)
 
     print(f"\nSelected scale = {selected_scale} ({selected_label}, min full-data order_w1)")
     print("\nper config: order_w1 (full), walsh_l1 (full), cos_order2 (full):")
     for _, r in summary.sort_values("order_w1_all").iterrows():
         star = " *" if r["selected"] else ""
-        print(f"  {r['config']:<18} order_w1={r['order_w1_all']:.4f}  "
-              f"walsh_l1={r['walsh_l1_all']:.4f}  "
-              f"cos_order2={r['cos_order2']:+.3f}{star}")
+        print(
+            f"  {r['config']:<18} order_w1={r['order_w1_all']:.4f}  "
+            f"walsh_l1={r['walsh_l1_all']:.4f}  "
+            f"cos_order2={r['cos_order2']:+.3f}{star}"
+        )
 
     _plot(bar_spectra, summary, selected_scale)
 
@@ -255,9 +282,12 @@ def _plot(bar_spectra, summary, selected_scale) -> None:
     orders = list(range(1, L + 1))
     width = 0.12
     colors = {
-        "real": "#000000", "v1_no_couplings": "#d62728",
-        "v2_scale_0.05": "#ff7f0e", "v2_scale_0.10": "#ffbb78",
-        "v2_scale_0.20": "#bcbd22", "v2_scale_0.50": "#17becf",
+        "real": "#000000",
+        "v1_no_couplings": "#d62728",
+        "v2_scale_0.05": "#ff7f0e",
+        "v2_scale_0.10": "#ffbb78",
+        "v2_scale_0.20": "#bcbd22",
+        "v2_scale_0.50": "#17becf",
         "v2_scale_1.00": "#2ca02c",
     }
     labels = {
@@ -298,7 +328,9 @@ def _plot(bar_spectra, summary, selected_scale) -> None:
     for col, lbl in trunc_styles:
         ax2.plot(scales, s[f"order_w1_{col}"].to_numpy(), marker="o", label=lbl)
     ax2.axvline(
-        selected_scale, color="#d62728", linestyle="--",
+        selected_scale,
+        color="#d62728",
+        linestyle="--",
         label=f"selected scale = {selected_scale} (min order_w1)",
     )
     ax2.set_xlabel("MSA coupling scale")

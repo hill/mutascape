@@ -365,9 +365,7 @@ def _normalise_graphfla(raw: pd.DataFrame, spec: LandscapeSpec) -> LandscapeData
     wild_type = "A" * len(kept_columns)
     rows: list[dict[str, object]] = []
     for values in finite[kept_columns + [spec.fitness_column]].itertuples(index=False, name=None):
-        sequence = "".join(
-            encoding[value] for encoding, value in zip(encodings, values[:-1])
-        )
+        sequence = "".join(encoding[value] for encoding, value in zip(encodings, values[:-1]))
         mutations = {
             position: residue
             for position, residue in enumerate(sequence, start=1)

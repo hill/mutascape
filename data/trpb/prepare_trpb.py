@@ -63,7 +63,7 @@ def _extract_wt_sequence() -> str:
         for r in chain
         if PDB.is_aa(r, standard=True)
     }
-    min_pos, max_pos = min(residues), max(residues)
+    max_pos = max(residues)
     # Build a sequence indexed 1..max_pos, filling gaps with 'X' for safety.
     seq = ["X"] * max_pos
     for p, aa in residues.items():
@@ -88,35 +88,39 @@ def prepare_dms() -> None:
     fitness_rel = df["fitness"].astype(float) - parent_fitness
     depth = df["n_mut"].astype(int)
 
-    combinatorial = pd.DataFrame({
-        "mutant": df["muts"],
-        "fitness": fitness_rel,
-        "depth": depth,
-    })
+    combinatorial = pd.DataFrame(
+        {
+            "mutant": df["muts"],
+            "fitness": fitness_rel,
+            "depth": depth,
+        }
+    )
     combinatorial.to_csv(OUTPUT_DIR / "trpb_combinatorial.csv", index=False)
     print(f"Combinatorial: {len(combinatorial)} variants")
-    print(
-        "  depth distribution: "
-        f"{combinatorial['depth'].value_counts().sort_index().to_dict()}"
-    )
+    print(f"  depth distribution: {combinatorial['depth'].value_counts().sort_index().to_dict()}")
     print(f"  fitness range: {fitness_rel.min():.3f} to {fitness_rel.max():.3f}")
 
     singles_rows = []
     singles_mask = combinatorial["depth"] == 1
-    for mutant_str, fit in zip(combinatorial.loc[singles_mask, "mutant"], fitness_rel[singles_mask]):
+    for mutant_str, fit in zip(
+        combinatorial.loc[singles_mask, "mutant"], fitness_rel[singles_mask]
+    ):
         import re
+
         match = re.match(r"([A-Z])(\d+)([A-Z])", mutant_str)
         assert match is not None, f"could not parse single mutant: {mutant_str}"
         wt_aa, pos, mut_aa = match.group(1), int(match.group(2)), match.group(3)
         assert PARENT_AA_AT_POSITION[pos] == wt_aa, (
             f"mutant {mutant_str} inconsistent with parent at position {pos}"
         )
-        singles_rows.append({
-            "position": pos,
-            "wildtype": wt_aa,
-            "mutant": mut_aa,
-            "fitness": float(fit),
-        })
+        singles_rows.append(
+            {
+                "position": pos,
+                "wildtype": wt_aa,
+                "mutant": mut_aa,
+                "fitness": float(fit),
+            }
+        )
     singles = pd.DataFrame(singles_rows)
     singles.to_csv(OUTPUT_DIR / "trpb.csv", index=False)
     print(
@@ -149,9 +153,7 @@ def prepare_contact_map(wt_seq: str) -> None:
     )
     # Also print the 4-site submap in case the user wants to sanity-check.
     sub = cm.submap(list(MUTATED_POSITIONS))
-    print(
-        f"Four-site submap: {sub.n_contacts} contacts out of {4 * 3 // 2} possible pairs"
-    )
+    print(f"Four-site submap: {sub.n_contacts} contacts out of {4 * 3 // 2} possible pairs")
     for i, p in enumerate(sub.positions):
         for q in sub.positions[i + 1 :]:
             d = sub.distances[sub.positions.index(p), sub.positions.index(q)]
@@ -169,8 +171,10 @@ if __name__ == "__main__":
         "Download from https://files.rcsb.org/download/8VHH.pdb."
     )
     wt_seq = _extract_wt_sequence()
-    print(f"WT length: {len(wt_seq)}, positions of interest: "
-          + ", ".join(f"{p}={wt_seq[p - 1]}" for p in MUTATED_POSITIONS))
+    print(
+        f"WT length: {len(wt_seq)}, positions of interest: "
+        + ", ".join(f"{p}={wt_seq[p - 1]}" for p in MUTATED_POSITIONS)
+    )
     write_wt_fasta(wt_seq)
     prepare_dms()
     prepare_contact_map(wt_seq)

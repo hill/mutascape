@@ -1155,14 +1155,18 @@ class DMSPairwiseLandscape:
         effects = generator.preimage_effects if readout is not None else generator.single_effects
         scale = generator.preimage_scale if readout is not None else generator.target_scale
         latent = sum(effects[mutation] for mutation in genotype)
-        latent += self.coupling * scale * sum(
-            dms_pairwise_unit_coefficient(
-                first,
-                second,
-                generator.wild_type_sequence,
-                self.seed,
+        latent += (
+            self.coupling
+            * scale
+            * sum(
+                dms_pairwise_unit_coefficient(
+                    first,
+                    second,
+                    generator.wild_type_sequence,
+                    self.seed,
+                )
+                for first, second in combinations(genotype, 2)
             )
-            for first, second in combinations(genotype, 2)
         )
         centred = float(readout.forward(latent)) if readout is not None else float(latent)
         return float(generator.observations[()] + centred)

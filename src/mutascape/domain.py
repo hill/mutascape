@@ -1,7 +1,5 @@
 """Declared mutation domains for lazy benchmark oracles."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 import numpy as np
@@ -38,11 +36,7 @@ class MutationDomain:
     def substitutions_at(self, position: int) -> tuple[str, ...]:
         """Return supported non-wild-type residues at one position."""
         position = int(position)
-        return tuple(
-            amino_acid
-            for site, amino_acid in self.substitutions
-            if site == position
-        )
+        return tuple(amino_acid for site, amino_acid in self.substitutions if site == position)
 
     def parse(self, variant: VariantLike) -> Mutant:
         """Return one canonical, domain-checked mutant."""
@@ -90,9 +84,7 @@ class MutationDomain:
 
         rng = np.random.default_rng(seed)
         positions = np.asarray(self.positions, dtype=int)
-        wild_type = {
-            position: self.wild_type_sequence[position - 1] for position in self.positions
-        }
+        wild_type = {position: self.wild_type_sequence[position - 1] for position in self.positions}
         sampled: list[Mutant] = []
         seen: set[tuple[tuple[int, str], ...]] = set()
         while len(sampled) < n:

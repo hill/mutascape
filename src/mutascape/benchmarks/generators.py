@@ -130,9 +130,7 @@ def potts_tensor(
             table = rng.normal(size=(shape[first], shape[second]))
             first_position = cube.positions[first]
             second_position = cube.positions[second]
-            first_wild_type = cube.alphabets[first_position].index(
-                cube.wild_type[first_position]
-            )
+            first_wild_type = cube.alphabets[first_position].index(cube.wild_type[first_position])
             second_wild_type = cube.alphabets[second_position].index(
                 cube.wild_type[second_position]
             )
@@ -166,9 +164,7 @@ def dms_pairwise_readout_tensor(
     fields = [
         np.asarray(
             [
-                0.0
-                if residue == cube.wild_type[position]
-                else effects[(position, residue)]
+                0.0 if residue == cube.wild_type[position] else effects[(position, residue)]
                 for residue in cube.alphabets[position]
             ],
             dtype=np.float64,

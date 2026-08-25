@@ -59,7 +59,7 @@ PROTEINGYM_CSV = PROTEINGYM_DIR / "SPG1_STRSG_Wu_2016.csv"
 # offset below. Wu et al. screen 4 sites: V39/D40/G41/V54 (domain numbering).
 PROTEINGYM_OFFSET = 226
 DOMAIN_START_PG = 227  # first residue of GB1 domain in precursor numbering
-DOMAIN_END_PG = 282    # last residue
+DOMAIN_END_PG = 282  # last residue
 MUTATED_POSITIONS_PG = {265, 266, 267, 280}  # positions screened by Wu et al.
 
 WT_FITNESS = 1.0  # ProteinGym DMS_score = enrichment ratio; WT enrichment is 1
@@ -116,11 +116,13 @@ def prepare_dms(pg_df: pd.DataFrame, wt_seq: str) -> None:
     fitness = pg_df["DMS_score"].astype(float) - WT_FITNESS
     depth = translated.apply(lambda s: s.count(":") + 1)
 
-    combinatorial = pd.DataFrame({
-        "mutant": translated,
-        "fitness": fitness,
-        "depth": depth,
-    })
+    combinatorial = pd.DataFrame(
+        {
+            "mutant": translated,
+            "fitness": fitness,
+            "depth": depth,
+        }
+    )
     combinatorial.to_csv(OUTPUT_DIR / "gb1_combinatorial.csv", index=False)
     print(f"Combinatorial: {len(combinatorial)} variants")
     print(f"  depth distribution: {combinatorial['depth'].value_counts().sort_index().to_dict()}")
@@ -133,12 +135,14 @@ def prepare_dms(pg_df: pd.DataFrame, wt_seq: str) -> None:
         match = re.match(r"([A-Z])(\d+)([A-Z])", mutant_str)
         wt_aa, pos, mut_aa = match.group(1), int(match.group(2)), match.group(3)
         assert wt_seq[pos - 1] == wt_aa
-        singles_rows.append({
-            "position": pos,
-            "wildtype": wt_aa,
-            "mutant": mut_aa,
-            "fitness": float(fit),
-        })
+        singles_rows.append(
+            {
+                "position": pos,
+                "wildtype": wt_aa,
+                "mutant": mut_aa,
+                "fitness": float(fit),
+            }
+        )
     singles = pd.DataFrame(singles_rows)
     singles.to_csv(OUTPUT_DIR / "gb1.csv", index=False)
     print(f"Singles: {len(singles)} variants, {singles['position'].nunique()} positions")
@@ -166,8 +170,10 @@ def download_pdb() -> Path:
 def prepare_contact_map(wt_seq: str) -> None:
     pdb_path = download_pdb()
     cm = ContactMap.from_pdb(pdb_path, threshold=8.0, chain_id="A")
-    print(f"PDB contact map: {cm.n_positions} positions, {cm.n_contacts} contacts, "
-          f"residue range {min(cm.positions)}-{max(cm.positions)}")
+    print(
+        f"PDB contact map: {cm.n_positions} positions, {cm.n_contacts} contacts, "
+        f"residue range {min(cm.positions)}-{max(cm.positions)}"
+    )
 
     # Verify numbering matches the GB1 domain (PDB residues 1-56 map to our WT seq)
     pdb_positions = list(cm.positions)
@@ -195,7 +201,9 @@ if __name__ == "__main__":
     print(f"WT domain: {wt_seq}")
     expected_positions = {39: "V", 40: "D", 41: "G", 54: "V"}
     for pos, aa in expected_positions.items():
-        assert wt_seq[pos - 1] == aa, f"WT seq at position {pos} is {wt_seq[pos-1]}, expected {aa}"
+        assert wt_seq[pos - 1] == aa, (
+            f"WT seq at position {pos} is {wt_seq[pos - 1]}, expected {aa}"
+        )
 
     write_wt_fasta(wt_seq)
     prepare_dms(pg_df, wt_seq)

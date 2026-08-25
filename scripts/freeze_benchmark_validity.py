@@ -101,9 +101,7 @@ def main() -> None:
         "id": "benchmark-validity-v1",
         "panel": "SSMuLA development panel",
         **development_metadata,
-        "measuredReliabilityFloor": round(
-            float(reliability["split_half_lower"].median()), 6
-        ),
+        "measuredReliabilityFloor": round(float(reliability["split_half_lower"].median()), 6),
         "external": {
             "panel": "GraphFLA protein panel",
             **external_metadata,
@@ -120,12 +118,10 @@ def main() -> None:
                     "id": arm,
                     "label": label,
                     "developmentKendall": [
-                        _arm_metrics(development[budget], arm)["kendallTau"]
-                        for budget in budgets
+                        _arm_metrics(development[budget], arm)["kendallTau"] for budget in budgets
                     ],
                     "externalKendall": [
-                        _arm_metrics(external[budget], arm)["kendallTau"]
-                        for budget in budgets
+                        _arm_metrics(external[budget], arm)["kendallTau"] for budget in budgets
                     ],
                     "developmentWinners": [
                         _arm_metrics(development[budget], arm)["pairwiseAccuracy"]

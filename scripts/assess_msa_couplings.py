@@ -82,17 +82,25 @@ def _fit_censored_sigmoid(dms_csv, upside, scale_override, floor_hard):
     if floor_hard is None:
         floor_hard = float(min(v for pos in singles.values() for v in pos.values()))
     return GlobalEpistasisSigmoid(
-        floor=base.floor, ceiling=base.ceiling, scale=scale, floor_hard=floor_hard,
+        floor=base.floor,
+        ceiling=base.ceiling,
+        scale=scale,
+        floor_hard=floor_hard,
     )
 
 
 def _real_tensor_and_walsh(cfg):
     real_df = load_gb1_combinatorial(
-        cfg["combinatorial_csv"], cfg["dms_csv"], positions=cfg["positions"],
+        cfg["combinatorial_csv"],
+        cfg["dms_csv"],
+        positions=cfg["positions"],
     )
     alphabets = observed_alphabets(real_df, cfg["positions"], cfg["wt_aa_at_position"])
     real_tensor, _ = fitness_tensor_from_real(
-        real_df, cfg["positions"], cfg["wt_aa_at_position"], alphabets,
+        real_df,
+        cfg["positions"],
+        cfg["wt_aa_at_position"],
+        alphabets,
     )
     return real_tensor, walsh_decompose(real_tensor), alphabets
 
@@ -105,7 +113,10 @@ def _metrics_row(label, ls, cfg, real_tensor, real_walsh, alphabets):
     ss = ssmula_attributes(t)
     return {
         "config": label,
-        "walsh_1": w[1], "walsh_2": w[2], "walsh_3": w[3], "walsh_4": w[4],
+        "walsh_1": w[1],
+        "walsh_2": w[2],
+        "walsh_3": w[3],
+        "walsh_4": w[4],
         "walsh_L1": walsh_l1_distance(real_walsh, w),
         "fitness_W1": fitness_wasserstein(real_tensor, t),
         "n_optima": o["n_optima"],
@@ -118,46 +129,78 @@ def run(protein):
     cfg = PROTEIN_CONFIG[protein]
     print(f"\n=== {protein.upper()} ===")
     g = _fit_censored_sigmoid(
-        cfg["dms_csv"], cfg["combinatorial_upside"],
-        cfg["scale_override"], cfg["floor_hard"],
+        cfg["dms_csv"],
+        cfg["combinatorial_upside"],
+        cfg["scale_override"],
+        cfg["floor_hard"],
     )
     real_tensor, real_walsh, alphabets = _real_tensor_and_walsh(cfg)
 
     rows = []
-    rows.append({
-        "config": "REAL",
-        "walsh_1": real_walsh[1], "walsh_2": real_walsh[2],
-        "walsh_3": real_walsh[3], "walsh_4": real_walsh[4],
-        "walsh_L1": float("nan"), "fitness_W1": float("nan"),
-        "n_optima": local_optima_from_tensor(real_tensor)["n_optima"],
-        "accessible_frac": accessible_paths(
-            real_tensor, n_sources=3000, n_rsign_samples=20000, seed=SEED,
-        )["mean_accessible_fraction"],
-        "ssmula_kurtosis": ssmula_attributes(real_tensor)["kurtosis"],
-    })
+    rows.append(
+        {
+            "config": "REAL",
+            "walsh_1": real_walsh[1],
+            "walsh_2": real_walsh[2],
+            "walsh_3": real_walsh[3],
+            "walsh_4": real_walsh[4],
+            "walsh_L1": float("nan"),
+            "fitness_W1": float("nan"),
+            "n_optima": local_optima_from_tensor(real_tensor)["n_optima"],
+            "accessible_frac": accessible_paths(
+                real_tensor,
+                n_sources=3000,
+                n_rsign_samples=20000,
+                seed=SEED,
+            )["mean_accessible_fraction"],
+            "ssmula_kurtosis": ssmula_attributes(real_tensor)["kurtosis"],
+        }
+    )
 
     # Baseline: RandomEpistasis at headline noise
     ls_rand = build_landscape(
-        cfg["dms_csv"], cfg["distances_npz"], cfg["wt_fasta"],
-        alpha=cfg["alpha"], seed=SEED, nonlinearity=g, noise_sigma=NOISE_SIGMA,
+        cfg["dms_csv"],
+        cfg["distances_npz"],
+        cfg["wt_fasta"],
+        alpha=cfg["alpha"],
+        seed=SEED,
+        nonlinearity=g,
+        noise_sigma=NOISE_SIGMA,
     )
-    rows.append(_metrics_row(
-        "random(sigma=0.3) + noise=0.3",
-        ls_rand, cfg, real_tensor, real_walsh, alphabets,
-    ))
+    rows.append(
+        _metrics_row(
+            "random(sigma=0.3) + noise=0.3",
+            ls_rand,
+            cfg,
+            real_tensor,
+            real_walsh,
+            alphabets,
+        )
+    )
 
     # MSA couplings at various scales
     for msa_scale in MSA_SCALES:
         msa = MSACouplingsEpistasis.from_npz(cfg["msa_npz"], scale=msa_scale)
         ls_msa = build_landscape(
-            cfg["dms_csv"], cfg["distances_npz"], cfg["wt_fasta"],
-            alpha=cfg["alpha"], seed=SEED, nonlinearity=g, noise_sigma=NOISE_SIGMA,
+            cfg["dms_csv"],
+            cfg["distances_npz"],
+            cfg["wt_fasta"],
+            alpha=cfg["alpha"],
+            seed=SEED,
+            nonlinearity=g,
+            noise_sigma=NOISE_SIGMA,
             msa_couplings=msa,
         )
-        rows.append(_metrics_row(
-            f"MSA(scale={msa_scale}) + noise=0.3",
-            ls_msa, cfg, real_tensor, real_walsh, alphabets,
-        ))
+        rows.append(
+            _metrics_row(
+                f"MSA(scale={msa_scale}) + noise=0.3",
+                ls_msa,
+                cfg,
+                real_tensor,
+                real_walsh,
+                alphabets,
+            )
+        )
 
     df = pd.DataFrame(rows)
     out_path = cfg["output_dir"] / f"{protein}_msa_assessment.csv"

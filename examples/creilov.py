@@ -21,11 +21,11 @@ import numpy as np
 
 from mutascape import (
     ContactMap,
+    GlobalEpistasisSigmoid,
     Landscape,
     Mutant,
     RandomEpistasis,
     SignConsistentEpistasis,
-    GlobalEpistasisSigmoid,
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent

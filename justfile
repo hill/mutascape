@@ -8,12 +8,13 @@ test *ARGS:
     uv run pytest {{ARGS}}
 
 lint:
-    uv run ruff check src tests scripts
+    uv run ruff check .
+    uv run ruff format --check .
     cd web && bun run lint
 
 fmt:
-    uv run ruff check --fix src tests scripts
-    uv run ruff format src tests scripts
+    uv run ruff check --fix .
+    uv run ruff format .
     cd web && bun run format
 
 # Download pinned SSMuLA and CombinGym sources outside Git.

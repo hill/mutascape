@@ -54,8 +54,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data/gfp"
 OUTPUT_DIR = REPO_ROOT / "notebooks/validation/output_structural"
 PROTEINGYM_CSV = (
-    REPO_ROOT.parent
-    / "mutantopt/experiments/datasets/proteingym/GFP_AEQVI_Sarkisyan_2016.csv"
+    REPO_ROOT.parent / "mutantopt/experiments/datasets/proteingym/GFP_AEQVI_Sarkisyan_2016.csv"
 )
 DMS_CSV = DATA_DIR / "gfp.csv"
 DISTANCES_NPZ = DATA_DIR / "gfp_distances.npz"
@@ -414,8 +413,10 @@ def _distance_decay_sign_couplings(
             d = float(distances[idx_i, idx_j])
             if d > max_distance:
                 continue
-            weight = 1.0 if d <= contact_map.threshold else np.exp(
-                -(d - contact_map.threshold) / distance_scale
+            weight = (
+                1.0
+                if d <= contact_map.threshold
+                else np.exp(-(d - contact_map.threshold) / distance_scale)
             )
             matrix = np.zeros((n_aa, n_aa), dtype=np.float64)
             effects_i = effects.get(pos_i, {})
@@ -458,8 +459,10 @@ def _distance_decay_random_couplings(
             d = float(distances[idx_i, idx_j])
             if d > max_distance:
                 continue
-            weight = 1.0 if d <= contact_map.threshold else np.exp(
-                -(d - contact_map.threshold) / distance_scale
+            weight = (
+                1.0
+                if d <= contact_map.threshold
+                else np.exp(-(d - contact_map.threshold) / distance_scale)
             )
             couplings[(int(pos_i), int(pos_j))] = rng.normal(
                 0.0,
@@ -486,11 +489,13 @@ def _prepare_observations(df: pd.DataFrame, contact_map: ContactMap) -> pd.DataF
 def _add_control_residual(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     y = out["abs_epistatic_deviation"].to_numpy(dtype=np.float64)
-    controls = np.column_stack([
-        np.ones(len(out)),
-        out["depth"].to_numpy(dtype=np.float64),
-        out["abs_additive_prediction"].to_numpy(dtype=np.float64),
-    ])
+    controls = np.column_stack(
+        [
+            np.ones(len(out)),
+            out["depth"].to_numpy(dtype=np.float64),
+            out["abs_additive_prediction"].to_numpy(dtype=np.float64),
+        ]
+    )
     coef, *_ = np.linalg.lstsq(controls, y, rcond=None)
     out["abs_epi_control_residual"] = y - controls @ coef
     return out
@@ -502,13 +507,15 @@ def _evaluate_same_variants(landscape: Landscape, real_df: pd.DataFrame) -> pd.D
         variant = {int(pos): aa for pos, aa in mutations.items()}
         fitness = _fast_pairwise_fitness(landscape, variant)
         additive = landscape.additive_fitness(variant)
-        rows.append({
-            "mutations": variant,
-            "fitness": fitness,
-            "additive_prediction": additive,
-            "depth": len(variant),
-            "epistatic_deviation": fitness - additive,
-        })
+        rows.append(
+            {
+                "mutations": variant,
+                "fitness": fitness,
+                "additive_prediction": additive,
+                "depth": len(variant),
+                "epistatic_deviation": fitness - additive,
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -578,14 +585,18 @@ def _summary_row(
             float(df["abs_epistatic_deviation"].mean())
             - float(real_df["abs_epistatic_deviation"].mean())
         ),
-        "deviation_w1": float(wasserstein_distance(
-            real_df["abs_epistatic_deviation"],
-            df["abs_epistatic_deviation"],
-        )),
-        "signed_deviation_w1": float(wasserstein_distance(
-            real_df["epistatic_deviation"],
-            df["epistatic_deviation"],
-        )),
+        "deviation_w1": float(
+            wasserstein_distance(
+                real_df["abs_epistatic_deviation"],
+                df["abs_epistatic_deviation"],
+            )
+        ),
+        "signed_deviation_w1": float(
+            wasserstein_distance(
+                real_df["epistatic_deviation"],
+                df["epistatic_deviation"],
+            )
+        ),
         "beta_error": abs(regression.beta - real_regression.beta),
         "partial_r2_error": abs(regression.partial_r2 - real_regression.partial_r2),
         "curve_rmse": _curve_rmse(curve, real_curve),
@@ -624,16 +635,18 @@ def _bin_rows(
 ) -> list[dict[str, float | int | str]]:
     rows = []
     for _, row in curve.iterrows():
-        rows.append({
-            "model_key": spec.key,
-            "model_label": spec.label,
-            "metric": metric,
-            "bin": int(row["bin"]),
-            "n": int(row["n"]),
-            "contact_mean": float(row["contact_mean"]),
-            "value_mean": float(row["value_mean"]),
-            "value_sem": float(row["value_sem"]),
-        })
+        rows.append(
+            {
+                "model_key": spec.key,
+                "model_label": spec.label,
+                "metric": metric,
+                "bin": int(row["bin"]),
+                "n": int(row["n"]),
+                "contact_mean": float(row["contact_mean"]),
+                "value_mean": float(row["value_mean"]),
+                "value_sem": float(row["value_sem"]),
+            }
+        )
     return rows
 
 
@@ -665,9 +678,7 @@ def _add_composite_scores(summary: pd.DataFrame) -> pd.DataFrame:
         if not np.isfinite(scale) or scale == 0:
             scale = 1.0
         out[f"{col}_contact_scaled"] = out[col] / scale
-    out["contact_score"] = out[
-        [f"{col}_contact_scaled" for col in contact_components]
-    ].sum(axis=1)
+    out["contact_score"] = out[[f"{col}_contact_scaled" for col in contact_components]].sum(axis=1)
     out.loc[out["model_key"] == "real", "contact_score"] = 0.0
     return out
 
@@ -683,9 +694,7 @@ def _plot_ablation(
     plot_summary = summary[summary["model_key"].isin(PLOT_KEYS)].copy()
     plot_summary["model_label"] = pd.Categorical(
         plot_summary["model_label"],
-        categories=[
-            spec.label for spec in MODEL_SPECS if spec.key in PLOT_KEYS
-        ],
+        categories=[spec.label for spec in MODEL_SPECS if spec.key in PLOT_KEYS],
         ordered=True,
     )
     plot_summary = plot_summary.sort_values("model_label")
@@ -724,9 +733,11 @@ def _plot_ablation(
     ax_curve.legend(fontsize=8, frameon=False)
 
     score_data = plot_summary[plot_summary["model_key"] != "real"]
-    ax_score.barh(score_data["model_label"], score_data["contact_score"], color=[
-        colors[k] for k in score_data["model_key"]
-    ])
+    ax_score.barh(
+        score_data["model_label"],
+        score_data["contact_score"],
+        color=[colors[k] for k in score_data["model_key"]],
+    )
     ax_score.set_xlabel("Contact-specific distance to GFP")
     ax_score.set_title("Structural ablation score, lower is better")
 

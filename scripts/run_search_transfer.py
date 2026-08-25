@@ -331,8 +331,7 @@ def main() -> None:
             cube_names = {name for name in cube_names if name in set(args.only)}
         folds = list(iter_protein_holdouts(training_datasets))
         batches = Parallel(n_jobs=args.jobs, verbose=10)(
-            delayed(_fold_rows)(fold, index, cube_names, args)
-            for index, fold in enumerate(folds)
+            delayed(_fold_rows)(fold, index, cube_names, args) for index, fold in enumerate(folds)
         )
         validation_panel = "protein_holdout"
     scores = pd.DataFrame([row for batch in batches for row in batch])

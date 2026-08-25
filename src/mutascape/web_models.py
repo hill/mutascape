@@ -559,9 +559,7 @@ def _parse_dms_input(
     if {"variant", "fitness"}.issubset(fields):
         return _parse_variant_csv(text, wt_sequence)
     rows = _parse_dms_csv(text, wt_sequence)
-    observations = [
-        {"variant": "wt", "mutations": {}, "fitness": 0.0, "depth": 0}
-    ]
+    observations = [{"variant": "wt", "mutations": {}, "fitness": 0.0, "depth": 0}]
     observations.extend(
         {
             "variant": f"{row['wildtype']}{row['position']}{row['mutant']}",
@@ -595,9 +593,7 @@ def _parse_variant_csv(
             claimed = mutant._wild_type.get(position)
             actual = wt_sequence[position - 1]
             if claimed != actual:
-                raise ValueError(
-                    f"DMS wild type {claimed}{position} does not match the WT FASTA"
-                )
+                raise ValueError(f"DMS wild type {claimed}{position} does not match the WT FASTA")
             if amino_acid not in CANONICAL_AAS:
                 raise ValueError(f"DMS row {row_number} uses a non-canonical amino acid")
         key = tuple(sorted(mutant.items()))

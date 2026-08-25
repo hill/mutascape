@@ -29,8 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data/gfp"
 OUTPUT_DIR = REPO_ROOT / "notebooks/validation/output_gfp"
 PROTEINGYM_CSV = (
-    REPO_ROOT.parent
-    / "mutantopt/experiments/datasets/proteingym/GFP_AEQVI_Sarkisyan_2016.csv"
+    REPO_ROOT.parent / "mutantopt/experiments/datasets/proteingym/GFP_AEQVI_Sarkisyan_2016.csv"
 )
 
 DMS_CSV = DATA_DIR / "gfp.csv"
@@ -44,19 +43,21 @@ SEED = 42
 def _summary_rows(real_metrics: dict, synth_metrics: dict) -> list[dict]:
     rows = []
     for depth in DEPTHS:
-        rows.append({
-            "depth": depth,
-            "real_n": real_metrics["fitness_moments"].get(depth, {}).get("n"),
-            "synth_n": synth_metrics["fitness_moments"].get(depth, {}).get("n"),
-            "real_additive_correlation": real_metrics["additive_correlation"].get(depth),
-            "synth_additive_correlation": synth_metrics["additive_correlation"].get(depth),
-            "real_sign_epistasis": real_metrics["sign_epistasis"].get(depth),
-            "synth_sign_epistasis": synth_metrics["sign_epistasis"].get(depth),
-            "real_deviation_mae": real_metrics["deviation_stats"].get(depth, {}).get("mae"),
-            "synth_deviation_mae": synth_metrics["deviation_stats"].get(depth, {}).get("mae"),
-            "real_fitness_mean": real_metrics["fitness_moments"].get(depth, {}).get("mean"),
-            "synth_fitness_mean": synth_metrics["fitness_moments"].get(depth, {}).get("mean"),
-        })
+        rows.append(
+            {
+                "depth": depth,
+                "real_n": real_metrics["fitness_moments"].get(depth, {}).get("n"),
+                "synth_n": synth_metrics["fitness_moments"].get(depth, {}).get("n"),
+                "real_additive_correlation": real_metrics["additive_correlation"].get(depth),
+                "synth_additive_correlation": synth_metrics["additive_correlation"].get(depth),
+                "real_sign_epistasis": real_metrics["sign_epistasis"].get(depth),
+                "synth_sign_epistasis": synth_metrics["sign_epistasis"].get(depth),
+                "real_deviation_mae": real_metrics["deviation_stats"].get(depth, {}).get("mae"),
+                "synth_deviation_mae": synth_metrics["deviation_stats"].get(depth, {}).get("mae"),
+                "real_fitness_mean": real_metrics["fitness_moments"].get(depth, {}).get("mean"),
+                "synth_fitness_mean": synth_metrics["fitness_moments"].get(depth, {}).get("mean"),
+            }
+        )
     return rows
 
 

@@ -145,11 +145,7 @@ def _allocate_weighted_counts(
         for depth in order[:remainder]:
             allocated[depth] += 1
 
-        capped = {
-            depth
-            for depth in active
-            if allocated[depth] > capacities[depth] - counts[depth]
-        }
+        capped = {depth for depth in active if allocated[depth] > capacities[depth] - counts[depth]}
         if not capped:
             for depth, value in allocated.items():
                 counts[depth] += value
@@ -757,9 +753,7 @@ class Landscape:
             depth = int(raw_depth)
             weight = float(raw_weight)
             if depth < 0 or depth > self.n_positions:
-                raise ValueError(
-                    f"mutation depth {depth} must be in [0, {self.n_positions}]"
-                )
+                raise ValueError(f"mutation depth {depth} must be in [0, {self.n_positions}]")
             if not np.isfinite(weight) or weight < 0:
                 raise ValueError(f"weight for depth {depth} must be finite and non-negative")
             if weight > 0:
@@ -838,9 +832,7 @@ class Landscape:
         for raw_position in chosen:
             position = int(raw_position)
             alternatives = [
-                aa
-                for aa in self.single_site_effects[position]
-                if aa != self.wild_type[position]
+                aa for aa in self.single_site_effects[position] if aa != self.wild_type[position]
             ]
             mutation[position] = str(rng.choice(alternatives))
         return mutation

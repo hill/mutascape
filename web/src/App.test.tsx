@@ -144,6 +144,7 @@ describe("landscape builder", () => {
                     index: 0,
                     mutationLabel: "V39A+D40G",
                     depth: 2,
+                    observed: false,
                     additiveFitness: 0.2,
                     fixedOracleFitness: 0.7,
                     posteriorMean: 0.5,
@@ -173,6 +174,8 @@ describe("landscape builder", () => {
 
     expect(await screen.findByText("Oracle spread")).toBeTruthy()
     expect(screen.getByText("0.3000")).toBeTruthy()
+    expect(screen.getByText("Synthetic oracle value")).toBeTruthy()
+    expect(screen.getByText("1 unique session queries")).toBeTruthy()
     expect(screen.getByText("Latest oracle distribution")).toBeTruthy()
   })
 

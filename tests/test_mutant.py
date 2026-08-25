@@ -2,7 +2,7 @@
 
 import pytest
 
-from mutascape.mutant import Mutant
+from mutascape.mutant import Mutant, parse_variant
 
 
 class TestParsing:
@@ -40,6 +40,13 @@ class TestParsing:
         with pytest.raises(ValueError, match="Cannot parse"):
             Mutant("A-5G")
 
+    def test_colon_and_lowercase_are_accepted(self):
+        assert Mutant("a5g:l10v").label == "A5G+L10V"
+
+    def test_duplicate_position_raises(self):
+        with pytest.raises(ValueError, match="position 5"):
+            Mutant("A5G+A5V")
+
 
 class TestDictConstructor:
     def test_basic(self):
@@ -51,6 +58,10 @@ class TestDictConstructor:
         m = Mutant({5: "G"})
         assert m[5] == "G"
         assert m.label == "?5G"
+
+    def test_string_position_and_lowercase_residue(self):
+        m = Mutant({"5": "g"}, wild_type={"5": "a"})
+        assert m.label == "A5G"
 
     def test_empty_dict(self):
         m = Mutant({})
@@ -196,3 +207,26 @@ class TestEdgeCases:
     def test_add_returns_mutant_type(self):
         result = Mutant("A5G") + Mutant("L10V")
         assert isinstance(result, Mutant)
+
+
+class TestDomainValidation:
+    def test_claimed_wild_type_is_checked(self):
+        with pytest.raises(ValueError, match="contains A"):
+            parse_variant("W1G", wild_type_sequence="AC")
+
+    def test_missing_single_has_labelled_error(self):
+        with pytest.raises(ValueError, match="single-mutant measurement for A1V"):
+            parse_variant(
+                "A1V",
+                wild_type_sequence="AC",
+                supported_substitutions={(1, "G"), (2, "D")},
+            )
+
+    def test_maximum_depth_is_checked(self):
+        with pytest.raises(ValueError, match="maximum depth of 1"):
+            parse_variant(
+                "A1G+C2D",
+                wild_type_sequence="AC",
+                supported_substitutions={(1, "G"), (2, "D")},
+                maximum_depth=1,
+            )

@@ -925,7 +925,8 @@ function ExactQueryPanel({
             Query an exact variant
           </Text>
           <Text variant="secondary" size="sm">
-            Enter a mutation set such as {mutationExample(selectedModel)}. Use WT for the parent.
+            Enter {mutationExample(selectedModel)}. Separate substitutions with + or a colon. You
+            may use lowercase. Use WT for the parent.
           </Text>
         </div>
       </div>
@@ -957,6 +958,12 @@ function ExactQueryPanel({
       </form>
       {latestPosterior && (
         <div className="posterior-query-results" aria-live="polite">
+          <div className="panel-heading">
+            <Badge variant={latestPosterior.observed ? "green" : "purple"}>
+              {latestPosterior.observed ? "Measured observation" : "Synthetic oracle value"}
+            </Badge>
+            <Badge variant="neutral">{posteriorResults.length} unique session queries</Badge>
+          </div>
           <div className="posterior-metric-grid">
             <div>
               <span>Fixed oracle</span>

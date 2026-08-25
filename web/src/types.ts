@@ -216,6 +216,7 @@ export interface PosteriorQueryResult {
   index: number
   mutationLabel: string
   depth: number
+  observed: boolean
   additiveFitness: number
   fixedOracleFitness: number
   posteriorMean: number

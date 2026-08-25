@@ -9,22 +9,28 @@ for every genotype in the target mutation domain.
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import dataclass, field, replace
 from functools import cached_property
+from importlib.metadata import PackageNotFoundError, version
 from itertools import combinations
 from math import sqrt
+from os import PathLike
 from typing import TYPE_CHECKING, Self
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
+from mutascape.domain import MutationDomain
+from mutascape.mutant import VariantLike
 from mutascape.nonlinearity import GlobalEpistasisSigmoid, NonLinearity
 
 if TYPE_CHECKING:
     from mutascape.benchmarks.datasets import LandscapeDataset
 
 MutationKey = tuple[tuple[int, str], ...]
+DEFAULT_DMS_PAIRWISE_COUPLING = 0.1
 
 # Below this many contributing landscapes a depth bin cannot support a transferred shift.
 _MIN_DEPTH_LANDSCAPES = 3
@@ -702,6 +708,32 @@ class PosteriorLandscape:
     preimage_effects: dict[tuple[int, str], float] = field(default_factory=dict)
     preimage_scale: float = 1.0
     donors: tuple = ()
+    maximum_depth: int | None = None
+    prior_id: str | None = None
+
+    @cached_property
+    def domain(self) -> MutationDomain:
+        """Declared mutation domain supported by the measured singles."""
+        return MutationDomain(
+            self.wild_type_sequence,
+            tuple(self.single_effects),
+            maximum_depth=self.maximum_depth,
+        )
+
+    @cached_property
+    def source_digest(self) -> str:
+        """Stable digest of the sequence and exact supplied observations."""
+        payload = {
+            "wild_type_sequence": self.wild_type_sequence,
+            "observations": [
+                {"mutations": list(genotype), "fitness": fitness}
+                for genotype, fitness in sorted(self.observations.items())
+            ],
+        }
+        return hashlib.blake2b(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode(),
+            digest_size=16,
+        ).hexdigest()
 
     @classmethod
     def condition(
@@ -713,6 +745,8 @@ class PosteriorLandscape:
         global_epistasis: bool = True,
         floor_policy: str = "censored",
         donors: tuple = (),
+        maximum_depth: int | None = None,
+        prior_id: str | None = None,
     ) -> Self:
         """Condition the prior on WT, singles, and any supplied combinations.
 
@@ -794,7 +828,13 @@ class PosteriorLandscape:
             preimage_effects=preimage_effects,
             preimage_scale=preimage_scale,
             donors=tuple(donors),
+            maximum_depth=maximum_depth,
+            prior_id=prior_id,
         )
+
+    def draw(self, seed: int) -> DMSPairwiseLandscape:
+        """Draw one fixed oracle from the versioned default generator."""
+        return self.sample_dms_pairwise(seed, coupling=DEFAULT_DMS_PAIRWISE_COUPLING)
 
     def sample(
         self,
@@ -865,6 +905,10 @@ class CompletedLandscape:
     seed: int
     clip_to_assay_range: bool = False
     roughness: float = 1.0
+
+    @property
+    def domain(self) -> MutationDomain:
+        return self.posterior.domain
 
     @cached_property
     def _transplant(self):
@@ -944,10 +988,11 @@ class CompletedLandscape:
         # coefficient avoids multiplying an order median by every subset.
         return scale * prior.order_scale[order] * self._magnitude(interaction) * unit_variance_t
 
-    def evaluate(self, mutations: dict[int, str]) -> float:
+    def evaluate(self, mutations: VariantLike) -> float:
         """Evaluate any genotype in the whole-protein mutation domain."""
         posterior = self.posterior
-        genotype = _key(mutations, posterior.wild_type_sequence)
+        mutant = self.domain.parse(mutations)
+        genotype = _key(mutant, posterior.wild_type_sequence)
         if genotype in posterior.observations:
             return posterior.observations[genotype]
 
@@ -1047,9 +1092,25 @@ class CompletedLandscape:
         blended = ((1.0 - mix) * ordered + mix * iid) / denominator if denominator else 0.0
         return self.roughness * prior.texture_scale * posterior.target_scale * blended
 
-    def evaluate_batch(self, variants: list[dict[int, str]]) -> NDArray[np.float64]:
+    def evaluate_batch(self, variants: list[VariantLike]) -> NDArray[np.float64]:
         """Evaluate a sequence of genotypes."""
         return np.asarray([self.evaluate(variant) for variant in variants], dtype=np.float64)
+
+    def score(self, variant: VariantLike) -> float:
+        """Score one variant supplied as a label, mapping, or ``Mutant``."""
+        return self.evaluate(variant)
+
+    def score_many(self, variants: list[VariantLike]) -> pd.Series:
+        """Score variants and return values indexed by canonical mutation labels."""
+        mutants = [self.domain.parse(variant) for variant in variants]
+        return pd.Series(
+            self.evaluate_batch(mutants),
+            index=[mutant.label for mutant in mutants],
+            name="fitness",
+        )
+
+    def __getitem__(self, variant: VariantLike) -> float:
+        return self.score(variant)
 
 
 @dataclass(frozen=True)
@@ -1060,10 +1121,29 @@ class DMSPairwiseLandscape:
     seed: int
     coupling: float = 0.1
 
-    def evaluate(self, mutations: dict[int, str]) -> float:
+    @property
+    def domain(self) -> MutationDomain:
+        domain = getattr(self.generator, "domain", None)
+        if domain is not None:
+            return domain
+        return MutationDomain(
+            self.generator.wild_type_sequence,
+            tuple(self.generator.single_effects),
+            maximum_depth=getattr(self.generator, "maximum_depth", None),
+        )
+
+    @property
+    def wild_type(self) -> dict[int, str]:
+        return {
+            index + 1: amino_acid
+            for index, amino_acid in enumerate(self.generator.wild_type_sequence)
+        }
+
+    def evaluate(self, mutations: VariantLike) -> float:
         """Evaluate one genotype without enumerating the mutation domain."""
         generator = self.generator
-        genotype = _key(mutations, generator.wild_type_sequence)
+        mutant = self.domain.parse(mutations)
+        genotype = _key(mutant, generator.wild_type_sequence)
         if genotype in generator.observations:
             return generator.observations[genotype]
         missing = [mutation for mutation in genotype if mutation not in generator.single_effects]
@@ -1087,6 +1167,64 @@ class DMSPairwiseLandscape:
         centred = float(readout.forward(latent)) if readout is not None else float(latent)
         return float(generator.observations[()] + centred)
 
-    def evaluate_batch(self, variants: list[dict[int, str]]) -> NDArray[np.float64]:
+    def evaluate_batch(self, variants: list[VariantLike]) -> NDArray[np.float64]:
         """Evaluate genotypes in input order."""
         return np.asarray([self.evaluate(variant) for variant in variants], dtype=np.float64)
+
+    def score(self, variant: VariantLike) -> float:
+        """Score one variant supplied as a label, mapping, or ``Mutant``."""
+        return self.evaluate(variant)
+
+    def score_many(self, variants: list[VariantLike]) -> pd.Series:
+        """Score variants and return values indexed by canonical mutation labels."""
+        mutants = [self.domain.parse(variant) for variant in variants]
+        return pd.Series(
+            self.evaluate_batch(mutants),
+            index=[mutant.label for mutant in mutants],
+            name="fitness",
+        )
+
+    def is_observed(self, variant: VariantLike) -> bool:
+        """Return whether this exact genotype was supplied as an observation."""
+        mutant = self.domain.parse(variant)
+        return _key(mutant, self.generator.wild_type_sequence) in self.generator.observations
+
+    def manifest(self) -> dict[str, object]:
+        """Return the fixed settings required to identify this benchmark oracle."""
+        try:
+            package_version = version("mutascape")
+        except PackageNotFoundError:
+            package_version = "unknown"
+        return {
+            "mutascape_version": package_version,
+            "generator": "dms-pairwise-v1",
+            "prior": self.generator.prior_id or "custom",
+            "seed": self.seed,
+            "coupling": self.coupling,
+            "source_digest": self.generator.source_digest,
+            "observations": len(self.generator.observations),
+            "wild_type_fitness": self.generator.observations[()],
+            "positions": list(self.domain.positions),
+            "substitutions": len(self.domain.substitutions),
+            "maximum_depth": self.domain.maximum_depth,
+        }
+
+    def save_manifest(self, path: str | PathLike[str]) -> None:
+        """Write the oracle manifest as formatted JSON."""
+        from pathlib import Path
+
+        Path(path).write_text(json.dumps(self.manifest(), indent=2, sort_keys=True) + "\n")
+
+    def __getitem__(self, variant: VariantLike) -> float:
+        return self.score(variant)
+
+    def __repr__(self) -> str:
+        maximum = self.domain.maximum_depth
+        return (
+            "Oracle("
+            'generator="dms-pairwise-v1", '
+            f"seed={self.seed}, "
+            f"positions={len(self.domain.positions)}, "
+            f"substitutions={len(self.domain.substitutions)}, "
+            f"maximum_depth={maximum})"
+        )

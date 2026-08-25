@@ -133,6 +133,7 @@ const posteriorResult: PosteriorQueryResult = {
   index: 0,
   mutationLabel: "V39A+D40G",
   depth: 2,
+  observed: false,
   additiveFitness: 0.2,
   fixedOracleFitness: 0.7,
   posteriorMean: 0.5,

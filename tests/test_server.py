@@ -160,11 +160,13 @@ def test_posterior_query_preview_publish_and_fixed_evaluation(tmp_path):
         "priorId": "combinatorial-v2",
         "seed": 17,
         "ensembleSize": 20,
-        "entries": [{"mutationLabel": "A1V+C2D"}],
+        "entries": [{"mutationLabel": "a1v:c2d"}],
     }
     query = client.post("/api/v1/posterior-queries", json=query_payload)
     assert query.status_code == 200
     result = query.json()["results"][0]
+    assert result["mutationLabel"] == "A1V+C2D"
+    assert result["observed"] is False
     assert result["posteriorStd"] > 0
     assert len(result["samples"]) == 20
 

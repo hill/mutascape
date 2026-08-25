@@ -92,7 +92,9 @@ def posterior_from_source(
             }
         )
     observations = pd.DataFrame(rows)
-    posterior = PosteriorLandscape.condition(source["wtSequence"], observations, prior)
+    posterior = PosteriorLandscape.condition(
+        source["wtSequence"], observations, prior, prior_id=prior_id
+    )
     return posterior, metadata
 
 
@@ -128,12 +130,8 @@ def query_posterior(
         wild_type=wild_type,
     )
     _check_cost(variants, ensemble_size)
-    ensemble = np.vstack(
-        [
-            _oracle(posterior, seed + index).evaluate_batch(variants)
-            for index in range(ensemble_size)
-        ]
-    )
+    oracles = [_oracle(posterior, seed + index) for index in range(ensemble_size)]
+    ensemble = np.vstack([oracle.evaluate_batch(variants) for oracle in oracles])
     additive = np.asarray([_additive_fitness(posterior, variant) for variant in variants])
     intervals = {
         level: (
@@ -149,6 +147,7 @@ def query_posterior(
                 "index": index,
                 "mutationLabel": label,
                 "depth": len(variant),
+                "observed": oracles[0].is_observed(variant),
                 "additiveFitness": float(additive[index]),
                 "fixedOracleFitness": float(ensemble[0, index]),
                 "posteriorMean": float(np.mean(ensemble[:, index])),
@@ -290,18 +289,7 @@ def _parse_entries(
         if bool(label) == bool(sequence):
             raise ValueError("each entry needs one mutationLabel or compactSequence")
         if label:
-            mutant = Mutant(str(label).upper())
-            for position, amino_acid in mutant.items():
-                if position not in wild_type:
-                    raise ValueError(f"position {position} is not mutable in this model")
-                claimed = mutant._wild_type.get(position)
-                if claimed != wild_type[position]:
-                    raise ValueError(
-                        f"mutation at {position} claims wild type {claimed}, "
-                        f"expected {wild_type[position]}"
-                    )
-                if amino_acid not in CANONICAL_AAS:
-                    raise ValueError(f"unsupported amino acid {amino_acid} at position {position}")
+            mutant = posterior.domain.parse(str(label))
         else:
             compact = str(sequence).upper()
             if len(compact) != len(positions):
@@ -311,24 +299,13 @@ def _parse_entries(
                 raise ValueError(
                     f"compactSequence contains unsupported residues: {','.join(invalid)}"
                 )
-            mutant = Mutant.from_dict(
+            mutant = posterior.domain.parse(
                 {
                     position: amino_acid
                     for position, amino_acid in zip(positions, compact)
                     if amino_acid != wild_type[position]
-                },
-                wild_type,
+                }
             )
-        missing = [
-            (position, amino_acid)
-            for position, amino_acid in mutant.items()
-            if (position, amino_acid) not in posterior.single_effects
-        ]
-        if missing:
-            text = ", ".join(
-                f"{wild_type[position]}{position}{amino_acid}" for position, amino_acid in missing
-            )
-            raise ValueError(f"missing constituent single measurements for: {text}")
         variant = dict(mutant)
         variants.append(variant)
         labels.append(Mutant.from_dict(variant, wild_type).label)

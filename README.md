@@ -22,29 +22,46 @@ uv sync --extra dev  # + pytest/ruff
 ## Quick start
 
 ```python
-import pandas as pd
+from mutascape import from_dms
 
-from mutascape import PosteriorLandscape
-from mutascape.posterior_web import load_prior_bundle
-
-wt_sequence = "DQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"
-
-observations = pd.DataFrame(
-    {
-        "mutations": [{}, {39: "A"}, {40: "W"}, {54: "F"}],
-        "fitness": [1.0, 0.58, 1.14, 0.73],
-        "depth": [0, 1, 1, 1],
-    }
+generator = from_dms(
+    "dms.csv",
+    fasta="wild_type.fasta",
+    maximum_depth=5,
 )
-_, prior = load_prior_bundle()
-generator = PosteriorLandscape.condition(wt_sequence, observations, prior)
 
 # One seed fixes one benchmark instance.
-oracle = generator.sample_dms_pairwise(seed=42, coupling=0.1)
-fitness = oracle.evaluate({39: "A", 40: "W", 54: "F"})
+oracle = generator.draw(seed=42)
+fitness = oracle["V39A+D40W+V54F"]
 ```
 
-The oracle accepts a genotype only when every constituent substitution has a measured single effect. A supplied multi-mutant returns its measured value.
+Mutation labels are case-insensitive. Use `+` or a colon between substitutions. Dictionaries and `Mutant` objects remain supported.
+
+```python
+oracle.score("v39a:d40w")
+oracle.score({39: "A", 40: "W"})
+oracle.score_many(["WT", "V39A", "V39A+D40W"])
+```
+
+The oracle accepts a genotype only when every constituent substitution has a measured single effect. A supplied multi-mutant returns its measured value. `generator.domain` reports the supported positions, substitutions, and depth limit.
+
+Save the fixed generator version, seed, source digest, and domain with the benchmark result.
+
+```python
+oracle.save_manifest("oracle.json")
+```
+
+Recreate the same oracle from the manifest and source data.
+
+```python
+from mutascape import load_oracle
+
+oracle = load_oracle(
+    "oracle.json",
+    dms="dms.csv",
+    fasta="wild_type.fasta",
+)
+```
 
 ## What real enough means
 

@@ -702,14 +702,10 @@ def _examples(
             else int(model["oracleSeed"])
         )
         local = (
-            "import pandas as pd\n\n"
-            "from mutascape import LandscapePrior, PosteriorLandscape\n\n"
-            '# Load the bundled prior parameters and normalise the DMS rows first.\n'
-            'prior = LandscapePrior.from_dict(prior_parameters)\n'
-            'observations = pd.DataFrame(observation_rows)\n'
-            'posterior = PosteriorLandscape.condition(wt_sequence, observations, prior)\n'
-            f'oracle = posterior.sample_dms_pairwise(seed={seed}, coupling=0.1)\n'
-            f"fitness = oracle.evaluate({{{positions[0]}: {mutant!r}}})"
+            "from mutascape import from_dms\n\n"
+            'generator = from_dms("dms.csv", fasta="wt.fasta")\n'
+            f"oracle = generator.draw(seed={seed})\n"
+            f"fitness = oracle[{mutation!r}]"
         )
     elif model_id.endswith("_headline"):
         local = (

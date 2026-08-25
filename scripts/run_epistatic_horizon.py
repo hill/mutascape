@@ -82,19 +82,37 @@ def _adaptive_singles(
 
 
 def _pairs(
-    adaptive: dict[tuple[int, str], float],
+    mutations,
     limit: int,
     rng: np.random.Generator,
 ) -> list[tuple[tuple[int, str], tuple[int, str]]]:
     pairs = [
         (first, second)
-        for first, second in combinations(sorted(adaptive), 2)
+        for first, second in combinations(sorted(mutations), 2)
         if first[0] != second[0]
     ]
     if len(pairs) <= limit:
         return pairs
     chosen = rng.choice(len(pairs), size=limit, replace=False)
     return [pairs[index] for index in sorted(chosen.tolist())]
+
+
+def _mean_epistasis(
+    pairs,
+    fitness: dict[tuple[int, str], float],
+    wild_type: float,
+    lookup,
+) -> tuple[float, int]:
+    """Mean double difference over the supplied pairs."""
+    values = []
+    for first, second in pairs:
+        double = lookup(first, second)
+        if double is None or not np.isfinite(double):
+            continue
+        values.append(double - fitness[first] - fitness[second] + wild_type)
+    if not values:
+        return float("nan"), 0
+    return float(np.mean(values)), len(values)
 
 
 def _measured_row(dataset, rng: np.random.Generator, limit: int) -> dict[str, object] | None:
@@ -112,43 +130,57 @@ def _measured_row(dataset, rng: np.random.Generator, limit: int) -> dict[str, ob
     if len(adaptive) < 2:
         return None
 
+    def lookup(first, second):
+        return observed.get(tuple(sorted((first, second))))
+
+    effects = {mutation: value - wild_type for mutation, value in singles.items()}
     pairs = _pairs(adaptive, limit, rng)
-    epistasis = []
-    for first, second in pairs:
-        double = observed.get(tuple(sorted((first, second))))
-        if double is None or not np.isfinite(double):
-            continue
-        epistasis.append(double - singles[first] - singles[second] + wild_type)
-    if not epistasis:
+    mean_epistasis, n_pairs = _mean_epistasis(pairs, singles, wild_type, lookup)
+    if not n_pairs:
         return None
 
+    # Conditioning on adaptive singles selects upward measurement error, and a
+    # double measured independently does not repeat it. That alone makes the
+    # mean double difference negative. The unconditioned mean over every pair
+    # carries no such selection, so it is the honest calibration target.
+    all_pairs = _pairs(singles, limit, rng)
+    mean_all, n_all = _mean_epistasis(all_pairs, singles, wild_type, lookup)
+
     mean_single = float(np.mean(list(adaptive.values())))
-    mean_epistasis = float(np.mean(epistasis))
+    mean_effect = float(np.mean(np.abs(list(effects.values()))))
     return {
         "n_adaptive_singles": len(adaptive),
-        "n_pairs": len(epistasis),
+        "n_pairs": n_pairs,
+        "n_all_pairs": n_all,
         "mean_adaptive_single": mean_single,
+        "mean_abs_single": mean_effect,
         "mean_adaptive_epistasis": mean_epistasis,
+        "mean_all_epistasis": mean_all,
         "epistatic_horizon": _horizon(mean_single, mean_epistasis),
         "pairs": pairs,
+        "all_pairs": all_pairs,
         "adaptive": adaptive,
+        "singles": singles,
         "wild_type": wild_type,
     }
 
 
 def _synthetic_row(oracle, measured: dict[str, object]) -> dict[str, float]:
     adaptive: dict[tuple[int, str], float] = measured["adaptive"]
+    singles: dict[tuple[int, str], float] = measured["singles"]
     wild_type = float(measured["wild_type"])
-    singles = {mutation: oracle.evaluate({mutation[0]: mutation[1]}) for mutation in adaptive}
-    epistasis = []
-    for first, second in measured["pairs"]:
-        double = oracle.evaluate({first[0]: first[1], second[0]: second[1]})
-        epistasis.append(double - singles[first] - singles[second] + wild_type)
-    mean_single = float(np.mean([singles[m] - wild_type for m in adaptive]))
-    mean_epistasis = float(np.mean(epistasis))
+
+    def lookup(first, second):
+        return oracle.evaluate({first[0]: first[1], second[0]: second[1]})
+
+    mean_epistasis, _ = _mean_epistasis(measured["pairs"], singles, wild_type, lookup)
+    mean_all, _ = _mean_epistasis(measured["all_pairs"], singles, wild_type, lookup)
+    mean_single = float(np.mean(list(adaptive.values())))
     return {
         "mean_adaptive_single": mean_single,
+        "mean_abs_single": measured["mean_abs_single"],
         "mean_adaptive_epistasis": mean_epistasis,
+        "mean_all_epistasis": mean_all,
         "epistatic_horizon": _horizon(mean_single, mean_epistasis),
     }
 
@@ -184,8 +216,11 @@ def main() -> None:
                     "coupling": float("nan"),
                     "n_adaptive_singles": measured["n_adaptive_singles"],
                     "n_pairs": measured["n_pairs"],
+                    "n_all_pairs": measured["n_all_pairs"],
                     "mean_adaptive_single": measured["mean_adaptive_single"],
+                    "mean_abs_single": measured["mean_abs_single"],
                     "mean_adaptive_epistasis": measured["mean_adaptive_epistasis"],
+                    "mean_all_epistasis": measured["mean_all_epistasis"],
                     "epistatic_horizon": measured["epistatic_horizon"],
                 }
             )
@@ -202,6 +237,7 @@ def main() -> None:
                         "coupling": coupling,
                         "n_adaptive_singles": measured["n_adaptive_singles"],
                         "n_pairs": measured["n_pairs"],
+                        "n_all_pairs": measured["n_all_pairs"],
                         **synthetic,
                     }
                 )
@@ -216,6 +252,7 @@ def main() -> None:
     # scaled by the mean adaptive single effect, stays bounded and carries the
     # sign, which is what separates systematic epistasis from noise.
     table["epistasis_ratio"] = table["mean_adaptive_epistasis"] / table["mean_adaptive_single"]
+    table["all_epistasis_ratio"] = table["mean_all_epistasis"] / table["mean_abs_single"]
     table.to_csv(args.output / "epistatic_horizon.csv", index=False)
 
     finite = table.loc[np.isfinite(table["epistatic_horizon"])]
@@ -223,7 +260,8 @@ def main() -> None:
     measured_median = measured["epistatic_horizon"].median()
     print(f"\nmeasured landscapes: {len(measured)}")
     print(f"measured median horizon: {measured_median:.3f}")
-    print(f"measured median epistasis ratio: {measured['epistasis_ratio'].median():.3f}")
+    print(f"measured median adaptive-pair ratio: {measured['epistasis_ratio'].median():.3f}")
+    print(f"measured median all-pair ratio: {measured['all_epistasis_ratio'].median():.3f}")
     print(f"measured deleterious-mean landscapes: {int((measured['epistasis_ratio'] < 0).sum())}\n")
 
     synthetic = finite.loc[finite["source"] == "mutascape"]
@@ -232,6 +270,7 @@ def main() -> None:
         .agg(
             median_horizon=("epistatic_horizon", "median"),
             median_ratio=("epistasis_ratio", "median"),
+            median_all_ratio=("all_epistasis_ratio", "median"),
             deleterious_mean=("epistasis_ratio", lambda values: int((values < 0).sum())),
             n=("epistatic_horizon", "size"),
         )

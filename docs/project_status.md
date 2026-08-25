@@ -20,7 +20,15 @@ The default is `dms-pairwise-v1`.
 
 The model has no structural contact filter, donor transplant, depth residual, floor texture, or explicit higher-order term.
 
-`0.1` is not the best coupling on the development panel. Task transfer at 48 queries peaks near `0.05`. It falls at every larger value, because the pair table has zero mean and the added variation reads as disagreement. The measured epistatic horizon points the other way and favours a value above `0.4`. Keep `0.1` and report both, since a panel that has already guided model selection cannot settle the choice.
+`0.1` is not the best coupling on the development panel. Task transfer at 48 queries peaks near `0.05` and falls at every larger value, because the pair table has zero mean and the added variation reads as disagreement. Keep `0.1` anyway. A panel that has already guided model selection cannot settle the choice, and reporting a value on the descending side keeps the headline conservative.
+
+Three results say the coupling is a weak parameter and not worth calibrating.
+
+- Singles carry no roughness signal. A held-out ridge over 25 landscapes scores `R^2` below zero on non-additive variance share, order ratio, and log local optima, so a per-target solve has nothing to solve against.
+- The coupling barely moves ruggedness. Raising it from `0` to `0.8` changes peak fraction by at most about three times, against a measured gap of 30 to 130 times. Pair tables are shared by every genotype carrying the pair, so they move neighbourhoods together rather than making peaks.
+- Reproducing the measured peak fraction needs genotype-pinned noise at one to two times the landscape spread. Measured local optima are therefore largely assay error, which belongs in the observation layer rather than the latent landscape.
+
+Ruggedness is handled by `Campaign(noise=...)`, which perturbs a read rather than the landscape. That keeps regret defined against the true optimum and gives the level a measurable target in replicate variance.
 
 ## Current evidence
 
@@ -89,6 +97,8 @@ These components remain useful for ablations. They are outside the default gener
 - `scripts/run_search_transfer.py` runs the primary task test.
 - `scripts/run_coupling_sensitivity.py` scores every primary metric against the coupling.
 - `scripts/run_epistatic_horizon.py` compares generated and measured epistatic horizons.
+- `scripts/run_ruggedness_calibration.py` sweeps the coupling and genotype-pinned noise against measured peak fraction.
+- `scripts/run_roughness_predictors.py` tests whether singles predict roughness.
 - `scripts/freeze_benchmark_validity.py` checks and freezes the four-budget result.
 - `scripts/run_topology_benchmark.py` runs secondary shape checks.
 - `scripts/plot_benchmark_validity.py` builds the manuscript figures.

@@ -6,8 +6,6 @@ interaction coefficients. Each posterior sample is a stable oracle defined
 for every genotype in the target mutation domain.
 """
 
-from __future__ import annotations
-
 import hashlib
 import json
 from dataclasses import dataclass, field, replace
@@ -195,7 +193,7 @@ def _training_readout(
             floor=min(low - margin * span, -margin * span),
             ceiling=max(high + margin * span, margin * span),
         )
-    except (ValueError, RuntimeError):
+    except ValueError, RuntimeError:
         return None
 
 
@@ -211,7 +209,7 @@ def _refit_scale(readout, centred_fitness: NDArray[np.float64], *, cap: int = 50
         refitted = GlobalEpistasisSigmoid.fit_from_singles(
             values, margin=0.05, floor=readout.floor, ceiling=readout.ceiling
         )
-    except (ValueError, RuntimeError):
+    except ValueError, RuntimeError:
         return None
     return float(refitted.scale)
 
@@ -690,7 +688,7 @@ def _fit_readout(
         # so only the floor and the ceiling set how fast stacking saturates.
         # ``readout_scale_ratio`` stays on the prior as a measured diagnostic.
         return replace(fitted, floor_hard=floor_hard) if floor_hard is not None else fitted
-    except (ValueError, RuntimeError):
+    except ValueError, RuntimeError:
         return None
 
 

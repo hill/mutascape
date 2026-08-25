@@ -1,7 +1,5 @@
 """Publication figures for posterior landscape evaluation."""
 
-from __future__ import annotations
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns

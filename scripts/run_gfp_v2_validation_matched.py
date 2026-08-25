@@ -19,8 +19,6 @@ Outputs:
   - notebooks/validation/output_gfp_v2/gfp_v2_fitness_match_diagnostic.csv
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import numpy as np

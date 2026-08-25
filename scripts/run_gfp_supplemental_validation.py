@@ -10,8 +10,6 @@ Outputs:
   - notebooks/validation/output_gfp/gfp_reference_validation_summary.{csv,png,pdf}
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import pandas as pd

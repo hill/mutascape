@@ -14,8 +14,6 @@ It is a nonparametric prior over landscapes rather than a copy of one. The donor
 is chosen by seed, and it is never the protein being evaluated.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 import numpy as np

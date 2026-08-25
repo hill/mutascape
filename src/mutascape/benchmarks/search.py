@@ -1,7 +1,5 @@
 """Budget-matched search methods for real and synthetic landscape oracles."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Protocol
 

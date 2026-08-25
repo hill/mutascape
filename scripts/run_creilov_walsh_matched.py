@@ -19,8 +19,6 @@ Outputs:
   notebooks/validation/output_creilov_combinatorial/creilov_walsh_matched_spectrum.{pdf,png}
 """
 
-from __future__ import annotations
-
 import re
 from pathlib import Path
 

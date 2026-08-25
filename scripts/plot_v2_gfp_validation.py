@@ -11,8 +11,6 @@ Writes:
   notebooks/validation/output_gfp_v2/gfp_v2_matched_validation.pdf / .png
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import matplotlib.pyplot as plt

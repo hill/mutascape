@@ -1,7 +1,5 @@
 """Budget, domain and roughness invariants for the search-transfer benchmark."""
 
-from __future__ import annotations
-
 import numpy as np
 import pytest
 

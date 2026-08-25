@@ -7,8 +7,6 @@ so a benchmark built on one cannot rank search methods the way the measured
 landscape does.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from itertools import product
 

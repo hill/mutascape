@@ -1,7 +1,5 @@
 """Round trip and lookup invariants for the shipped benchmark landscapes."""
 
-from __future__ import annotations
-
 import numpy as np
 import pytest
 

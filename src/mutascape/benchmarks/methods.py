@@ -11,8 +11,6 @@ smaller population, and the local searches start from wild type where the mask
 kept it.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from itertools import combinations
 

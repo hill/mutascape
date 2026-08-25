@@ -6,8 +6,6 @@ and pairwise-aligner paths are NOT tested here (they require UniProt
 network access); only the deterministic numerical helpers are.
 """
 
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 

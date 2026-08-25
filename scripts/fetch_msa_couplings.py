@@ -9,8 +9,6 @@ Usage:
 Needs internet. Falls back gracefully if UniProt unreachable.
 """
 
-from __future__ import annotations
-
 import argparse
 import io
 import urllib.request

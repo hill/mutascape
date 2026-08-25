@@ -961,7 +961,7 @@ class Landscape:
         readout_texture_floor_band: float = 1e-9,
         readout_texture_seed: int | None = None,
         nonlinearity: NonLinearity | str | None = None,
-    ) -> "Landscape":
+    ) -> Landscape:
         """Build a landscape from pLM-predicted single-site effects.
 
         Uses masked marginal log-likelihood ratios as fitness proxies
@@ -1042,7 +1042,7 @@ class Landscape:
         fitness_col: str = "fitness",
         nonlinearity: NonLinearity | str | None = None,
         missing_aa_prior: str = "position_mean",
-    ) -> "Landscape":
+    ) -> Landscape:
         """Construct a landscape from a DMS CSV file and structural data.
 
         Expected CSV format: one row per single-site variant, with columns

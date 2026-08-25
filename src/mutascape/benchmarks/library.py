@@ -6,8 +6,6 @@ same rows in the same order, which is what makes a ranking difference
 attributable to the landscape rather than to the domain.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 import numpy as np

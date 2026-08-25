@@ -1,7 +1,5 @@
 """Fetch pinned SSMuLA and CombinGym benchmark data outside Git."""
 
-from __future__ import annotations
-
 import argparse
 import hashlib
 import json

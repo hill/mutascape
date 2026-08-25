@@ -10,8 +10,6 @@ The correction reads the measured spectrum of the training landscapes only,
 never the target, so it stays inside the protein holdout.
 """
 
-from __future__ import annotations
-
 from dataclasses import replace
 
 import numpy as np

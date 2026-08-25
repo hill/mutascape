@@ -1,7 +1,5 @@
 """Freeze search-transfer outputs for the API, web interface and manuscript."""
 
-from __future__ import annotations
-
 import argparse
 import json
 from pathlib import Path

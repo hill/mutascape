@@ -12,8 +12,6 @@ Example:
         --output notebooks/iclr/output_260820_e3
 """
 
-from __future__ import annotations
-
 import argparse
 from pathlib import Path
 

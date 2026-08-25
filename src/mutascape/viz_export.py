@@ -5,8 +5,6 @@ web/src/data/gb1.json. Keyed measurements use a 4-letter string of amino
 acids at the four Olson positions (39, 40, 41, 54) to keep the file small.
 """
 
-from __future__ import annotations
-
 import csv
 import json
 from pathlib import Path

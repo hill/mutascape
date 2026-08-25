@@ -14,8 +14,6 @@ combination.
 Fitness is relative to wild type, where wild type is 0.0.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from pathlib import Path
 

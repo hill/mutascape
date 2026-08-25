@@ -10,8 +10,6 @@ Reads the CSVs produced by ``run_v2_contact_prediction_check.py``.
 Outputs PDFs to ``notebooks/validation/output_v2_contact_check/``.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import matplotlib.pyplot as plt

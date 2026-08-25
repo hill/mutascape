@@ -17,8 +17,6 @@ Outputs:
   notebooks/validation/output_structural/gfp_structural_prior_ablation.{png,pdf}
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from itertools import combinations
 from pathlib import Path

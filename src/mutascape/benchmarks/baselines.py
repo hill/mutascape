@@ -1,7 +1,5 @@
 """Small, auditable baselines for landscape-completion benchmarks."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from itertools import combinations
 from typing import Self

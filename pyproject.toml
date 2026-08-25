@@ -3,7 +3,7 @@ name = "mutascape"
 version = "0.1.0"
 description = "DMS- and structure-grounded synthetic combinatorial protein fitness landscapes for MLDE/ALDE benchmarking"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "numpy>=1.24",
     "scipy>=1.11",
@@ -35,12 +35,12 @@ web = [
 ]
 
 [build-system]
-requires = ["uv_build>=0.11.2,<0.12.0"]
+requires = ["uv_build>=0.12.6,<0.13"]
 build-backend = "uv_build"
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]

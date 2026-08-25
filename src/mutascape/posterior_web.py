@@ -1,7 +1,5 @@
 """Posterior landscape services shared by FastAPI and the browser studio."""
 
-from __future__ import annotations
-
 import json
 from itertools import product
 from pathlib import Path

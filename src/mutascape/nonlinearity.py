@@ -127,7 +127,7 @@ class GlobalEpistasisSigmoid:
         floor: float | None = None,
         ceiling: float | None = None,
         combinatorial_upside: float = 1.0,
-    ) -> "GlobalEpistasisSigmoid":
+    ) -> GlobalEpistasisSigmoid:
         """Fit floor, ceiling, and scale from observed single-site fitness effects.
 
         Floor and ceiling are set to the observed range padded by `margin` of

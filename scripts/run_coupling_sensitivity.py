@@ -11,8 +11,6 @@ guided model selection, so a better score at another coupling is not evidence
 for changing the default.
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import subprocess

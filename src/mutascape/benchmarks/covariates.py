@@ -8,8 +8,6 @@ Structure enters through the deposited backbone, not through a fitted parameter,
 so it is available before any combination is measured.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from itertools import combinations
 from pathlib import Path
@@ -99,7 +97,7 @@ def structure_index(
         return None
     try:
         contacts = ContactMap.from_pdb(pdb_path, threshold=contact_threshold)
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
     if contacts.distances is None:
         return None

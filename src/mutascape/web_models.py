@@ -1,7 +1,5 @@
 """Storage and calculations for the benchmark oracle web service."""
 
-from __future__ import annotations
-
 import csv
 import hashlib
 import io

@@ -6,8 +6,6 @@ against one. Building them over the same cube as the measured tensor puts every
 generator on the same domain and the same metric.
 """
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
 import numpy as np

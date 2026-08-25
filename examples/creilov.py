@@ -12,8 +12,6 @@ The predicted PDB is cached under ~/.cache/mutascape/structures/ so subsequent
 runs are instant.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import matplotlib.pyplot as plt

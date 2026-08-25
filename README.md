@@ -12,7 +12,7 @@ Mutascape targets benchmark behaviour. It does not predict an unknown protein's 
 
 ## Installation
 
-Requires Python 3.12+.
+Requires Python 3.14+.
 
 ```bash
 uv sync              # core dependencies

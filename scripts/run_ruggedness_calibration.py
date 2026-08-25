@@ -11,8 +11,6 @@ genotype alone. Only the second shape creates peaks, and it is also what assay
 error contributes to a measured landscape.
 """
 
-from __future__ import annotations
-
 import argparse
 from pathlib import Path
 

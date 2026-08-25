@@ -6,8 +6,6 @@ publication-critical parameter sets in one place instead of re-encoding them in
 notebooks and ad hoc scripts.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from pathlib import Path
 

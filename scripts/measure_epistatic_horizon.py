@@ -22,8 +22,6 @@ Example:
         --output notebooks/iclr/output_260822_horizon
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 from pathlib import Path

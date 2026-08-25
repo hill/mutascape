@@ -1,7 +1,5 @@
 """Plot the Chen 2023 CreiLOV combinatorial validation: MSA-coupling scale vs real."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import matplotlib.pyplot as plt

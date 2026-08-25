@@ -1,7 +1,5 @@
 """Leakage-resistant splits for sparse-to-complete landscape evaluation."""
 
-from __future__ import annotations
-
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 

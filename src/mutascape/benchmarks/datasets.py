@@ -17,8 +17,6 @@ The module reads user-supplied dataset checkouts. It does not download or
 redistribute source data.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal

@@ -8,8 +8,6 @@ Produces:
 Run: uv run python scripts/build_noise_figures.py
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import matplotlib.pyplot as plt

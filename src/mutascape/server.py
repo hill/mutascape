@@ -1,7 +1,5 @@
 """FastAPI service and static host for the mutascape benchmark oracle."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Annotated, Any, Literal
 

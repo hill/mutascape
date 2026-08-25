@@ -5,8 +5,6 @@ and JSON a benchmark run already wrote, so a notebook never recomputes a
 number the paper cites.
 """
 
-from __future__ import annotations
-
 import json
 from pathlib import Path
 

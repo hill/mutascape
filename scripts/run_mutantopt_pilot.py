@@ -7,8 +7,6 @@ cheap and reproducible while preserving the landscape topology that matters
 for benchmarking.
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import sys

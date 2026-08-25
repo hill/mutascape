@@ -11,8 +11,6 @@ variant the campaign would ship rather than the read that selected it. A method
 that chases assay noise is penalised for it.
 """
 
-from __future__ import annotations
-
 import hashlib
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass

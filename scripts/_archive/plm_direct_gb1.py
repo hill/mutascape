@@ -9,8 +9,6 @@ Output tensor has the same shape as the mutascape tensors so all downstream
 comparison metrics work unchanged.
 """
 
-from __future__ import annotations
-
 import time
 from itertools import product
 from pathlib import Path

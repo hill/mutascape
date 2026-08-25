@@ -10,8 +10,6 @@ Run:
     uv run python scripts/rebuild_reference_outputs.py
 """
 
-from __future__ import annotations
-
 from build_contact_map_figure import main as build_contact_map_figure_main
 from build_noise_figures import main as build_noise_figures_main
 from run_noise_sweep import run_sweep

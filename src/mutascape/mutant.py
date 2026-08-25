@@ -75,7 +75,7 @@ class Mutant(dict[int, str]):
     @classmethod
     def from_dict(
         cls, mutations: dict[int, str], wild_type: dict[int, str] | None = None
-    ) -> "Mutant":
+    ) -> Mutant:
         """Create a Mutant from a plain dict. Alias for Mutant(dict, wild_type)."""
         return cls(mutations, wild_type)
 
@@ -97,7 +97,7 @@ class Mutant(dict[int, str]):
     def positions(self) -> list[int]:
         return sorted(self.keys())
 
-    def __add__(self, other: "Mutant") -> "Mutant":
+    def __add__(self, other: Mutant) -> Mutant:
         """Combine two mutants. Raises on conflicting positions."""
         conflicts = set(self.keys()) & set(other.keys())
         if conflicts:
@@ -106,7 +106,7 @@ class Mutant(dict[int, str]):
         wt = {**self._wild_type, **other._wild_type}
         return Mutant.from_dict(merged, wt)
 
-    def __sub__(self, other: "Mutant") -> "Mutant":
+    def __sub__(self, other: Mutant) -> Mutant:
         """Remove mutations present in other."""
         remaining = {pos: aa for pos, aa in self.items() if pos not in other}
         wt = {pos: aa for pos, aa in self._wild_type.items() if pos in remaining}

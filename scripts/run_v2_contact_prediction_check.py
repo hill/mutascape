@@ -26,8 +26,6 @@ Outputs:
   - notebooks/validation/output_v2_contact_check/contact_prediction_summary.csv
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import numpy as np

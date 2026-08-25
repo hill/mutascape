@@ -17,8 +17,6 @@ Example:
         --output notebooks/iclr/output_260820_c2st_floor
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 from itertools import combinations

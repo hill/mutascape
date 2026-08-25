@@ -20,8 +20,6 @@ Outputs:
   - notebooks/validation/output_gfp_v2/gfp_v2_validation_summary.csv
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import pandas as pd

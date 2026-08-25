@@ -13,8 +13,6 @@ scales. A coupling of zero leaves the fitted readout as the only source of
 interaction, which separates the two contributions.
 """
 
-from __future__ import annotations
-
 import argparse
 from itertools import combinations
 from pathlib import Path

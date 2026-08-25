@@ -4,8 +4,6 @@ that random pairwise couplings worsen the Walsh spectrum match.
 Run: uv run python scripts/pairwise_sigma_sweep.py
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import pandas as pd

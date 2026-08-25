@@ -27,8 +27,6 @@ Outputs:
   notebooks/validation/output_creilov_combinatorial/creilov_combinatorial_*.csv
 """
 
-from __future__ import annotations
-
 import re
 from pathlib import Path
 

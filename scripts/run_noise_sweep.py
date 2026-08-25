@@ -10,8 +10,6 @@ Run:
     uv run python scripts/run_noise_sweep.py --protein trpb
 """
 
-from __future__ import annotations
-
 import argparse
 
 import pandas as pd

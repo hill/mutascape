@@ -1,6 +1,13 @@
 """Task-validated synthetic protein fitness oracles for search benchmarks."""
 
 from mutascape.api import LandscapeGenerator, Oracle, from_dms, load_oracle
+from mutascape.campaign import (
+    DEFAULT_BATCH_SIZE,
+    Campaign,
+    CampaignResult,
+    SearchMethod,
+    run_campaign,
+)
 from mutascape.completion import (
     CompletedLandscape,
     DMSPairwiseLandscape,
@@ -43,6 +50,9 @@ except ModuleNotFoundError as exc:
 
 __all__ = [
     "AMINO_ACIDS",
+    "DEFAULT_BATCH_SIZE",
+    "Campaign",
+    "CampaignResult",
     "ContactMap",
     "CompletedLandscape",
     "DMSPairwiseLandscape",
@@ -62,12 +72,14 @@ __all__ = [
     "PLMScorer",
     "PosteriorLandscape",
     "RandomEpistasis",
+    "SearchMethod",
     "SignConsistentEpistasis",
     "Variant",
     "VariantLike",
     "from_dms",
     "load_oracle",
     "morphing_landscape",
+    "run_campaign",
     "plot_alpha_sweep",
     "plot_contact_map",
     "plot_epistasis_scatter",

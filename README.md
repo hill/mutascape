@@ -63,6 +63,39 @@ oracle = load_oracle(
 )
 ```
 
+## Benchmarking a search method
+
+A campaign gives a method a budget, a candidate set, and an assay. It records every measurement, counts rounds, and scores the run afterwards. The oracle stays private, so a method can only learn a fitness by spending budget on it.
+
+```python
+from mutascape import run_campaign
+
+wanted = min(5000, generator.domain.count(depth=3))
+candidates = generator.domain.sample(depth=3, n=wanted, seed=0)
+
+def my_method(campaign):
+    campaign.measure(campaign.sample(96))          # first plate
+    while campaign.remaining:
+        design = campaign.encode()                  # one-hot over candidates
+        observed = campaign.observed                # variant, fitness, round
+        picks = choose_next(design, observed)       # your model goes here
+        campaign.measure(picks[: campaign.remaining])
+
+result = run_campaign(
+    my_method,
+    generator.draw(seed=42),
+    candidates,
+    budget=384,
+    batch_size=96,
+    noise=0.1,
+)
+print(result.simple_regret, result.rounds)
+```
+
+`batch_size` defaults to 96, one microplate. `noise` adds assay error in units of the landscape's own spread, pinned to the variant so a repeated read never changes. A repeated measurement is free, because a campaign that already holds it does not buy it twice.
+
+Scoring reads the true fitness of the variant with the best read, not the read itself, so a method that chases assay noise pays for it. `simple_regret` is the gap to the best candidate over the range of the candidate set, which is the number the frozen study reports.
+
 ## What real enough means
 
 Mutascape uses task-relative validity. A useful search benchmark should preserve conclusions about which optimisation method performs better.

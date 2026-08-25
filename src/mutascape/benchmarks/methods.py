@@ -3,9 +3,12 @@
 Three methods let Kendall tau take four values, which cannot separate a working
 benchmark from a broken one. Twelve give 66 ordered pairs and an interval.
 
-Every method spends the same budget through the same oracle and starts from the
-same random design for a given seed, so a paired comparison across arms sees
-only the landscape.
+Every method spends the same budget through the same oracle, and at a given seed
+it makes the same opening move on every arm, so a paired comparison across arms
+sees only the landscape. Methods do not share an opening move with each other.
+The model-based methods draw ``INITIAL_DESIGN`` rows, the genetic search draws a
+smaller population, and the local searches start from wild type where the mask
+kept it.
 """
 
 from __future__ import annotations
@@ -44,7 +47,7 @@ class _Features:
 
 
 def initial_rows(space: SearchSpace, seed: int, size: int) -> NDArray[np.int64]:
-    """Random start shared by every method at a given seed."""
+    """Random start, identical across arms at a given seed and size."""
     rng = np.random.default_rng(seed)
     take = min(size, space.size)
     return rng.choice(space.size, size=take, replace=False)

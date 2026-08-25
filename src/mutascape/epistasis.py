@@ -348,7 +348,7 @@ class MSACouplingsEpistasis(EpistasisModel):
         scale: float = 1.0,
         alphabet: str = "ACDEFGHIKLMNPQRSTVWY",
         restrict_to_contacts: bool = True,
-    ) -> "MSACouplingsEpistasis":
+    ) -> MSACouplingsEpistasis:
         """Load from an .npz with keys `coupling_matrix` (L,L,20,20 float) and
         `positions` (L int)."""
         data = np.load(path)
@@ -370,7 +370,7 @@ class MSACouplingsEpistasis(EpistasisModel):
         alphabet: str = "ACDEFGHIKLMNPQRSTVWY",
         scale: float = 1.0,
         restrict_to_contacts: bool = True,
-    ) -> "MSACouplingsEpistasis":
+    ) -> MSACouplingsEpistasis:
         """Compute log-odds couplings J[i,j,a,b] = log p(a,b|i,j) - log p(a|i) - log p(b|j)
         from an aligned FASTA MSA.
 

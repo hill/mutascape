@@ -96,7 +96,7 @@ class ContactMap:
         neighbour_indices = np.where(self.matrix[idx])[0]
         return tuple(self.positions[i] for i in sorted(neighbour_indices))
 
-    def submap(self, positions: Sequence[int]) -> "ContactMap":
+    def submap(self, positions: Sequence[int]) -> ContactMap:
         """Extract a sub-contact-map for a subset of positions.
 
         Parameters:
@@ -135,7 +135,7 @@ class ContactMap:
         threshold: float = 8.0,
         chain_id: str | None = None,
         positions: Sequence[int] | None = None,
-    ) -> "ContactMap":
+    ) -> ContactMap:
         """Build a contact map from a PDB or mmCIF file.
 
         Extracts C-beta atoms (C-alpha for glycine), computes pairwise
@@ -187,7 +187,7 @@ class ContactMap:
         distances: NDArray[np.float64],
         positions: Sequence[int],
         threshold: float = 8.0,
-    ) -> "ContactMap":
+    ) -> ContactMap:
         """Build a contact map from a precomputed distance matrix.
 
         Parameters:
@@ -216,7 +216,7 @@ class ContactMap:
         sequence: str,
         threshold: float = 8.0,
         cache_dir: Path | None = None,
-    ) -> "ContactMap":
+    ) -> ContactMap:
         """Predict structure with ESMFold and extract a contact map.
 
         Runs ESMFold to predict a 3D structure from the amino acid

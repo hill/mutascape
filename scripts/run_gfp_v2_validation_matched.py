@@ -19,8 +19,6 @@ Outputs:
   - notebooks/validation/output_gfp_v2/gfp_v2_fitness_match_diagnostic.csv
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import numpy as np
@@ -39,8 +37,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data/gfp"
 OUTPUT_DIR = REPO_ROOT / "notebooks/validation/output_gfp_v2"
 PROTEINGYM_CSV = (
-    REPO_ROOT.parent
-    / "mutantopt/experiments/datasets/proteingym/GFP_AEQVI_Sarkisyan_2016.csv"
+    REPO_ROOT.parent / "mutantopt/experiments/datasets/proteingym/GFP_AEQVI_Sarkisyan_2016.csv"
 )
 
 DMS_CSV = DATA_DIR / "gfp.csv"
@@ -107,35 +104,50 @@ def fitness_matched_subsample(
             pick = rng.choice(available_idx, size=target, replace=replace)
             matched_rows.append(synth_d.iloc[pick])
             achieved += target
-        diag_rows.append({
-            "depth": int(d),
-            "n_real": int(len(real_d)),
-            "n_synth_available": int(len(synth_d)),
-            "n_matched": achieved,
-            "n_empty_bins_in_synth": deficit_bins,
-            "fitness_lo": lo,
-            "fitness_hi": hi,
-        })
+        diag_rows.append(
+            {
+                "depth": int(d),
+                "n_real": int(len(real_d)),
+                "n_synth_available": int(len(synth_d)),
+                "n_matched": achieved,
+                "n_empty_bins_in_synth": deficit_bins,
+                "fitness_lo": lo,
+                "fitness_hi": hi,
+            }
+        )
     matched = pd.concat(matched_rows, ignore_index=True) if matched_rows else synth_df.iloc[0:0]
     return matched, pd.DataFrame(diag_rows)
 
 
 def _build_v1(singles_min: float):
     return build_landscape(
-        DMS_CSV, DISTANCES_NPZ, WT_FASTA,
-        alpha=1.5, sigma=0.0, seed=SEED,
-        nonlinearity="fit", scale=None, floor_hard=singles_min,
-        combinatorial_upside=3.0, noise_sigma=0.3,
+        DMS_CSV,
+        DISTANCES_NPZ,
+        WT_FASTA,
+        alpha=1.5,
+        sigma=0.0,
+        seed=SEED,
+        nonlinearity="fit",
+        scale=None,
+        floor_hard=singles_min,
+        combinatorial_upside=3.0,
+        noise_sigma=0.3,
     )
 
 
 def _build_v2(singles_min: float, msa_scale: float):
     epistasis = MSACouplingsEpistasis.from_npz(MSA_COUPLINGS_NPZ, scale=msa_scale)
     return build_landscape(
-        DMS_CSV, DISTANCES_NPZ, WT_FASTA,
-        alpha=1.5, seed=SEED,
-        nonlinearity="fit", scale=None, floor_hard=singles_min,
-        combinatorial_upside=3.0, noise_sigma=0.3,
+        DMS_CSV,
+        DISTANCES_NPZ,
+        WT_FASTA,
+        alpha=1.5,
+        seed=SEED,
+        nonlinearity="fit",
+        scale=None,
+        floor_hard=singles_min,
+        combinatorial_upside=3.0,
+        noise_sigma=0.3,
         msa_couplings=epistasis,
     )
 
@@ -154,7 +166,11 @@ def main() -> None:
 
     rows: list[dict] = []
     diag_all: list[pd.DataFrame] = []
-    print(f"\n{'config':18s} {'depth':>5s} {'real_n':>7s} {'matched_n':>9s} {'real_add':>9s} {'matched_add':>11s} {'real_sign':>10s} {'matched_sign':>13s}")
+    print(
+        f"\n{'config':18s} {'depth':>5s} {'real_n':>7s} {'matched_n':>9s} "
+        f"{'real_add':>9s} {'matched_add':>11s} {'real_sign':>10s} "
+        f"{'matched_sign':>13s}"
+    )
     print("-" * 100)
 
     for label, scale in CONFIGS:
@@ -220,7 +236,9 @@ def main() -> None:
         .apply(lambda df: df.abs().mean())
         .reset_index()
     )
-    agg["roughness_slope_matched"] = summary.groupby("config")["roughness_slope_matched"].first().values
+    agg["roughness_slope_matched"] = (
+        summary.groupby("config")["roughness_slope_matched"].first().values
+    )
     agg["roughness_slope_real"] = float(rs_real)
     print(agg.round(3).to_string(index=False))
 

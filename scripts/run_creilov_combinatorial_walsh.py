@@ -28,8 +28,6 @@ Outputs:
   notebooks/validation/output_creilov_combinatorial/creilov_walsh_spectrum.{pdf,png}
 """
 
-from __future__ import annotations
-
 import re
 from itertools import product
 from pathlib import Path
@@ -56,10 +54,26 @@ L = len(CHEN_POSITIONS)  # 15
 SEED = 42
 
 THREE_TO_ONE = {
-    "Ala": "A", "Arg": "R", "Asn": "N", "Asp": "D", "Cys": "C", "Gln": "Q",
-    "Glu": "E", "Gly": "G", "His": "H", "Ile": "I", "Leu": "L", "Lys": "K",
-    "Met": "M", "Phe": "F", "Pro": "P", "Ser": "S", "Thr": "T", "Trp": "W",
-    "Tyr": "Y", "Val": "V",
+    "Ala": "A",
+    "Arg": "R",
+    "Asn": "N",
+    "Asp": "D",
+    "Cys": "C",
+    "Gln": "Q",
+    "Glu": "E",
+    "Gly": "G",
+    "His": "H",
+    "Ile": "I",
+    "Leu": "L",
+    "Lys": "K",
+    "Met": "M",
+    "Phe": "F",
+    "Pro": "P",
+    "Ser": "S",
+    "Thr": "T",
+    "Trp": "W",
+    "Tyr": "Y",
+    "Val": "V",
 }
 MUTATION_RE = re.compile(r"p\.([A-Z][a-z]{2})(\d+)([A-Z][a-z]{2})")
 
@@ -84,7 +98,7 @@ def binary_vector_for_variant(mutations: list[tuple[int, str, str]]) -> tuple[in
 
 def aggregate_to_binary_cube(df: pd.DataFrame, fitness_col: str) -> np.ndarray:
     """Mean fitness per cell of the 2^15 binary cube. NaN for empty cells."""
-    n_cells = 2 ** L
+    n_cells = 2**L
     sums = np.zeros(n_cells, dtype=np.float64)
     counts = np.zeros(n_cells, dtype=np.int64)
     for vec, fit in zip(df["binary_vec"], df[fitness_col]):
@@ -145,7 +159,9 @@ def chen_variant_binary_vec_list(df: pd.DataFrame) -> list[tuple[int, ...]]:
     return out
 
 
-def evaluate_landscape_on_variants(landscape, mutations_list: list[list[tuple[int, str, str]]]) -> np.ndarray:
+def evaluate_landscape_on_variants(
+    landscape, mutations_list: list[list[tuple[int, str, str]]]
+) -> np.ndarray:
     wt = landscape.wild_type
     out = np.empty(len(mutations_list), dtype=np.float64)
     for i, muts in enumerate(mutations_list):
@@ -158,18 +174,29 @@ def evaluate_landscape_on_variants(landscape, mutations_list: list[list[tuple[in
 
 def _build_v1():
     return build_landscape(
-        DMS_CSV, DISTANCES_NPZ, WT_FASTA,
-        alpha=1.5, sigma=0.0, seed=SEED,
-        nonlinearity="fit", combinatorial_upside=3.0, noise_sigma=0.0,
+        DMS_CSV,
+        DISTANCES_NPZ,
+        WT_FASTA,
+        alpha=1.5,
+        sigma=0.0,
+        seed=SEED,
+        nonlinearity="fit",
+        combinatorial_upside=3.0,
+        noise_sigma=0.0,
     )
 
 
 def _build_v2(msa_scale: float):
     eps = MSACouplingsEpistasis.from_npz(MSA_COUPLINGS_NPZ, scale=msa_scale)
     return build_landscape(
-        DMS_CSV, DISTANCES_NPZ, WT_FASTA,
-        alpha=1.5, seed=SEED,
-        nonlinearity="fit", combinatorial_upside=3.0, noise_sigma=0.0,
+        DMS_CSV,
+        DISTANCES_NPZ,
+        WT_FASTA,
+        alpha=1.5,
+        seed=SEED,
+        nonlinearity="fit",
+        combinatorial_upside=3.0,
+        noise_sigma=0.0,
         msa_couplings=eps,
     )
 
@@ -206,8 +233,10 @@ def main() -> None:
     real_tensor = fill_missing_with_mean(real_tensor_raw)
     real_walsh = walsh_hadamard(real_tensor)
     real_spectrum = variance_per_order(real_walsh)
-    print(f"  Real spectrum (top 6 orders): "
-          f"{', '.join(f'O{k}={real_spectrum[k]:.3f}' for k in range(1, 7))}")
+    print(
+        f"  Real spectrum (top 6 orders): "
+        f"{', '.join(f'O{k}={real_spectrum[k]:.3f}' for k in range(1, 7))}"
+    )
 
     # For each Mutascape config, evaluate on all 184320 binary cells
     # (using a canonical AA assignment per cell). We pick, for each Chen
@@ -260,16 +289,20 @@ def main() -> None:
         spectra[label] = synth_spectrum
         l1 = sum(abs(synth_spectrum[k] - real_spectrum[k]) for k in real_spectrum)
         for k in real_spectrum:
-            rows.append({
-                "config": label,
-                "scale": scale if scale is not None else 0.0,
-                "order": k,
-                "real_var_frac": real_spectrum[k],
-                "synth_var_frac": synth_spectrum[k],
-                "diff": synth_spectrum[k] - real_spectrum[k],
-            })
-        print(f"  L1_Walsh = {l1:.4f}, top orders: "
-              f"{', '.join(f'O{k}={synth_spectrum[k]:.3f}' for k in range(1, 7))}")
+            rows.append(
+                {
+                    "config": label,
+                    "scale": scale if scale is not None else 0.0,
+                    "order": k,
+                    "real_var_frac": real_spectrum[k],
+                    "synth_var_frac": synth_spectrum[k],
+                    "diff": synth_spectrum[k] - real_spectrum[k],
+                }
+            )
+        print(
+            f"  L1_Walsh = {l1:.4f}, top orders: "
+            f"{', '.join(f'O{k}={synth_spectrum[k]:.3f}' for k in range(1, 7))}"
+        )
 
     summary = pd.DataFrame(rows)
     summary.to_csv(OUTPUT_DIR / "creilov_walsh_summary.csv", index=False)
@@ -289,8 +322,13 @@ def main() -> None:
     fig, ax = plt.subplots(1, 1, figsize=(10, 4.6), tight_layout=True)
     orders = sorted(real_spectrum.keys())
     width = 0.18
-    colors = {"real": "#000000", "v1_no_couplings": "#d62728",
-              "v2_scale_0.30": "#bcbd22", "v2_scale_0.50": "#17becf", "v2_scale_1.00": "#2ca02c"}
+    colors = {
+        "real": "#000000",
+        "v1_no_couplings": "#d62728",
+        "v2_scale_0.30": "#bcbd22",
+        "v2_scale_0.50": "#17becf",
+        "v2_scale_1.00": "#2ca02c",
+    }
     labels = {
         "real": "real Chen 2023",
         "v1_no_couplings": "No pairwise couplings",

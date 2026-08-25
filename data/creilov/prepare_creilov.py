@@ -77,12 +77,14 @@ def prepare_dms():
         mut_1 = protein_letters_3to1[mut_3]
         effect = row["log_mean"] - wt_fitness
 
-        rows.append({
-            "position": pos,
-            "wildtype": wt_1,
-            "mutant": mut_1,
-            "fitness": effect,
-        })
+        rows.append(
+            {
+                "position": pos,
+                "wildtype": wt_1,
+                "mutant": mut_1,
+                "fitness": effect,
+            }
+        )
 
     out = pd.DataFrame(rows)
     out.to_csv(OUTPUT_DIR / "creilov.csv", index=False)

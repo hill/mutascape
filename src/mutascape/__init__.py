@@ -1,19 +1,21 @@
-"""Synthetic combinatorial protein fitness landscapes for MLDE/ALDE benchmarks.
+"""Task-validated synthetic protein fitness oracles for search benchmarks."""
 
-The publication reference pipeline is exposed through frozen validation configs:
-
->>> from mutascape.validation.reference_configs import GB1_HEADLINE, evaluate_reference_config
->>> result = evaluate_reference_config(GB1_HEADLINE)
->>> result.walsh_l1
-
-Lower-level APIs still support custom landscapes from DMS, structure-derived
-contact maps, optional pairwise couplings, ESM2 single-site scoring, and fitted
-global-epistasis functions. Those features are useful for larger benchmark
-candidates, but the validated headline GB1/TrpB configs keep pairwise couplings
-off by setting ``sigma = 0``.
-"""
-
+from mutascape.api import LandscapeGenerator, Oracle, from_dms, load_oracle
+from mutascape.campaign import (
+    DEFAULT_BATCH_SIZE,
+    Campaign,
+    CampaignResult,
+    SearchMethod,
+    run_campaign,
+)
+from mutascape.completion import (
+    CompletedLandscape,
+    DMSPairwiseLandscape,
+    LandscapePrior,
+    PosteriorLandscape,
+)
 from mutascape.contacts import ContactMap
+from mutascape.domain import MutationDomain
 from mutascape.epistasis import (
     AMINO_ACIDS,
     CouplingTensor,
@@ -23,7 +25,7 @@ from mutascape.epistasis import (
     SignConsistentEpistasis,
 )
 from mutascape.landscape import Landscape, Variant
-from mutascape.mutant import Mutant
+from mutascape.mutant import Mutant, VariantLike, parse_variant
 from mutascape.nonlinearity import GlobalEpistasisSigmoid, Identity, NonLinearity
 from mutascape.plotting import (
     plot_alpha_sweep,
@@ -48,25 +50,41 @@ except ModuleNotFoundError as exc:
 
 __all__ = [
     "AMINO_ACIDS",
+    "DEFAULT_BATCH_SIZE",
+    "Campaign",
+    "CampaignResult",
     "ContactMap",
+    "CompletedLandscape",
+    "DMSPairwiseLandscape",
     "CouplingTensor",
     "ESM2Scorer",
     "EpistasisModel",
     "GlobalEpistasisSigmoid",
     "Identity",
     "Landscape",
+    "LandscapeGenerator",
+    "LandscapePrior",
+    "MutationDomain",
     "MSACouplingsEpistasis",
     "Mutant",
     "NonLinearity",
+    "Oracle",
     "PLMScorer",
+    "PosteriorLandscape",
     "RandomEpistasis",
+    "SearchMethod",
     "SignConsistentEpistasis",
     "Variant",
+    "VariantLike",
+    "from_dms",
+    "load_oracle",
     "morphing_landscape",
+    "run_campaign",
     "plot_alpha_sweep",
     "plot_contact_map",
     "plot_epistasis_scatter",
     "plot_fitness_distribution",
+    "parse_variant",
 ]
 
 __version__ = "0.1.0"

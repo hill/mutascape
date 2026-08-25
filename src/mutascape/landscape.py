@@ -145,11 +145,7 @@ def _allocate_weighted_counts(
         for depth in order[:remainder]:
             allocated[depth] += 1
 
-        capped = {
-            depth
-            for depth in active
-            if allocated[depth] > capacities[depth] - counts[depth]
-        }
+        capped = {depth for depth in active if allocated[depth] > capacities[depth] - counts[depth]}
         if not capped:
             for depth, value in allocated.items():
                 counts[depth] += value
@@ -757,9 +753,7 @@ class Landscape:
             depth = int(raw_depth)
             weight = float(raw_weight)
             if depth < 0 or depth > self.n_positions:
-                raise ValueError(
-                    f"mutation depth {depth} must be in [0, {self.n_positions}]"
-                )
+                raise ValueError(f"mutation depth {depth} must be in [0, {self.n_positions}]")
             if not np.isfinite(weight) or weight < 0:
                 raise ValueError(f"weight for depth {depth} must be finite and non-negative")
             if weight > 0:
@@ -838,9 +832,7 @@ class Landscape:
         for raw_position in chosen:
             position = int(raw_position)
             alternatives = [
-                aa
-                for aa in self.single_site_effects[position]
-                if aa != self.wild_type[position]
+                aa for aa in self.single_site_effects[position] if aa != self.wild_type[position]
             ]
             mutation[position] = str(rng.choice(alternatives))
         return mutation
@@ -969,7 +961,7 @@ class Landscape:
         readout_texture_floor_band: float = 1e-9,
         readout_texture_seed: int | None = None,
         nonlinearity: NonLinearity | str | None = None,
-    ) -> "Landscape":
+    ) -> Landscape:
         """Build a landscape from pLM-predicted single-site effects.
 
         Uses masked marginal log-likelihood ratios as fitness proxies
@@ -1050,7 +1042,7 @@ class Landscape:
         fitness_col: str = "fitness",
         nonlinearity: NonLinearity | str | None = None,
         missing_aa_prior: str = "position_mean",
-    ) -> "Landscape":
+    ) -> Landscape:
         """Construct a landscape from a DMS CSV file and structural data.
 
         Expected CSV format: one row per single-site variant, with columns

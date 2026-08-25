@@ -20,8 +20,6 @@ Outputs:
   - notebooks/validation/output_gfp_v2/gfp_v2_validation_summary.csv
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import pandas as pd
@@ -39,8 +37,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data/gfp"
 OUTPUT_DIR = REPO_ROOT / "notebooks/validation/output_gfp_v2"
 PROTEINGYM_CSV = (
-    REPO_ROOT.parent
-    / "mutantopt/experiments/datasets/proteingym/GFP_AEQVI_Sarkisyan_2016.csv"
+    REPO_ROOT.parent / "mutantopt/experiments/datasets/proteingym/GFP_AEQVI_Sarkisyan_2016.csv"
 )
 
 DMS_CSV = DATA_DIR / "gfp.csv"
@@ -57,20 +54,33 @@ SCALE_SWEEP = [0.0, 0.05, 0.1, 0.2, 0.5, 1.0]
 
 def _build_v1(singles_min: float):
     return build_landscape(
-        DMS_CSV, DISTANCES_NPZ, WT_FASTA,
-        alpha=1.5, sigma=0.0, seed=SEED,
-        nonlinearity="fit", scale=None, floor_hard=singles_min,
-        combinatorial_upside=3.0, noise_sigma=0.3,
+        DMS_CSV,
+        DISTANCES_NPZ,
+        WT_FASTA,
+        alpha=1.5,
+        sigma=0.0,
+        seed=SEED,
+        nonlinearity="fit",
+        scale=None,
+        floor_hard=singles_min,
+        combinatorial_upside=3.0,
+        noise_sigma=0.3,
     )
 
 
 def _build_v2(singles_min: float, msa_scale: float):
     epistasis = MSACouplingsEpistasis.from_npz(MSA_COUPLINGS_NPZ, scale=msa_scale)
     return build_landscape(
-        DMS_CSV, DISTANCES_NPZ, WT_FASTA,
-        alpha=1.5, seed=SEED,
-        nonlinearity="fit", scale=None, floor_hard=singles_min,
-        combinatorial_upside=3.0, noise_sigma=0.3,
+        DMS_CSV,
+        DISTANCES_NPZ,
+        WT_FASTA,
+        alpha=1.5,
+        seed=SEED,
+        nonlinearity="fit",
+        scale=None,
+        floor_hard=singles_min,
+        combinatorial_upside=3.0,
+        noise_sigma=0.3,
         msa_couplings=epistasis,
     )
 
@@ -110,7 +120,10 @@ def main() -> None:
     real_rs = roughness_slope_ratio(real_df)
 
     rows = []
-    print(f"\n{'config':24s} {'depth':>5s} {'real_add':>9s} {'synth_add':>10s} {'real_sign':>10s} {'synth_sign':>11s}")
+    print(
+        f"\n{'config':24s} {'depth':>5s} {'real_add':>9s} {'synth_add':>10s} "
+        f"{'real_sign':>10s} {'synth_sign':>11s}"
+    )
     print("-" * 75)
 
     # v1 baseline

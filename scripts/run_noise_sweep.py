@@ -10,8 +10,6 @@ Run:
     uv run python scripts/run_noise_sweep.py --protein trpb
 """
 
-from __future__ import annotations
-
 import argparse
 
 import pandas as pd
@@ -138,9 +136,7 @@ def run_sweep(protein: str, noise_sigmas=NOISE_SIGMAS) -> pd.DataFrame:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--protein", required=True, choices=sorted(PROTEIN_CONFIG)
-    )
+    parser.add_argument("--protein", required=True, choices=sorted(PROTEIN_CONFIG))
     args = parser.parse_args()
     df = run_sweep(args.protein)
     print()

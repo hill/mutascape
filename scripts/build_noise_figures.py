@@ -8,8 +8,6 @@ Produces:
 Run: uv run python scripts/build_noise_figures.py
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -70,10 +68,8 @@ def fig_headline(gb1: pd.DataFrame, trpb: pd.DataFrame) -> plt.Figure:
         best = _best_sigma(synth)
         for ci, metric in enumerate(HEADLINE_METRICS):
             ax = axes[ri][ci]
-            ax.plot(synth["noise_sigma"], synth[metric], "o-",
-                    color=palette[ri], linewidth=2)
-            ax.axvline(best, color="grey", linestyle=":", linewidth=1,
-                       label=f"best={best:g}")
+            ax.plot(synth["noise_sigma"], synth[metric], "o-", color=palette[ri], linewidth=2)
+            ax.axvline(best, color="grey", linestyle=":", linewidth=1, label=f"best={best:g}")
             best_val = synth.loc[synth["noise_sigma"] == best, metric].values[0]
             ax.scatter([best], [best_val], color="black", zorder=5, s=40)
             ax.set_xlabel("noise_sigma")
@@ -96,10 +92,8 @@ def fig_walsh_spectrum_at_best(df: pd.DataFrame, protein: str) -> plt.Figure:
     w = 0.38
     fig, ax = plt.subplots(figsize=(6, 4))
     palette = sns.color_palette()
-    ax.bar(x - w / 2, real_vals, w, label=f"real {protein}",
-           color=palette[0])
-    ax.bar(x + w / 2, synth_vals, w,
-           label=f"synth at noise_sigma={best:g}", color=palette[1])
+    ax.bar(x - w / 2, real_vals, w, label=f"real {protein}", color=palette[0])
+    ax.bar(x + w / 2, synth_vals, w, label=f"synth at noise_sigma={best:g}", color=palette[1])
     ax.set_xticks(x)
     ax.set_xticklabels([f"order {k}" for k in orders])
     ax.set_ylabel("Walsh variance fraction")
@@ -120,14 +114,38 @@ def fig_landscape_attributes(gb1: pd.DataFrame, trpb: pd.DataFrame) -> plt.Figur
     for i, col in enumerate(ATTRIBUTE_COLS):
         r, c = divmod(i, cols)
         ax = axes[r][c]
-        ax.plot(gb1_synth["noise_sigma"], gb1_synth[col], "o-",
-                color=palette[0], linewidth=2, label="GB1 synth")
-        ax.axhline(gb1_real[col], color=palette[0], linestyle="--",
-                   linewidth=1, alpha=0.7, label="GB1 real")
-        ax.plot(trpb_synth["noise_sigma"], trpb_synth[col], "s-",
-                color=palette[1], linewidth=2, label="TrpB synth")
-        ax.axhline(trpb_real[col], color=palette[1], linestyle="--",
-                   linewidth=1, alpha=0.7, label="TrpB real")
+        ax.plot(
+            gb1_synth["noise_sigma"],
+            gb1_synth[col],
+            "o-",
+            color=palette[0],
+            linewidth=2,
+            label="GB1 synth",
+        )
+        ax.axhline(
+            gb1_real[col],
+            color=palette[0],
+            linestyle="--",
+            linewidth=1,
+            alpha=0.7,
+            label="GB1 real",
+        )
+        ax.plot(
+            trpb_synth["noise_sigma"],
+            trpb_synth[col],
+            "s-",
+            color=palette[1],
+            linewidth=2,
+            label="TrpB synth",
+        )
+        ax.axhline(
+            trpb_real[col],
+            color=palette[1],
+            linestyle="--",
+            linewidth=1,
+            alpha=0.7,
+            label="TrpB real",
+        )
         ax.set_xlabel("noise_sigma")
         ax.set_ylabel(ATTRIBUTE_LABELS[col])
         ax.set_title(ATTRIBUTE_LABELS[col])
@@ -147,10 +165,8 @@ def main():
     trpb = pd.read_csv(OUT_TRPB / "trpb_noise_sweep.csv")
 
     save_fig(fig_headline(gb1, trpb), "headline", OUT_CROSS)
-    save_fig(fig_walsh_spectrum_at_best(gb1, "GB1"),
-             "walsh_spectrum_at_best_sigma", OUT_GB1)
-    save_fig(fig_walsh_spectrum_at_best(trpb, "TrpB"),
-             "walsh_spectrum_at_best_sigma", OUT_TRPB)
+    save_fig(fig_walsh_spectrum_at_best(gb1, "GB1"), "walsh_spectrum_at_best_sigma", OUT_GB1)
+    save_fig(fig_walsh_spectrum_at_best(trpb, "TrpB"), "walsh_spectrum_at_best_sigma", OUT_TRPB)
     save_fig(fig_landscape_attributes(gb1, trpb), "landscape_attributes", OUT_CROSS)
 
     for stale in (

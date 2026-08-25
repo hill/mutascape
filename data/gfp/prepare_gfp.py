@@ -38,7 +38,9 @@ import pandas as pd
 from mutascape import ContactMap
 
 OUTPUT_DIR = Path(__file__).resolve().parent
-MUTANTOPT_DIR = OUTPUT_DIR.parent.parent.parent / "mutantopt" / "experiments" / "datasets" / "proteingym"
+MUTANTOPT_DIR = (
+    OUTPUT_DIR.parent.parent.parent / "mutantopt" / "experiments" / "datasets" / "proteingym"
+)
 
 WT_FITNESS = 3.72  # log10 brightness (Gonzalez-Somermeyer 2022)
 
@@ -63,12 +65,14 @@ def prepare_dms():
         wt_aa, pos, mut_aa = m.group(1), int(m.group(2)), m.group(3)
         if pos > len(wt_seq) or wt_seq[pos - 1] != wt_aa:
             continue
-        rows.append({
-            "position": pos,
-            "wildtype": wt_aa,
-            "mutant": mut_aa,
-            "fitness": row["DMS_score"] - WT_FITNESS,
-        })
+        rows.append(
+            {
+                "position": pos,
+                "wildtype": wt_aa,
+                "mutant": mut_aa,
+                "fitness": row["DMS_score"] - WT_FITNESS,
+            }
+        )
 
     out = pd.DataFrame(rows)
     out.to_csv(OUTPUT_DIR / "gfp.csv", index=False)

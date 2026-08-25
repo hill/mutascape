@@ -11,8 +11,6 @@ Writes:
   notebooks/validation/output_gfp_v2/gfp_v2_matched_validation.pdf / .png
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -33,17 +31,34 @@ def main() -> None:
     ]
     depths = sorted(df["depth"].unique())
 
-    real = df.drop_duplicates(subset="depth")[["depth", "real_additive_correlation", "real_sign_epistasis"]]
+    real = df.drop_duplicates(subset="depth")[
+        ["depth", "real_additive_correlation", "real_sign_epistasis"]
+    ]
     real = real.sort_values("depth")
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.4), tight_layout=True)
 
     # Additive correlation
     ax = axes[0]
-    ax.plot(real["depth"], real["real_additive_correlation"], "k-", lw=2.2, marker="s", label="Sarkisyan (real)")
+    ax.plot(
+        real["depth"],
+        real["real_additive_correlation"],
+        "k-",
+        lw=2.2,
+        marker="s",
+        label="Sarkisyan (real)",
+    )
     for name, label, color in configs:
         sub = df[df["config"] == name].sort_values("depth")
-        ax.plot(sub["depth"], sub["matched_additive_correlation"], "--", marker="o", color=color, label=label, alpha=0.85)
+        ax.plot(
+            sub["depth"],
+            sub["matched_additive_correlation"],
+            "--",
+            marker="o",
+            color=color,
+            label=label,
+            alpha=0.85,
+        )
     ax.set_xlabel("Mutation depth")
     ax.set_ylabel("Additive correlation (matched)")
     ax.set_title("GFP whole-protein, fitness-matched")
@@ -53,10 +68,25 @@ def main() -> None:
 
     # Sign epistasis
     ax = axes[1]
-    ax.plot(real["depth"], real["real_sign_epistasis"], "k-", lw=2.2, marker="s", label="Sarkisyan (real)")
+    ax.plot(
+        real["depth"],
+        real["real_sign_epistasis"],
+        "k-",
+        lw=2.2,
+        marker="s",
+        label="Sarkisyan (real)",
+    )
     for name, label, color in configs:
         sub = df[df["config"] == name].sort_values("depth")
-        ax.plot(sub["depth"], sub["matched_sign_epistasis"], "--", marker="o", color=color, label=label, alpha=0.85)
+        ax.plot(
+            sub["depth"],
+            sub["matched_sign_epistasis"],
+            "--",
+            marker="o",
+            color=color,
+            label=label,
+            alpha=0.85,
+        )
     ax.set_xlabel("Mutation depth")
     ax.set_ylabel("Sign-epistasis fraction (matched)")
     ax.set_title("GFP whole-protein, fitness-matched")

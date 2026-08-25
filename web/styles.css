@@ -436,6 +436,130 @@ input {
   font-size: 11px;
 }
 
+.posterior-query-results {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e4e4e7;
+}
+
+.posterior-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.posterior-metric-grid > div {
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px;
+  border: 1px solid #e4e4e7;
+  border-radius: 7px;
+  background: #fafafa;
+}
+
+.posterior-metric-grid span {
+  color: #71717a;
+  font-size: 11px;
+}
+
+.posterior-metric-grid strong {
+  font-size: 14px;
+}
+
+.embedded-chart {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+}
+
+.interval-plot,
+.histogram {
+  display: grid;
+  min-height: 190px;
+  align-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.interval-row {
+  display: grid;
+  grid-template-columns: minmax(70px, 0.4fr) minmax(150px, 1fr);
+  align-items: center;
+  gap: 9px;
+  font-size: 10px;
+}
+
+.interval-row > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.interval-track {
+  position: relative;
+  height: 18px;
+  border-radius: 4px;
+  background: #f4f4f5;
+}
+
+.interval-band,
+.interval-point {
+  position: absolute;
+  display: block;
+}
+
+.interval-band {
+  top: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(246, 130, 31, 0.3);
+}
+
+.interval-point {
+  top: 3px;
+  width: 3px;
+  height: 12px;
+  margin-left: -1px;
+  border-radius: 2px;
+}
+
+.interval-point.additive {
+  background: #64748b;
+}
+
+.interval-point.mean {
+  background: #f6821f;
+}
+
+.interval-point.fixed {
+  background: #7c3aed;
+}
+
+.interval-axis,
+.histogram-axis {
+  display: flex;
+  justify-content: space-between;
+  color: #71717a;
+  font-size: 10px;
+}
+
+.histogram-bars {
+  display: flex;
+  height: 150px;
+  align-items: end;
+  gap: 2px;
+  border-bottom: 1px solid #d4d4d8;
+}
+
+.histogram-bars i {
+  flex: 1;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: #f6821f;
+}
+
 .sample-control-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
@@ -763,6 +887,10 @@ input {
     align-items: stretch;
     flex-direction: column;
     gap: 10px;
+  }
+
+  .posterior-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

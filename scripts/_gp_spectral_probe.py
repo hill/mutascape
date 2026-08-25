@@ -120,8 +120,10 @@ def run(config, name):
                 best = (l1, t, theta, swf, w1, nopt)
                 flag = "  <- best L1"
             print(f"  {t:>4} {theta:>6} | {str(swf):>26} | {l1:>6.3f} {w1:>6.3f} {nopt:>6}{flag}")
-    print(f"  BEST spectrum match: t={best[1]} theta={best[2]} -> Walsh={best[3]} "
-          f"L1={best[0]:.3f} W1={best[4]:.3f} n_opt={best[5]} (real {real_opt})")
+    print(
+        f"  BEST spectrum match: t={best[1]} theta={best[2]} -> Walsh={best[3]} "
+        f"L1={best[0]:.3f} W1={best[4]:.3f} n_opt={best[5]} (real {real_opt})"
+    )
     return best, real_opt
 
 
@@ -130,4 +132,6 @@ trpb_best, trpb_real = run(TRPB_HEADLINE, "TrpB")
 
 print("\n=== make-or-break: does ONE (t, theta) work for both proteins? ===")
 print(f"  GB1  best t={gb1_best[1]} theta={gb1_best[2]}  (n_opt {gb1_best[5]} vs real {gb1_real})")
-print(f"  TrpB best t={trpb_best[1]} theta={trpb_best[2]}  (n_opt {trpb_best[5]} vs real {trpb_real})")
+print(
+    f"  TrpB best t={trpb_best[1]} theta={trpb_best[2]}  (n_opt {trpb_best[5]} vs real {trpb_real})"
+)

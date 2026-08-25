@@ -4,13 +4,15 @@
 
 # mutascape
 
-Synthetic combinatorially complete protein fitness landscapes with tuneable, structurally informed epistasis.
+Task-relative synthetic combinatorial protein fitness oracles for ML-assisted directed evolution benchmarks.
 
-Real single-site DMS effects, 3D structural contacts, and a swappable pairwise epistasis model, all wrapped behind a `Landscape` oracle that you can index with `Mutant` objects to get fitness for any multi-mutant. Tune ruggedness with a single parameter (`alpha`), then pick the epistasis story you want (random, sign-consistent, MSA-derived). Wrap the latent score in a global-epistasis function and Gaussian noise when you want a more realistic readout.
+Mutascape turns wild type and measured single mutants into a stable, lazy fitness oracle. The default generator adds baseline-corrected random pair interactions and a saturating readout. It preserves every supplied observation exactly.
+
+Mutascape targets benchmark behaviour. It does not predict an unknown protein's combinatorial landscape.
 
 ## Installation
 
-Requires Python 3.12+.
+Requires Python 3.14+.
 
 ```bash
 uv sync              # core dependencies
@@ -20,25 +22,139 @@ uv sync --extra dev  # + pytest/ruff
 ## Quick start
 
 ```python
-from mutascape import Landscape, ContactMap, Mutant, RandomEpistasis
+from mutascape import from_dms
 
-# Contact map from a PDB file (or predicted from sequence with ESMFold)
-contacts = ContactMap.from_pdb("structure.pdb", threshold=8.0)
-
-# Build a synthetic landscape grounded in DMS singles + structural contacts
-landscape = Landscape.from_dms(
-    dms_path="dms_data.csv",
-    wt_sequence="MAEQLA...",
-    contact_map=contacts,
-    epistasis=RandomEpistasis(sigma=0.3, seed=42),
-    alpha=1.0,
+generator = from_dms(
+    "dms.csv",
+    fasta="wild_type.fasta",
+    maximum_depth=5,
 )
 
-# Query the oracle by mutant label or composed Mutant objects
-landscape["A29H"]
-landscape[Mutant("A29H") + Mutant("R60D")]
-landscape[Mutant("A29H") + Mutant("R60D") + Mutant("K93T")]
+# One seed fixes one benchmark instance.
+oracle = generator.draw(seed=42)
+fitness = oracle["V39A+D40W+V54F"]
 ```
+
+Mutation labels are case-insensitive. Use `+` or a colon between substitutions. Dictionaries and `Mutant` objects remain supported.
+
+```python
+oracle.score("v39a:d40w")
+oracle.score({39: "A", 40: "W"})
+oracle.score_many(["WT", "V39A", "V39A+D40W"])
+```
+
+The oracle accepts a genotype only when every constituent substitution has a measured single effect. A supplied multi-mutant returns its measured value. `generator.domain` reports the supported positions, substitutions, and depth limit.
+
+Save the fixed generator version, seed, source digest, and domain with the benchmark result.
+
+```python
+oracle.save_manifest("oracle.json")
+```
+
+Recreate the same oracle from the manifest and source data.
+
+```python
+from mutascape import load_oracle
+
+oracle = load_oracle(
+    "oracle.json",
+    dms="dms.csv",
+    fasta="wild_type.fasta",
+)
+```
+
+## Benchmarking a search method
+
+A campaign gives a method a budget, a candidate set, and an assay. It records every measurement, counts rounds, and scores the run afterwards. The oracle stays private, so a method can only learn a fitness by spending budget on it.
+
+```python
+from mutascape import run_campaign
+
+wanted = min(5000, generator.domain.count(depth=3))
+candidates = generator.domain.sample(depth=3, n=wanted, seed=0)
+
+def my_method(campaign):
+    campaign.measure(campaign.sample(96))          # first plate
+    while campaign.remaining:
+        design = campaign.encode()                  # one-hot over candidates
+        observed = campaign.observed                # variant, fitness, round
+        picks = choose_next(design, observed)       # your model goes here
+        campaign.measure(picks[: campaign.remaining])
+
+result = run_campaign(
+    my_method,
+    generator.draw(seed=42),
+    candidates,
+    budget=384,
+    batch_size=96,
+    noise=0.1,
+)
+print(result.simple_regret, result.rounds)
+```
+
+`batch_size` defaults to 96, one microplate. `noise` adds assay error in units of the landscape's own spread, pinned to the variant so a repeated read never changes. A repeated measurement is free, because a campaign that already holds it does not buy it twice.
+
+Scoring reads the true fitness of the variant with the best read, not the read itself, so a method that chases assay noise pays for it. `simple_regret` is the gap to the best candidate over the range of the candidate set, which is the number the frozen study reports.
+
+## What real enough means
+
+Mutascape uses task-relative validity. A useful search benchmark should preserve conclusions about which optimisation method performs better.
+
+The frozen study uses 16 complete SSMuLA landscapes, seven external GraphFLA protein landscapes, and 12 search methods. It tests budgets of 48, 96, 192, and 384 queries with ten trials and three matched generator draws.
+
+- At 48 queries, development Kendall transfer is 0.529 and reliable winner accuracy is 88.5 per cent.
+- Mutascape passes the measured-reliability floor on 14 of 16 development landscapes.
+- External winner accuracy is 86.4 per cent, with a reliability pass on all seven landscapes.
+
+The browser retains 96 queries as its reference. At that budget, development Kendall transfer is 0.454 and winner accuracy is 78.7 per cent. External Kendall transfer is 0.644 and winner accuracy is 74.2 per cent.
+
+No generator leads every metric at later budgets. High-budget external rank transfer also saturates for several generators. Treat validity as relative to the method set, budget, and decision measure.
+
+The default fails a stricter topology test. It has fewer local optima and less Walsh non-additive variance than measured landscapes. Use it for method-ranking studies within the tested protocol. Do not use it for claims about peak counts or molecular epistasis.
+
+## Reproduce the task-transfer result
+
+```bash
+just benchmark-data
+for budget in 48 96 192 384; do
+  uv run python scripts/run_search_transfer.py \
+    --ssmula-root .mutascape/benchmark-data/ssmula \
+    --combingym-root .mutascape/benchmark-data/combingym \
+    --output "notebooks/iclr/output_validity_b${budget}_primary" \
+    --budget "$budget" --seeds 10 --draws 3 \
+    --generators primary --dms-pairwise-coupling 0.1
+done
+```
+
+The runner writes trial-level regret, rank transfer, paired winners, and measured split-half reliability. Source manifests pin upstream revisions.
+
+## Browser studio
+
+The studio exposes the same DMS-pairwise oracle. It shows the frozen task-transfer result, fitness by mutation depth, a genotype graph, and exact queries.
+
+Upload DMS data with either supported CSV schema. Both schemas require a matching FASTA sequence.
+
+```csv
+position,wildtype,mutant,fitness
+39,V,A,-0.42
+```
+
+Variant-level files must include `WT`. They may also include measured combinations.
+
+```csv
+variant,fitness
+WT,1.0
+V39A,0.58
+V39A:D40W,0.91
+```
+
+Run the studio and API locally with `uv sync --extra dev --extra web` and `just dev`. The local address is `http://localhost:8000`.
+
+The API keeps its existing posterior route names for compatibility. Studio labels describe oracle draws and variation rather than biological uncertainty.
+
+## Legacy structure-aware generator
+
+The earlier `Landscape` API remains available for experiments with structural contacts, MSA couplings, and genotype-stable noise. These arms are outside the current default claim.
 
 ## Loading landscapes
 
@@ -169,9 +285,9 @@ landscape = Landscape.from_dms(
 )
 ```
 
-## Reference benchmark landscapes
+## Archival reference landscapes
 
-For benchmarking work, mutascape ships two named reference configurations calibrated against the complete factorial GB1 and TrpB landscapes. Use these when you want a published, regression-tested benchmark landscape rather than building one from scratch.
+Mutascape still ships the earlier GB1 and TrpB reference configurations. They support regression tests and comparison with the first manuscript. They are outside the new task-transfer default.
 
 ```python
 from mutascape.validation.reference_configs import GB1_HEADLINE, TRPB_HEADLINE
@@ -183,9 +299,9 @@ gb1["V39A"]
 trpb[Mutant("V183A") + Mutant("F184I")]
 ```
 
-At the shared default `noise_sigma=0.3` and `sigma=0`, with a tiny censored readout texture, these reach `walsh_L1=0.317` / `fitness_W1=0.036` / `n_optima=200` on GB1 and `walsh_L1=0.105` / `fitness_W1=0.027` / `n_optima=843` on TrpB, against real `n_optima=182` and `802`.
+These frozen outputs preserve the earlier Walsh and local-optima results. They should not be mixed with the DMS-pairwise task-transfer claim.
 
-## Reproducing the published outputs
+## Reproduce archival outputs
 
 ```bash
 ./.venv/bin/python scripts/rebuild_reference_outputs.py
@@ -197,13 +313,16 @@ The rebuild script regenerates the GB1 / TrpB sweep CSVs and the headline figure
 
 ## Known limitations
 
-- GB1 still shows an order-1 / order-3 Walsh mismatch.
-- The censored readout texture is calibrated on complete combinatorial references. For unvalidated proteins, treat it as a tunable topology parameter rather than a universal default.
-- Sparse full-protein GFP remains smoother than the real landscape under the same default settings. The structural pairwise term (`alpha > 0`), MSA-derived couplings, and Contact-NK higher-order terms are the supported routes for closing this gap.
-- Functional-contact overrides should only be used when a ligand/cofactor or annotated active-site mechanism justifies them.
+- Validation depends on the method set, query budget, and candidate domain.
+- The coupling was selected on the SSMuLA development panel.
+- The external protein panel contains seven landscapes.
+- The default underestimates measured local optima and non-additive Walsh variance.
+- Oracle ensembles measure benchmark sensitivity. They are not calibrated biological intervals.
+- Whole-protein queries require measured singles for every constituent substitution.
 
 ## Docs
 
 - [Project status](docs/project_status.md)
-- [Global-epistasis function design](docs/nonlinearity_design.md), current mechanism with historical validation notes
-- [Design document](docs/design.md), historical design background
+- [Benchmark protocol](docs/benchmark_protocol.md)
+- [Global-epistasis design](docs/nonlinearity_design.md)
+- [Historical design document](docs/design.md)

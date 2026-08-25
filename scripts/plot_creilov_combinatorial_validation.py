@@ -1,7 +1,5 @@
 """Plot the Chen 2023 CreiLOV combinatorial validation: MSA-coupling scale vs real."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -40,12 +38,25 @@ def main() -> None:
     # Additive correlation: real vs Mutascape, compared to the additive baseline.
     ax = axes[1]
     real_add = df[df["config"] == "v1_no_couplings"].sort_values("depth")
-    ax.plot(real_add["depth"], real_add["real_additive_correlation"], "k-",
-            lw=2.2, marker="s", label="real ↔ additive (target)")
+    ax.plot(
+        real_add["depth"],
+        real_add["real_additive_correlation"],
+        "k-",
+        lw=2.2,
+        marker="s",
+        label="real ↔ additive (target)",
+    )
     for name, label, color in configs:
         sub = df[df["config"] == name].sort_values("depth")
-        ax.plot(sub["depth"], sub["synth_additive_correlation"], "--",
-                marker="o", color=color, label=f"{label} ↔ additive", alpha=0.85)
+        ax.plot(
+            sub["depth"],
+            sub["synth_additive_correlation"],
+            "--",
+            marker="o",
+            color=color,
+            label=f"{label} ↔ additive",
+            alpha=0.85,
+        )
     ax.set_xlabel("Mutation depth")
     ax.set_ylabel("Correlation to Mutascape additive baseline")
     ax.set_title("CreiLOV combinatorial -- over-additivity diagnostic")

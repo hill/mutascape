@@ -6,8 +6,6 @@ full-protein datasets where exact Walsh spectra and complete peak counts are
 not available.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 import numpy as np

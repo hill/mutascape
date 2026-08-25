@@ -127,7 +127,7 @@ class GlobalEpistasisSigmoid:
         floor: float | None = None,
         ceiling: float | None = None,
         combinatorial_upside: float = 1.0,
-    ) -> "GlobalEpistasisSigmoid":
+    ) -> GlobalEpistasisSigmoid:
         """Fit floor, ceiling, and scale from observed single-site fitness effects.
 
         Floor and ceiling are set to the observed range padded by `margin` of
@@ -162,11 +162,19 @@ class GlobalEpistasisSigmoid:
             raise ValueError("single_site_effects contains no values")
 
         lo, hi = float(values.min()), float(values.max())
-        if not (lo < 0 < hi):
+        # Only a derived bound needs the observations to reach past WT on that
+        # side. Assays where every single mutation is deleterious never produce
+        # a positive effect, and there the caller supplies the ceiling from the
+        # known assay range instead.
+        if floor is None and lo >= 0:
             raise ValueError(
-                f"Observed fitness range [{lo}, {hi}] does not straddle WT (0). "
-                "GlobalEpistasisSigmoid requires both positive and negative effects; "
-                "check that fitness is defined relative to WT."
+                f"Observed fitness range [{lo}, {hi}] does not fall below WT (0), "
+                "so the sigmoid floor cannot be derived; pass floor explicitly."
+            )
+        if ceiling is None and hi <= 0:
+            raise ValueError(
+                f"Observed fitness range [{lo}, {hi}] does not rise above WT (0), "
+                "so the sigmoid ceiling cannot be derived; pass ceiling explicitly."
             )
         span = hi - lo
         if floor is None:

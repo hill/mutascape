@@ -13,6 +13,13 @@ DMS = """position,wildtype,mutant,fitness
 2,C,D,-0.4
 """
 FASTA = ">WT\nAC\n"
+VARIANT_DMS = """variant,fitness
+WT,1.0
+A1G,1.5
+A1V,1.2
+C2D,0.5
+A1G+C2D,2.1
+"""
 PARAMETERS = {
     "noiseSigma": 0.3,
     "alpha": 1.5,
@@ -85,6 +92,23 @@ def test_custom_draft_preview_publish_and_evaluate(tmp_path):
     assert "V39A" in reference_detail["examples"]["hostedPython"]
     compile(reference_detail["examples"]["localPython"], "<reference-example>", "exec")
 
+    posterior_detail = client.get("/api/v1/models/gb1_posterior").json()
+    assert posterior_detail["kind"] == "posterior"
+    assert posterior_detail["posteriorSettings"]["priorId"] == "combinatorial-v2"
+    compile(posterior_detail["examples"]["localPython"], "<posterior-example>", "exec")
+    posterior_query = client.post(
+        "/api/v1/posterior-queries",
+        json={
+            "source": {"kind": "reference", "id": "gb1_posterior"},
+            "priorId": "combinatorial-v2",
+            "seed": 42,
+            "ensembleSize": 8,
+            "entries": [{"mutationLabel": "V39A+D40A"}],
+        },
+    )
+    assert posterior_query.status_code == 200
+    assert posterior_query.json()["results"][0]["posteriorStd"] > 0
+
     changed_parameters = {**PARAMETERS, "seed": 43}
     changed_preview = client.post(
         "/api/v1/previews",
@@ -120,6 +144,75 @@ def test_upload_validation_error_is_structured(tmp_path):
     assert "unsupported residues" in response.json()["detail"]
 
 
+def test_posterior_query_preview_publish_and_fixed_evaluation(tmp_path):
+    client = TestClient(create_app(tmp_path / "web.sqlite3"))
+    priors = client.get("/api/v1/priors")
+    assert priors.status_code == 200
+    assert priors.json()["defaultPriorId"] == "combinatorial-v2"
+
+    draft = client.post(
+        "/api/v1/drafts",
+        json={"dmsCsv": VARIANT_DMS, "wtFasta": FASTA},
+    ).json()
+    source = {"kind": "draft", "id": draft["id"]}
+    query_payload = {
+        "source": source,
+        "priorId": "combinatorial-v2",
+        "seed": 17,
+        "ensembleSize": 20,
+        "entries": [{"mutationLabel": "a1v:c2d"}],
+    }
+    query = client.post("/api/v1/posterior-queries", json=query_payload)
+    assert query.status_code == 200
+    result = query.json()["results"][0]
+    assert result["mutationLabel"] == "A1V+C2D"
+    assert result["observed"] is False
+    assert result["posteriorStd"] > 0
+    assert len(result["samples"]) == 20
+
+    preview = client.post(
+        "/api/v1/posterior-previews",
+        json={
+            "source": source,
+            "priorId": "combinatorial-v2",
+            "seed": 17,
+            "ensembleSize": 12,
+            "sample": {"size": 5, "depthWeights": {"1": 1, "2": 1}},
+        },
+    )
+    assert preview.status_code == 200
+    assert preview.json()["sample"]["graph"]["nodes"]
+
+    published = client.post(
+        "/api/v1/models",
+        json={
+            "draftId": draft["id"],
+            "name": "Posterior example",
+            "parameters": {**PARAMETERS, "seed": 17},
+            "modelType": "posterior",
+            "priorId": "combinatorial-v2",
+            "oracleSeed": 17,
+        },
+    )
+    assert published.status_code == 201
+    model = published.json()
+    assert model["kind"] == "posterior"
+    assert model["posteriorSettings"]["oracleSeed"] == 17
+
+    fixed = client.post(
+        f"/api/v1/models/{model['id']}/evaluate",
+        json={"entries": [{"mutationLabel": "A1V+C2D"}]},
+    )
+    assert fixed.status_code == 200
+    assert fixed.json()["results"][0]["fitness"] == result["fixedOracleFitness"]
+
+    changed = client.post(
+        "/api/v1/posterior-queries",
+        json={**query_payload, "source": {"kind": "model", "id": model["id"]}, "seed": 18},
+    )
+    assert changed.status_code == 422
+
+
 def test_evaluate_rejects_ambiguous_entry(tmp_path):
     client = TestClient(create_app(tmp_path / "web.sqlite3"))
     response = client.post(
@@ -146,6 +239,8 @@ def test_frontend_routes_support_direct_loading(tmp_path):
         response = client.get(path)
         assert response.status_code == 200
         assert '<div id="root"></div>' in response.text
+        assert 'href="/dist/main.css"' in response.text
+        assert 'src="/dist/main.js"' in response.text
 
 
 def test_leaderboard_create_and_add_result(tmp_path):

@@ -7,8 +7,6 @@ Run:
     uv run python scripts/build_contact_map_figure.py
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import matplotlib.pyplot as plt

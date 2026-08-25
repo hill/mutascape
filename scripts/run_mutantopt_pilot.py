@@ -7,8 +7,6 @@ cheap and reproducible while preserving the landscape topology that matters
 for benchmarking.
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import sys
@@ -83,20 +81,18 @@ def export_compact_dataset(config: Any, noise_sigma: float, out_dir: Path) -> tu
 
     combos = list(product(*(alphabets[pos] for pos in config.positions)))
     mutations = [
-        {
-            pos: aa
-            for pos, aa in zip(config.positions, combo)
-            if aa != config.wt_aa_at_position[pos]
-        }
+        {pos: aa for pos, aa in zip(config.positions, combo) if aa != config.wt_aa_at_position[pos]}
         for combo in combos
     ]
     fitness = landscape.evaluate_batch(mutations)
 
     dataset_csv = out_dir / "landscape.csv"
-    pd.DataFrame({
-        "sequence": ["".join(combo) for combo in combos],
-        "fitness": fitness.astype(float),
-    }).to_csv(dataset_csv, index=False)
+    pd.DataFrame(
+        {
+            "sequence": ["".join(combo) for combo in combos],
+            "fitness": fitness.astype(float),
+        }
+    ).to_csv(dataset_csv, index=False)
 
     wt_fasta = out_dir / "wt.fasta"
     wt_fasta.write_text(f">WT\n{_compact_wt(config)}\n")

@@ -20,6 +20,8 @@ The default is `dms-pairwise-v1`.
 
 The model has no structural contact filter, donor transplant, depth residual, floor texture, or explicit higher-order term.
 
+`0.1` is not the best coupling on the development panel. Task transfer at 48 queries peaks near `0.05`. It falls at every larger value, because the pair table has zero mean and the added variation reads as disagreement. The measured epistatic horizon points the other way and favours a value above `0.4`. Keep `0.1` and report both, since a panel that has already guided model selection cannot settle the choice.
+
 ## Current evidence
 
 The development panel uses 16 complete SSMuLA landscapes. The external panel uses seven GraphFLA protein landscapes. Both compare 12 search methods at budgets of 48, 96, 192, and 384 queries. Each run uses ten search trials and three matched generator draws.
@@ -85,6 +87,8 @@ These components remain useful for ablations. They are outside the default gener
 ## Reproducibility hooks
 
 - `scripts/run_search_transfer.py` runs the primary task test.
+- `scripts/run_coupling_sensitivity.py` scores every primary metric against the coupling.
+- `scripts/run_epistatic_horizon.py` compares generated and measured epistatic horizons.
 - `scripts/freeze_benchmark_validity.py` checks and freezes the four-budget result.
 - `scripts/run_topology_benchmark.py` runs secondary shape checks.
 - `scripts/plot_benchmark_validity.py` builds the manuscript figures.

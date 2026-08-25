@@ -32,7 +32,11 @@ The development panel contains 16 SSMuLA landscapes. Related landscapes share a 
 
 Each target exposes wild type and all supported singles. Every higher-order value remains hidden until search scoring. Readout calibration excludes the target protein group.
 
-The coupling was selected through a small four-method development sweep. All 12-method confirmation runs keep it fixed.
+The coupling was selected through a four-method development sweep at 96 queries over the values 0.1, 0.25, 0.5, and 1.0. That sweep ranked couplings by rank transfer only. It ran three trials, below the four a reliable-winner interval needs, so it could not score winner accuracy.
+
+`scripts/run_coupling_sensitivity.py` reports every primary metric against the coupling at the confirmation protocol. Treat the result as sensitivity. Both panels have guided model selection, so a higher score at another value is not grounds for changing the default.
+
+All 12-method confirmation runs keep the coupling fixed at 0.1.
 
 ## External split
 
@@ -93,6 +97,7 @@ The fifth percentile is the landscape reliability floor. A synthetic arm passes 
 
 Secondary checks include these measures.
 
+- Epistatic horizon against the measured panel, from `scripts/run_epistatic_horizon.py`.
 - Walsh or multiallelic interaction-order variance.
 - Strict local optima and peak fraction.
 - Beneficial fraction relative to wild type.

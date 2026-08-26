@@ -2,7 +2,7 @@ default:
     @just --list
 
 sync:
-    uv sync --extra dev
+    uv sync --extra dev --extra web
 
 test *ARGS:
     uv run pytest {{ARGS}}
@@ -39,16 +39,21 @@ web-build:
 
 # Check, test, and build the web application.
 web-check:
-    cd web && bun run lint && bun run typecheck && bun test && bun run build
+    uv run python scripts/build_docs_assets.py --check
+    cd web && bun install --silent && bun run lint && bun run typecheck && bun test && bun run build
+
+# Rebuild figures, outputs, and API facts embedded in the documentation site.
+docs-assets:
+    uv run python scripts/build_docs_assets.py
 
 # Frontend-only dev server with client-side synthetic couplings.
 web-dev:
     cd web && bun install --silent && bun run dev
 
-# Run the FastAPI oracle. Serves both the frontend and POST /api/score.
+# Run FastAPI and serve the built studio.
 # Rebuild the frontend first so web/dist/ exists.
 api-dev: web-build
-    uv run uvicorn mutascape.server:app --reload --port 8000
+    uv run uvicorn web.server:app --reload --port 8000
 
 # Full stack dev (alias). http://localhost:8000
 dev: api-dev

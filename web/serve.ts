@@ -10,6 +10,9 @@ const CONTENT_TYPES: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
+  ".woff2": "font/woff2",
+  ".woff": "font/woff",
+  ".ttf": "font/ttf",
   ".fasta": "text/plain; charset=utf-8",
 };
 
@@ -19,6 +22,7 @@ async function build() {
     outdir: DIST,
     target: "browser",
     sourcemap: "inline",
+    splitting: true,
   });
   if (!result.success) {
     console.error("build failed:");
@@ -66,8 +70,21 @@ const server = Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
     let path = decodeURIComponent(url.pathname);
-    if (["/", "/landscapes", "/leaderboards"].includes(path) || path.startsWith("/landscapes/")) {
+    if (
+      ["/", "/landscapes", "/leaderboards"].includes(path) ||
+      path.startsWith("/landscapes/") ||
+      path === "/docs" ||
+      path.startsWith("/docs/")
+    ) {
       path = "/index.html";
+    }
+
+    if (path.startsWith("/vendor/katex/")) {
+      const r = await serveFrom(
+        "./node_modules/katex/dist",
+        path.slice("/vendor/katex".length),
+      );
+      if (r) return r;
     }
 
     if (path === "/assets/logo.png") {

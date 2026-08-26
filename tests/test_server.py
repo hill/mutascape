@@ -2,9 +2,10 @@
 
 import sqlite3
 
+import pytest
 from fastapi.testclient import TestClient
 
-from mutascape.server import create_app
+from web.server import create_app
 
 DMS = """position,wildtype,mutant,fitness
 1,A,G,0.5
@@ -75,6 +76,7 @@ def test_custom_draft_preview_publish_and_evaluate(tmp_path):
 
     catalogue = client.get("/api/v1/models").json()["models"]
     assert {model["id"] for model in catalogue} >= {
+        "creilov_dms_pairwise",
         "gb1_headline",
         "trpb_headline",
         model_id,
@@ -108,6 +110,11 @@ def test_custom_draft_preview_publish_and_evaluate(tmp_path):
     )
     assert posterior_query.status_code == 200
     assert posterior_query.json()["results"][0]["posteriorStd"] > 0
+
+    creilov_detail = client.get("/api/v1/models/creilov_dms_pairwise").json()
+    assert creilov_detail["kind"] == "posterior"
+    assert len(creilov_detail["positions"]) == 118
+    assert "2,121 measured single mutants" in creilov_detail["description"]
 
     changed_parameters = {**PARAMETERS, "seed": 43}
     changed_preview = client.post(
@@ -235,12 +242,28 @@ def test_repository_logo_is_served(tmp_path):
 def test_frontend_routes_support_direct_loading(tmp_path):
     client = TestClient(create_app(tmp_path / "web.sqlite3"))
 
-    for path in ("/", "/landscapes", "/leaderboards", "/landscapes/gb1_headline"):
+    for path in (
+        "/",
+        "/landscapes",
+        "/leaderboards",
+        "/landscapes/gb1_headline",
+        "/docs",
+        "/docs/benchmarking",
+    ):
         response = client.get(path)
         assert response.status_code == 200
         assert '<div id="root"></div>' in response.text
         assert 'href="/dist/main.css"' in response.text
         assert 'src="/dist/main.js"' in response.text
+
+
+def test_documentation_figure_is_served(tmp_path):
+    client = TestClient(create_app(tmp_path / "web.sqlite3"))
+    response = client.get("/assets/docs/oracle-profile.svg")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/svg+xml"
+    assert b"<svg" in response.content
 
 
 def test_leaderboard_create_and_add_result(tmp_path):
@@ -300,3 +323,214 @@ def test_cached_preview_does_not_extend_draft_lifetime(tmp_path):
 
     response = client.post("/api/v1/previews", json=payload)
     assert response.status_code == 404
+
+
+def test_substitution_map_serves_every_source_kind(tmp_path):
+    database = tmp_path / "web.sqlite3"
+    client = TestClient(create_app(database))
+    draft = client.post(
+        "/api/v1/drafts",
+        json={"dmsCsv": DMS, "wtFasta": FASTA},
+    ).json()
+
+    drafted = client.post(
+        "/api/v1/substitution-maps",
+        json={"source": {"kind": "draft", "id": draft["id"]}},
+    )
+    assert drafted.status_code == 200
+    grid = drafted.json()
+    assert grid["positions"] == [1, 2]
+    assert grid["wildTypeCompact"] == "AC"
+    assert grid["measuredCount"] == 4
+    assert grid["truncated"] is False
+
+    reference = client.post(
+        "/api/v1/substitution-maps",
+        json={"source": {"kind": "reference", "id": "gb1_headline"}},
+    )
+    assert reference.status_code == 200
+    assert reference.json()["positions"] == [39, 40, 41, 54]
+
+    model_id = client.post(
+        "/api/v1/models",
+        json={"draftId": draft["id"], "name": "Grid oracle", "parameters": PARAMETERS},
+    ).json()["id"]
+    published = client.post(
+        "/api/v1/substitution-maps",
+        json={"source": {"kind": "model", "id": model_id}},
+    )
+    assert published.status_code == 200
+    assert published.json()["positions"] == [1, 2]
+
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            "UPDATE drafts SET expires_at = ? WHERE id = ?",
+            ("2000-01-01T00:00:00+00:00", draft["id"]),
+        )
+    expired = client.post(
+        "/api/v1/substitution-maps",
+        json={"source": {"kind": "draft", "id": draft["id"]}},
+    )
+    assert expired.status_code == 404
+
+
+def test_uploaded_structure_is_aligned_to_the_wild_type(tmp_path):
+    client = TestClient(create_app(tmp_path / "web.sqlite3"))
+    draft = client.post("/api/v1/drafts", json={"dmsCsv": DMS, "wtFasta": FASTA}).json()
+
+    pdb = (
+        "ATOM      1  CA  ALA A   7       0.000   0.000   0.000  1.00  0.00           C\n"
+        "ATOM      2  CA  CYS A   8       3.800   0.000   0.000  1.00  0.00           C\n"
+        "END\n"
+    )
+    response = client.post(
+        "/api/v1/structures",
+        json={
+            "source": {"kind": "draft", "id": draft["id"]},
+            "kind": "upload",
+            "structureText": pdb,
+            "structureFormat": "pdb",
+        },
+    )
+    assert response.status_code == 200
+    view = response.json()
+    assert view["method"] == "upload"
+    assert view["label"] == "Uploaded file"
+    assert view["chainId"] == "A"
+    assert view["identity"] == 1.0
+    assert [entry["residue"] for entry in view["residues"]] == [7, 8]
+    assert view["residues"][0]["effect"] == pytest.approx(0.15)
+    assert view["unmatched"] == []
+
+
+def test_structure_request_rejects_a_bad_pdb_id_and_a_missing_upload(tmp_path):
+    client = TestClient(create_app(tmp_path / "web.sqlite3"))
+    draft = client.post("/api/v1/drafts", json={"dmsCsv": DMS, "wtFasta": FASTA}).json()
+    source = {"kind": "draft", "id": draft["id"]}
+
+    bad_id = client.post(
+        "/api/v1/structures",
+        json={"source": source, "kind": "rcsb", "pdbId": "nope"},
+    )
+    assert bad_id.status_code == 422
+    assert "four characters" in bad_id.json()["detail"]
+
+    empty = client.post("/api/v1/structures", json={"source": source, "kind": "upload"})
+    assert empty.status_code == 422
+    assert empty.json()["detail"] == "upload a structure file"
+
+
+MAVEDB_CSV = """accession,hgvs_pro,score
+urn:x#1,p.Ala1Gly,0.5
+urn:x#2,p.Ala1Val,-0.2
+urn:x#3,p.Cys2Ala,0.3
+urn:x#4,p.Cys2Ter,-1.0
+"""
+
+
+def test_csv_inspection_reports_headers_and_a_guess():
+    client = TestClient(create_app())
+
+    response = client.post("/api/v1/csv-inspections", json={"dmsCsv": MAVEDB_CSV})
+
+    assert response.status_code == 200
+    report = response.json()
+    assert report["headers"] == ["accession", "hgvs_pro", "score"]
+    assert report["detected"]["schema"] == "hgvs"
+    assert report["rowCount"] == 4
+
+    unmapped = client.post("/api/v1/csv-inspections", json={"dmsCsv": "a,b\n1,2\n"})
+    assert unmapped.json()["detected"] is None
+
+
+def test_draft_accepts_a_hand_mapped_csv(tmp_path):
+    client = TestClient(create_app(tmp_path / "web.sqlite3"))
+
+    response = client.post(
+        "/api/v1/drafts",
+        json={
+            "dmsCsv": "site,from,to,effect\n1,A,G,0.5\n2,C,D,-0.4\n",
+            "wtFasta": FASTA,
+            "columnMap": {
+                "schema": "singles",
+                "columns": {
+                    "position": "site",
+                    "wildtype": "from",
+                    "mutant": "to",
+                    "fitness": "effect",
+                },
+            },
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["summary"]["positionCount"] == 2
+
+
+def test_draft_rejects_a_column_map_the_csv_cannot_satisfy(tmp_path):
+    client = TestClient(create_app(tmp_path / "web.sqlite3"))
+
+    response = client.post(
+        "/api/v1/drafts",
+        json={
+            "dmsCsv": MAVEDB_CSV,
+            "wtFasta": FASTA,
+            "columnMap": {"schema": "hgvs", "columns": {"hgvs": "nope", "score": "score"}},
+        },
+    )
+
+    assert response.status_code == 422
+    assert "not in the CSV" in response.json()["detail"]
+
+
+def test_score_histogram_and_sequence_scope(tmp_path):
+    client = TestClient(create_app(tmp_path / "web.sqlite3"))
+    draft = client.post("/api/v1/drafts", json={"dmsCsv": DMS, "wtFasta": FASTA}).json()
+    source = {"kind": "draft", "id": draft["id"]}
+
+    histogram = client.post("/api/v1/score-histograms", json={"source": source})
+    assert histogram.status_code == 200
+    assert sum(histogram.json()["singles"]) == 4
+    assert histogram.json()["wildType"] == 0.0
+
+    scoped = client.post("/api/v1/substitution-maps", json={"source": source, "scope": "sequence"})
+    assert scoped.status_code == 200
+    assert scoped.json()["scope"] == "sequence"
+    assert scoped.json()["assayedCount"] == 2
+
+
+def test_mavedb_import_uses_the_score_set_target_sequence(monkeypatch):
+    import web.server as server
+
+    def fake_fetch(reference):
+        assert reference == "urn:mavedb:00001222-b-2"
+        return {
+            "urn": "urn:mavedb:00001222-b-2",
+            "title": "Example score set",
+            "targetName": "BRCA1",
+            "recordUrl": "https://www.mavedb.org/score-sets/urn:mavedb:00001222-b-2",
+            "wtFasta": FASTA,
+            "dmsCsv": MAVEDB_CSV,
+        }
+
+    monkeypatch.setattr(server, "fetch_score_set", fake_fetch)
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/api/v1/mavedb-imports",
+        json={"reference": "urn:mavedb:00001222-b-2"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["wtFasta"] == FASTA
+    assert payload["inspection"]["detected"]["schema"] == "hgvs"
+
+
+def test_mavedb_import_reports_a_bad_reference():
+    client = TestClient(create_app())
+
+    response = client.post("/api/v1/mavedb-imports", json={"reference": "not a urn"})
+
+    assert response.status_code == 422
+    assert "cannot find a MaveDB URN" in response.json()["detail"]

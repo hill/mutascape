@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-just sync            # uv sync --extra dev
+just sync            # uv sync --extra dev --extra web
 just test            # full suite
 just test tests/test_fourier.py::test_walsh_fractions_sum_to_one   # single test
 just lint            # Ruff for Python and Biome for TypeScript
@@ -18,9 +18,18 @@ Web stack (Bun frontend plus FastAPI oracle):
 just dev             # builds frontend, serves both on :8000
 just web-data        # regenerate web/data/gb1.json after changing data/gb1/
 just web-check       # lint, type-check, test, and build the studio
+just docs-assets     # rebuild documentation figures and generated facts
 ```
 
 The suite takes about 70 seconds. Most of that is `tests/test_reference_configs.py`, which builds complete 20^4 landscapes and computes exact Walsh decompositions.
+
+## Documentation website
+
+The documentation pages live in `web/src/docs/`. Keep each page focused on an end-user task. Use the public package API in every code sample.
+
+Update the site in the same change when you alter a public API, default value, benchmark protocol, claim boundary, or studio workflow. Run `just docs-assets` when an example output, plot, signature, or docstring changes. `just web-check` rejects stale generated assets.
+
+`scripts/build_docs_assets.py` runs the examples against tracked data. It also reads public signatures and summaries from docstrings. Keep generated facts in `web/data/docs.generated.json`. Keep generated figures in `web/assets/docs/`.
 
 ## What this produces
 
@@ -63,7 +72,8 @@ Random pairwise couplings are **off by default** (`sigma = 0`). Setting `sigma >
 
 ## Layout
 
-- `src/mutascape/` core package. `landscape.py` (the oracle, with `from_dms` and `from_plm` constructors), `epistasis.py`, `nonlinearity.py`, `contacts.py`, `scoring.py` (ESM2), `mutant.py` (a `dict` subclass supporting `+` and `-`), plus `server.py` and `viz_export.py` for the web stack.
+- `src/mutascape/` core package. `landscape.py` (the oracle, with `from_dms` and `from_plm` constructors), `epistasis.py`, `nonlinearity.py`, `contacts.py`, `scoring.py` (ESM2), `mutant.py` (a `dict` subclass supporting `+` and `-`), and `viz_export.py`.
+- `web/` React studio and FastAPI application. Run the server through `web.server:app`.
 - `src/mutascape/validation/` metrics and the frozen pipeline. `fourier.py` computes the headline `walsh_L1`, `metrics.py` covers local optima, accessible paths and landscape attributes, `real_data.py` loads ProteinGym-style CSVs.
 - `scripts/` versioned analysis runs. `rebuild_reference_outputs.py` regenerates the paper figures and sweep CSVs.
 

@@ -1,21 +1,20 @@
-"""Posterior landscape services shared by FastAPI and the browser studio."""
+"""Posterior landscape views for the benchmark studio."""
 
-import json
 from itertools import product
-from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
-from mutascape.completion import LandscapePrior, PosteriorLandscape
+from mutascape.completion import PosteriorLandscape
 from mutascape.epistasis import AMINO_ACIDS
 from mutascape.landscape import _allocate_weighted_counts
 from mutascape.mutant import Mutant
+from mutascape.priors import DEFAULT_PRIOR_ID, load_prior_bundle
+from mutascape.validation.results import load_benchmark_validity_summary
 
-PRIOR_ROOT = Path(__file__).resolve().parent / "data" / "priors"
-VALIDATION_ROOT = Path(__file__).resolve().parent / "data" / "validation"
-DEFAULT_PRIOR_ID = "combinatorial-v2"
+from .models import Progress, _noop_progress
+
 DEFAULT_ORACLE_COUPLING = 0.1
 DEFAULT_ORACLE_KIND = "dms-pairwise-v1"
 MAX_POSTERIOR_COST = 2_000_000
@@ -28,49 +27,12 @@ def _oracle(posterior: PosteriorLandscape, seed: int):
 
 def benchmark_validity_summary() -> dict[str, Any]:
     """Return the frozen task-transfer result shown in the studio."""
-    return json.loads((VALIDATION_ROOT / "benchmark-validity-v1.json").read_text())
+    return load_benchmark_validity_summary()
 
 
 def _camel(name: str) -> str:
     head, *rest = name.split("_")
     return head + "".join(word.capitalize() for word in rest)
-
-
-def list_prior_metadata() -> list[dict[str, Any]]:
-    """Return metadata for each bundled prior without exposing its parameters."""
-    priors = []
-    for path in sorted(PRIOR_ROOT.glob("*.json")):
-        bundle = json.loads(path.read_text())
-        parameters = LandscapePrior.from_dict(bundle["parameters"])
-        priors.append(
-            {key: value for key, value in bundle.items() if key != "parameters"}
-            | {
-                "nLandscapes": parameters.n_landscapes,
-                "nProteins": parameters.n_proteins,
-                "globalEpistasis": True,
-                "depthShrinkage": {
-                    str(depth): round(weight, 4)
-                    for depth, weight in sorted(parameters.depth_shrinkage.items())
-                },
-            }
-        )
-    return priors
-
-
-def load_prior_bundle(prior_id: str = DEFAULT_PRIOR_ID) -> tuple[dict[str, Any], LandscapePrior]:
-    """Load one versioned prior and its public metadata."""
-    path = PRIOR_ROOT / f"{prior_id}.json"
-    if not path.exists():
-        raise ValueError(f"unknown posterior prior {prior_id}")
-    bundle = json.loads(path.read_text())
-    prior = LandscapePrior.from_dict(bundle["parameters"])
-    metadata = {key: value for key, value in bundle.items() if key != "parameters"}
-    metadata["nLandscapes"] = prior.n_landscapes
-    metadata["nProteins"] = prior.n_proteins
-    metadata["depthShrinkage"] = {
-        str(depth): round(weight, 4) for depth, weight in sorted(prior.depth_shrinkage.items())
-    }
-    return metadata, prior
 
 
 def posterior_from_source(
@@ -194,12 +156,14 @@ def preview_posterior(
     depth_weights: dict[int, float],
     seed: int,
     ensemble_size: int,
+    progress: Progress = _noop_progress,
 ) -> dict[str, Any]:
     """Build an uncertainty-aware sample for the browser studio."""
     if sample_size < 1 or sample_size > 5_000:
         raise ValueError("posterior preview size must be in [1, 5000]")
     if ensemble_size < 2 or ensemble_size > 200:
         raise ValueError("preview ensemble size must be in [2, 200]")
+    progress("Sampling variants")
     variants = _sample_supported_variants(
         posterior,
         sample_size=sample_size,
@@ -216,6 +180,7 @@ def preview_posterior(
     ]
     positions = sorted({position for position, _ in posterior.single_effects})
     wild_type = {position: posterior.wild_type_sequence[position - 1] for position in positions}
+    progress("Drawing the posterior ensemble")
     query = query_posterior(
         posterior,
         entries,
@@ -240,6 +205,7 @@ def preview_posterior(
                 "upper80": result["intervals"]["80"]["upper"],
             }
         )
+    progress("Tracing mutation paths")
     graph = _posterior_graph(
         posterior,
         variants[:60],

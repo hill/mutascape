@@ -7,16 +7,32 @@ import numpy as np
 import pytest
 
 from mutascape.contacts import ContactMap
-from mutascape.web_models import (
+from web.models import (
     BenchmarkParameters,
     ModelStore,
     build_custom_landscape,
     custom_model_id,
     evaluate_entries,
+    inspect_dms_csv,
     parse_custom_source,
     preview_custom,
+    score_histogram,
+    substitution_map,
     wilson_interval,
 )
+
+MAVEDB = """accession,hgvs_nt,hgvs_pro,score,std
+urn:x#1,NA,p.Ala1Ter,-1.1,0.4
+urn:x#2,NA,p.Ala1Gly,0.5,0.4
+urn:x#3,NA,p.Ala1Val,-0.2,0.3
+urn:x#4,NA,p.Cys2Ala,0.3,0.2
+urn:x#5,NA,p.Cys2Asp,-0.4,0.2
+urn:x#6,NA,p.Cys2=,0.0,0.1
+urn:x#7,NA,p.Ala1delinsGly,0.9,0.1
+urn:x#8,NA,p.Ala1Gly,0.7,0.1
+urn:x#9,NA,p.Cys2Glu,NA,0.1
+urn:x#10,NA,p.[Ala1Gly;Cys2Ala],1.4,0.2
+"""
 
 DMS = """position,wildtype,mutant,fitness
 1,A,G,0.5
@@ -102,7 +118,9 @@ def test_parse_custom_source_accepts_variant_rows_and_preserves_doubles():
     assert parsed["dmsRows"][0]["fitness"] == pytest.approx(0.5)
     double = next(row for row in parsed["observationRows"] if row["depth"] == 2)
     assert double["variant"] == "A1G+C2D"
-    assert double["fitness"] == 2.1
+    assert double["fitness"] == pytest.approx(1.1)
+    wild_type_row = next(row for row in parsed["observationRows"] if row["depth"] == 0)
+    assert wild_type_row["fitness"] == 0.0
 
 
 @pytest.mark.parametrize(
@@ -233,3 +251,144 @@ def test_oracle_rejects_unknown_position(source):
             landscape,
             [{"mutationLabel": "A3G", "compactSequence": None}],
         )
+
+
+def test_substitution_map_fills_the_grid_and_centres_the_scale(source):
+    grid = substitution_map(source)
+
+    assert grid["positions"] == [1, 2]
+    assert grid["aminoAcids"] == "ACDEFGHIKLMNPQRSTVWY"
+    assert grid["wildTypeCompact"] == "AC"
+    assert grid["wildTypeCells"] == [[0, 0], [1, 1]]
+    assert grid["measuredCount"] == 4
+    assert grid["imputedCount"] == 34
+    assert grid["measuredCount"] + grid["imputedCount"] + len(grid["wildTypeCells"]) == 40
+    assert grid["bound"] == pytest.approx(0.5)
+    assert grid["truncated"] is False
+    assert grid["totalPositions"] == 2
+
+    measured = {(column, row): value for column, row, value in grid["measured"]}
+    assert measured[(0, 5)] == pytest.approx(0.5)
+
+
+def test_inspect_detects_the_mavedb_layout():
+    report = inspect_dms_csv(MAVEDB)
+
+    assert report["detected"] == {
+        "schema": "hgvs",
+        "columns": {"hgvs": "hgvs_pro", "score": "score"},
+    }
+    assert report["rowCount"] == 10
+    assert report["headers"][0] == "accession"
+    assert len(report["sampleRows"][0]) == len(report["headers"])
+
+
+def test_inspect_reports_roles_when_nothing_matches():
+    report = inspect_dms_csv("a,b\n1,2\n")
+
+    assert report["detected"] is None
+    assert {entry["id"] for entry in report["schemas"]} == {"singles", "variants", "hgvs"}
+    assert all(entry["complete"] is False for entry in report["schemas"])
+
+
+def test_mavedb_rows_parse_and_report_what_was_dropped():
+    parsed, summary = parse_custom_source(MAVEDB, FASTA)
+
+    assert summary["dmsSchema"] == "hgvs"
+    # p.Cys2= is synonymous, so it fixes the wild-type score rather than being guessed.
+    assert summary["wildTypeScoreAssumed"] is False
+    assert summary["skippedRows"] == {
+        "nonsense": 1,
+        "indel or frameshift": 1,
+        "duplicate": 1,
+        "no score": 1,
+    }
+    assert {row["mutant"] for row in parsed["dmsRows"] if row["position"] == 1} == {"G", "V"}
+    double = next(row for row in parsed["observationRows"] if row["depth"] == 2)
+    assert double["variant"] == "A1G+C2A"
+    assert double["fitness"] == pytest.approx(1.4)
+
+
+def test_mavedb_wild_type_score_shifts_every_observation():
+    parsed, _ = parse_custom_source(MAVEDB, FASTA, wild_type_score=0.5)
+
+    single = next(row for row in parsed["dmsRows"] if row["mutant"] == "G")
+    assert single["fitness"] == pytest.approx(0.0)
+
+
+def test_mavedb_assumes_zero_when_no_row_pins_the_wild_type():
+    parsed, summary = parse_custom_source(
+        MAVEDB.replace("p.Cys2=,0.0,0.1", "p.Cys2Gly,0.6,0.1"), FASTA
+    )
+
+    assert summary["wildTypeScoreAssumed"] is True
+    assert summary["wildTypeFitness"] == 0.0
+    assert next(row["fitness"] for row in parsed["dmsRows"] if row["mutant"] == "G") == 0.5
+
+
+def test_mavedb_drops_rows_whose_parent_contradicts_the_fasta():
+    _, summary = parse_custom_source(MAVEDB.replace("Ala1", "Trp1"), FASTA)
+
+    assert summary["skippedRows"]["wild type W1 does not match the WT FASTA"] == 4
+    assert summary["positions"] == [2]
+
+
+def test_column_map_reads_an_arbitrary_layout():
+    text = "site,from,to,effect\n1,A,G,0.5\n2,C,D,-0.4\n"
+    column_map = {
+        "schema": "singles",
+        "columns": {
+            "position": "site",
+            "wildtype": "from",
+            "mutant": "to",
+            "fitness": "effect",
+        },
+    }
+
+    parsed, summary = parse_custom_source(text, FASTA, column_map=column_map)
+
+    assert summary["dmsSchema"] == "singles"
+    assert [row["mutant"] for row in parsed["dmsRows"]] == ["G", "D"]
+
+
+def test_column_map_rejects_a_header_the_csv_lacks():
+    column_map = {"schema": "hgvs", "columns": {"hgvs": "missing", "score": "score"}}
+
+    with pytest.raises(ValueError, match="not in the CSV"):
+        parse_custom_source(MAVEDB, FASTA, column_map=column_map)
+
+
+def test_score_histogram_marks_wild_type_at_zero(source):
+    histogram = score_histogram(source, bins=8)
+
+    assert len(histogram["centres"]) == 8
+    assert sum(histogram["singles"]) == 4
+    assert histogram["higherOrderCount"] == 0
+    assert histogram["wildType"] == 0.0
+    assert histogram["min"] == pytest.approx(-0.4)
+
+
+def test_substitution_map_sequence_scope_keeps_unassayed_columns():
+    rows = "position,wildtype,mutant,fitness\n2,C,D,-0.4\n"
+    parsed, _ = parse_custom_source(rows, ">WT\nACD\n")
+
+    grid = substitution_map(parsed, scope="sequence")
+
+    assert grid["positions"] == [1, 2, 3]
+    assert grid["assayed"] == [1]
+    assert grid["assayedCount"] == 1
+    assert grid["sequenceLength"] == 3
+    assert {column for column, _, _ in grid["measured"] + grid["imputed"]} == {1}
+    assert len(grid["wildTypeCells"]) == 3
+
+
+def test_substitution_map_truncates_wide_scans():
+    rows = ["position,wildtype,mutant,fitness"]
+    rows += [f"{position},A,G,0.1" for position in range(1, 7)]
+    parsed, _ = parse_custom_source("\n".join(rows) + "\n", ">WT\n" + "A" * 6 + "\n")
+
+    grid = substitution_map(parsed, max_positions=4)
+
+    assert grid["positions"] == [1, 2, 3, 4]
+    assert grid["totalPositions"] == 6
+    assert grid["truncated"] is True

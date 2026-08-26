@@ -15,15 +15,20 @@ import {
   Table,
   Tabs,
   Text,
+  Tooltip,
 } from "@cloudflare/kumo"
 import {
   ArrowClockwise,
   ArrowLeft,
+  BookOpenText,
   ChartBar,
   CheckCircle,
   Database,
   Dna,
+  DownloadSimple as Download,
   Flask,
+  Info,
+  Minus,
   Play,
   Plus,
   SquaresFour,
@@ -31,9 +36,10 @@ import {
   UploadSimple,
   WarningCircle,
 } from "@phosphor-icons/react"
-import { BarChart, GraphChart, LineChart } from "echarts/charts"
+import { BarChart, GraphChart, HeatmapChart, LineChart, ScatterChart } from "echarts/charts"
 import {
   AriaComponent,
+  DataZoomComponent,
   GridComponent,
   LegendComponent,
   TooltipComponent,
@@ -55,13 +61,17 @@ import {
   createDraft,
   createLeaderboard,
   evaluateLandscape,
+  fetchScoreHistogram,
+  fetchSubstitutionMap,
   getModel,
+  importMaveDb,
+  inspectCsv,
   listLeaderboards,
   listModels,
   publishModel,
   queryPosterior,
-  runPosteriorPreview,
-  runPreview,
+  streamPosteriorPreview,
+  streamPreview,
 } from "./api"
 import {
   benchmarkBudgetOptions,
@@ -69,30 +79,47 @@ import {
   fitnessProfileOptions,
   landscapeGraphOptions,
   posteriorProfileOptions,
+  reachableFrom,
+  scoreHistogramOptions,
+  substitutionMapOptions,
   walshOptions,
 } from "./charts"
+import DocumentationSite, { type DocsPage, isDocsPage } from "./docs/DocumentationSite"
+import { highlightPython } from "./python-highlight"
+import { StructureViewerPanel } from "./StructureViewer"
 import type {
   CodeExamples,
+  ColumnMapping,
+  CsvInspection,
   DraftResponse,
+  DraftSummary,
   EvaluationResult,
+  LandscapeGraph,
   Leaderboard,
   LeaderboardEntry,
+  MapScope,
+  MaveDbImport,
   ModelParameters,
   ModelSummary,
   PosteriorPreviewResponse,
   PosteriorQueryResult,
   PreviewResponse,
   PreviewSource,
+  ScoreHistogram,
+  SubstitutionMap,
 } from "./types"
 
 echarts.use([
   LineChart,
   BarChart,
   GraphChart,
+  HeatmapChart,
+  ScatterChart,
   GridComponent,
   LegendComponent,
   TooltipComponent,
   VisualMapComponent,
+  DataZoomComponent,
   AriaComponent,
   CanvasRenderer,
 ])
@@ -105,7 +132,7 @@ const DEFAULT_PARAMETERS: ModelParameters = {
   seed: 42,
 }
 
-export type Page = "studio" | "explore" | "models" | "leaderboards"
+export type Page = "studio" | "explore" | "models" | "leaderboards" | DocsPage
 
 interface AppProps {
   page?: Page
@@ -124,21 +151,38 @@ function initialWeights(maxDepth: number): Record<number, number> {
   return Object.fromEntries(Array.from({ length: maxDepth }, (_, index) => [index + 1, 1]))
 }
 
-function sampleCapacity(positionCount: number, maxDepth: number): number {
-  let combinations = 1
+// Only depths carrying a positive weight are drawn from, so a zero share removes that
+// depth's genotypes from the pool. Counting them would let the form request more unique
+// variants than exist and the sampler rejects the whole plan.
+function sampleCapacity(positionCount: number, depths: number[]): number {
   let total = 0
-  for (let depth = 1; depth <= Math.min(positionCount, maxDepth); depth++) {
-    combinations = (combinations * (positionCount - depth + 1)) / depth
+  for (const depth of depths) {
+    if (depth < 1 || depth > positionCount) continue
+    let combinations = 1
+    for (let step = 1; step <= depth; step++) {
+      combinations = (combinations * (positionCount - step + 1)) / step
+    }
     total += combinations * 19 ** depth
   }
-  return Math.min(100_000, total)
+  return Math.min(100_000, Math.floor(total))
 }
 
-function modelSampleLimit(model: ModelSummary | null, maxDepth: number): number {
+function activeDepths(depthWeights: Record<number, number>): number[] {
+  const depths = Object.entries(depthWeights)
+    .filter(([, weight]) => weight > 0)
+    .map(([depth]) => Number(depth))
+  return depths.length > 0 ? depths : [1]
+}
+
+function modelSampleLimit(
+  model: ModelSummary | null,
+  depthWeights: Record<number, number>,
+): number {
   if (!model) return 1
-  const theoretical = sampleCapacity(model.positions.length, maxDepth)
-  if (model.kind !== "posterior") return theoretical
-  return Math.min(5_000, model.sourceSummary?.previewCapacity ?? theoretical)
+  const theoretical = sampleCapacity(model.positions.length, activeDepths(depthWeights))
+  if (model.kind !== "posterior") return Math.max(1, theoretical)
+  const measured = model.sourceSummary?.previewCapacity ?? theoretical
+  return Math.max(1, Math.min(5_000, measured, theoretical))
 }
 
 function formatNumber(value: number | null, metricName?: string): string {
@@ -157,7 +201,7 @@ export default function App({
   const [models, setModels] = useState<ModelSummary[]>([])
   const [draft, setDraft] = useState<DraftResponse | null>(null)
   const [draftModel, setDraftModel] = useState<ModelSummary | null>(null)
-  const [selectedId, setSelectedId] = useState("gb1_headline")
+  const [selectedId, setSelectedId] = useState("creilov_dms_pairwise")
   const [parameters, setParameters] = useState<ModelParameters>(DEFAULT_PARAMETERS)
   const [sampleSize, setSampleSize] = useState(10_000)
   const [maxDepth, setMaxDepth] = useState(4)
@@ -169,8 +213,12 @@ export default function App({
   const [ensembleSize, setEnsembleSize] = useState(100)
   const [loadingModels, setLoadingModels] = useState(true)
   const [running, setRunning] = useState(false)
+  const [stages, setStages] = useState<BuildStage[]>([])
   const [error, setError] = useState<string | null>(null)
   const [publishedExamples, setPublishedExamples] = useState<CodeExamples | null>(null)
+  const [substitutionMap, setSubstitutionMap] = useState<SubstitutionMap | null>(null)
+  const [mapScope, setMapScope] = useState<MapScope>("assayed")
+  const [scoreHistogram, setScoreHistogram] = useState<ScoreHistogram | null>(null)
 
   const availableModels = useMemo(
     () => (draftModel ? [draftModel, ...models] : models),
@@ -178,6 +226,7 @@ export default function App({
   )
   const selectedModel = availableModels.find((model) => model.id === selectedId) ?? null
   const selectedIsDraft = draft !== null && selectedId === draft.id
+  const isDocumentation = isDocsPage(page)
   const selectedIsPosterior = selectedModel?.kind === "posterior"
   const parametersLocked = selectedModel?.kind === "custom" && !selectedIsDraft
   const hasStructure =
@@ -207,6 +256,10 @@ export default function App({
   }, [refreshModels])
 
   useEffect(() => {
+    if (isDocumentation) {
+      setPublishedExamples(null)
+      return
+    }
     if (!selectedId || selectedIsDraft) {
       setPublishedExamples(null)
       return
@@ -222,7 +275,40 @@ export default function App({
     return () => {
       active = false
     }
-  }, [selectedId, selectedIsDraft])
+  }, [isDocumentation, selectedId, selectedIsDraft])
+
+  useEffect(() => {
+    setSubstitutionMap(null)
+    if (isDocumentation || !selectedModel) return
+    let active = true
+    void fetchSubstitutionMap(sourceFromModel(selectedModel, draft?.id), mapScope)
+      .then((map) => {
+        if (active) setSubstitutionMap(map)
+      })
+      .catch(() => {
+        // A missing grid leaves the panel hidden. It must never block the build flow.
+        if (active) setSubstitutionMap(null)
+      })
+    return () => {
+      active = false
+    }
+  }, [isDocumentation, selectedModel, draft?.id, mapScope])
+
+  useEffect(() => {
+    setScoreHistogram(null)
+    if (isDocumentation || !selectedModel) return
+    let active = true
+    void fetchScoreHistogram(sourceFromModel(selectedModel, draft?.id))
+      .then((histogram) => {
+        if (active) setScoreHistogram(histogram)
+      })
+      .catch(() => {
+        if (active) setScoreHistogram(null)
+      })
+    return () => {
+      active = false
+    }
+  }, [isDocumentation, selectedModel, draft?.id])
 
   useEffect(() => {
     if (!landscapeId || landscapeId === selectedId) return
@@ -236,7 +322,10 @@ export default function App({
     setMaxDepth(nextMaxDepth)
     setDepthWeights(initialWeights(nextMaxDepth))
     setSampleSize(
-      Math.min(model.kind === "posterior" ? 500 : 10_000, modelSampleLimit(model, nextMaxDepth)),
+      Math.min(
+        model.kind === "posterior" ? 500 : 10_000,
+        modelSampleLimit(model, initialWeights(nextMaxDepth)),
+      ),
     )
     setPreview(null)
     setPosteriorPreview(null)
@@ -254,7 +343,10 @@ export default function App({
     setMaxDepth(nextMaxDepth)
     setDepthWeights(initialWeights(nextMaxDepth))
     setSampleSize(
-      Math.min(model.kind === "posterior" ? 500 : 10_000, modelSampleLimit(model, nextMaxDepth)),
+      Math.min(
+        model.kind === "posterior" ? 500 : 10_000,
+        modelSampleLimit(model, initialWeights(nextMaxDepth)),
+      ),
     )
     setPreview(null)
     setPosteriorPreview(null)
@@ -265,38 +357,58 @@ export default function App({
     const positionCount = selectedModel?.positions.length ?? 1
     const bounded = Math.max(1, Math.min(positionCount, Math.floor(value || 1)))
     setMaxDepth(bounded)
-    setSampleSize((current) => Math.min(current, modelSampleLimit(selectedModel, bounded)))
-    setDepthWeights((current) => {
-      const next: Record<number, number> = {}
-      for (let depth = 1; depth <= bounded; depth++) next[depth] = current[depth] ?? 1
-      return next
-    })
+    const next: Record<number, number> = {}
+    for (let depth = 1; depth <= bounded; depth++) next[depth] = depthWeights[depth] ?? 1
+    setDepthWeights(next)
+    setSampleSize((current) => Math.min(current, modelSampleLimit(selectedModel, next)))
+  }
+
+  function changeDepthWeights(next: Record<number, number>) {
+    setDepthWeights(next)
+    setSampleSize((current) => Math.min(current, modelSampleLimit(selectedModel, next)))
   }
 
   async function applyPreview(): Promise<boolean> {
     if (!selectedModel) return false
     setRunning(true)
     setError(null)
+    setStages([])
+    const startStage = (stage: string) => {
+      const at = performance.now()
+      setStages((current) => [
+        ...current.map((entry) => (entry.endedAt === null ? { ...entry, endedAt: at } : entry)),
+        { name: stage, startedAt: at, endedAt: null },
+      ])
+    }
+    const finishStages = () => {
+      const at = performance.now()
+      setStages((current) =>
+        current.map((entry) => (entry.endedAt === null ? { ...entry, endedAt: at } : entry)),
+      )
+    }
     try {
       const source = sourceFromModel(selectedModel, draft?.id)
       if (selectedIsPosterior) {
-        const result = await runPosteriorPreview(
+        const result = await streamPosteriorPreview(
           source,
           priorId,
           oracleSeed,
           ensembleSize,
           sampleSize,
           depthWeights,
+          startStage,
         )
         setPosteriorPreview(result)
         setPreview(null)
       } else {
-        const result = await runPreview(source, parameters, sampleSize, depthWeights)
+        const result = await streamPreview(source, parameters, sampleSize, depthWeights, startStage)
         setPreview(result)
         setPosteriorPreview(null)
       }
+      finishStages()
       return true
     } catch (cause) {
+      finishStages()
       setError(cause instanceof Error ? cause.message : "The preview failed.")
       return false
     } finally {
@@ -309,11 +421,11 @@ export default function App({
     if (await applyPreview()) onExploreLandscape?.(selectedModel.id)
   }
 
-  function acceptDraft(created: DraftResponse) {
+  function acceptDraft(created: DraftResponse, name: string) {
     const summary = created.summary
     const model: ModelSummary = {
       id: created.id,
-      name: "Custom draft",
+      name: name || "Custom draft",
       kind: "posterior",
       description: "Temporary DMS-pairwise benchmark oracle.",
       positions: summary.positions,
@@ -345,7 +457,7 @@ export default function App({
     const nextMaxDepth = Math.max(1, Math.min(4, summary.positionCount))
     setMaxDepth(nextMaxDepth)
     setDepthWeights(initialWeights(nextMaxDepth))
-    setSampleSize(Math.min(500, summary.previewCapacity))
+    setSampleSize(Math.min(500, modelSampleLimit(model, initialWeights(nextMaxDepth))))
     setPreview(null)
     setPosteriorPreview(null)
     setError(null)
@@ -400,12 +512,15 @@ export default function App({
               {page === "explore" && (selectedModel?.name ?? "Explore landscape")}
               {page === "models" && "Landscape library"}
               {page === "leaderboards" && "Leaderboards"}
+              {isDocumentation && "Documentation"}
             </Text>
           </div>
-          <Badge variant="beta">Research preview</Badge>
+          <Badge className="research-preview-badge" variant="beta">
+            Research preview
+          </Badge>
         </header>
 
-        <main className="page-frame">
+        <main className={isDocumentation ? "page-frame docs-page-host" : "page-frame"}>
           {error && (
             <Banner
               variant="error"
@@ -433,8 +548,15 @@ export default function App({
               ensembleSize={ensembleSize}
               setEnsembleSize={setEnsembleSize}
               running={running}
+              stages={stages}
               createLandscape={createLandscape}
               acceptDraft={acceptDraft}
+              intakeReport={draft && draft.id === selectedId ? draft.summary : null}
+              substitutionMap={substitutionMap}
+              mapScope={mapScope}
+              setMapScope={setMapScope}
+              scoreHistogram={scoreHistogram}
+              structureSource={selectedModel ? sourceFromModel(selectedModel, draft?.id) : null}
             />
           )}
           {page === "explore" && (
@@ -445,15 +567,17 @@ export default function App({
               oracleSeed={oracleSeed}
               ensembleSize={ensembleSize}
               sampleSize={sampleSize}
-              sampleLimit={modelSampleLimit(selectedModel, maxDepth)}
+              sampleLimit={modelSampleLimit(selectedModel, depthWeights)}
               setSampleSize={setSampleSize}
               maxDepth={maxDepth}
               changeMaxDepth={changeMaxDepth}
               depthWeights={depthWeights}
-              setDepthWeights={setDepthWeights}
+              setDepthWeights={changeDepthWeights}
               running={running}
+              stages={stages}
               applyPreview={applyPreview}
               draft={draft}
+              draftName={draftModel?.name ?? ""}
               publish={publish}
               preview={preview}
               posteriorPreview={posteriorPreview}
@@ -473,6 +597,13 @@ export default function App({
             />
           )}
           {page === "leaderboards" && <Leaderboards models={models} />}
+          {isDocsPage(page) && (
+            <DocumentationSite
+              page={page}
+              onNavigate={(nextPage) => onPageChange?.(nextPage)}
+              onOpenStudio={() => onPageChange?.("studio")}
+            />
+          )}
         </main>
       </section>
     </Sidebar.Provider>
@@ -532,6 +663,15 @@ function AppSidebar({
             >
               Leaderboards
             </Sidebar.MenuButton>
+            <Sidebar.MenuButton
+              size="sm"
+              icon={BookOpenText}
+              active={isDocsPage(page)}
+              tooltip="Documentation"
+              onClick={() => onPageChange?.("docs")}
+            >
+              Documentation
+            </Sidebar.MenuButton>
           </Sidebar.Menu>
         </Sidebar.Group>
         <Sidebar.Separator />
@@ -574,6 +714,7 @@ function AppSidebar({
 
 interface LandscapeBuilderProps {
   models: ModelSummary[]
+  structureSource: PreviewSource | null
   selectedModel: ModelSummary | null
   loadingModels: boolean
   selectModel: (id: string) => void
@@ -589,8 +730,14 @@ interface LandscapeBuilderProps {
   ensembleSize: number
   setEnsembleSize: (value: number) => void
   running: boolean
+  stages: BuildStage[]
   createLandscape: () => Promise<void>
-  acceptDraft: (draft: DraftResponse) => void
+  acceptDraft: (draft: DraftResponse, name: string) => void
+  intakeReport: DraftSummary | null
+  substitutionMap: SubstitutionMap | null
+  mapScope: MapScope
+  setMapScope: (value: MapScope) => void
+  scoreHistogram: ScoreHistogram | null
 }
 
 function LandscapeBuilder(props: LandscapeBuilderProps) {
@@ -611,8 +758,14 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
     ensembleSize,
     setEnsembleSize,
     running,
+    stages,
     createLandscape,
     acceptDraft,
+    intakeReport,
+    substitutionMap,
+    mapScope,
+    setMapScope,
+    scoreHistogram,
   } = props
   const [sourceMode, setSourceMode] = useState<"preset" | "upload">("preset")
   const modelItems = Object.fromEntries(models.map((model) => [model.id, model.name]))
@@ -638,9 +791,6 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
               <Text variant="heading3" as="h2">
                 Source data
               </Text>
-              <Text variant="secondary" size="sm">
-                Choose existing data or upload your own.
-              </Text>
             </div>
             {sourceMode === "preset" && selectedModel && (
               <Badge variant={selectedModel.kind === "reference" ? "blue" : "purple"}>
@@ -664,6 +814,7 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
             <div className="source-mode-panel">
               <Select
                 label="Landscape source"
+                labelTooltip="A reference has every combination measured, so a synthetic landscape built on it can be scored against ground truth. A posterior is built from single mutants alone and fills the combinations from the transferred prior, which is what your own DMS gets."
                 size="sm"
                 value={selectedModel?.id}
                 onValueChange={(value) => value && selectModel(String(value))}
@@ -673,6 +824,13 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
               />
               {selectedModel && (
                 <div className="source-summary">
+                  <div className="source-kind">
+                    <Badge variant={selectedModel.kind === "reference" ? "success" : "neutral"}>
+                      {selectedModel.kind === "reference"
+                        ? "Combinatorially complete"
+                        : "Completed from the prior"}
+                    </Badge>
+                  </div>
                   <Text size="sm">{selectedModel.description}</Text>
                   <dl className="compact-facts">
                     <div>
@@ -683,24 +841,31 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
                       <dt>Parent</dt>
                       <dd className="mono-value">{selectedModel.wtCompact}</dd>
                     </div>
-                    <div>
-                      <dt>Structure</dt>
-                      <dd>
-                        {selectedModel.sourceSummary?.structureMethod === "esmfold"
-                          ? "ESMFold"
-                          : hasStructure
-                            ? "Available"
-                            : "None"}
-                      </dd>
-                    </div>
+                    {selectedModel.kind === "posterior" ? (
+                      <div>
+                        <dt>DMS anchors</dt>
+                        <dd>{selectedModel.sourceSummary?.observationCount ?? "Unknown"}</dd>
+                      </div>
+                    ) : (
+                      <div>
+                        <dt>Structure</dt>
+                        <dd>
+                          {selectedModel.sourceSummary?.structureMethod === "esmfold"
+                            ? "ESMFold"
+                            : hasStructure
+                              ? "Available"
+                              : "None"}
+                        </dd>
+                      </div>
+                    )}
                   </dl>
                 </div>
               )}
             </div>
           ) : (
             <CustomUploadPanel
-              onCreated={(created) => {
-                acceptDraft(created)
+              onCreated={(created, name) => {
+                acceptDraft(created, name)
                 setSourceMode("preset")
               }}
             />
@@ -727,6 +892,19 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
           />
         )}
       </Grid>
+
+      {intakeReport && <IntakeReport summary={intakeReport} />}
+      {substitutionMap && (
+        <SubstitutionMapPanel map={substitutionMap} scope={mapScope} onScopeChange={setMapScope} />
+      )}
+      {scoreHistogram && <ScoreHistogramPanel histogram={scoreHistogram} />}
+      {props.structureSource && (
+        <StructureViewerPanel
+          key={`${props.structureSource.kind}:${props.structureSource.id}`}
+          source={props.structureSource}
+        />
+      )}
+      <BuildProgress stages={stages} />
 
       <div className="builder-action-bar">
         <div>
@@ -764,11 +942,130 @@ interface SamplingProps {
   maxDepth: number
   changeMaxDepth: (value: number) => void
   depthWeights: Record<number, number>
-  setDepthWeights: (
-    update: Record<number, number> | ((current: Record<number, number>) => Record<number, number>),
-  ) => void
+  setDepthWeights: (next: Record<number, number>) => void
   running: boolean
+  stages: BuildStage[]
   applyPreview: () => Promise<boolean>
+}
+
+function IntakeReport({ summary }: { summary: DraftSummary }) {
+  const skipped = Object.entries(summary.skippedRows).sort((left, right) => right[1] - left[1])
+  if (skipped.length === 0 && !summary.wildTypeScoreAssumed) return null
+  const total = skipped.reduce((sum, [, count]) => sum + count, 0)
+  const title = total > 0 ? `${total} rows dropped` : "Parent score assumed"
+
+  return (
+    <Banner variant="alert" title={title} className="intake-report">
+      <div className="intake-report-body">
+        {skipped.length > 0 && (
+          <ul className="intake-reasons">
+            {skipped.map(([reason, count]) => (
+              <li key={reason}>
+                <span>{reason}</span>
+                <Badge variant="secondary">{count}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+        {summary.wildTypeScoreAssumed && (
+          <Text size="sm">
+            No wild-type or synonymous row was found, so the parent score was taken as 0. Set a
+            wild-type score on the upload panel if this score set puts the parent elsewhere.
+          </Text>
+        )}
+      </div>
+    </Banner>
+  )
+}
+
+function SubstitutionMapPanel({
+  map,
+  scope,
+  onScopeChange,
+}: {
+  map: SubstitutionMap
+  scope: MapScope
+  onScopeChange: (value: MapScope) => void
+}) {
+  const total = map.measuredCount + map.imputedCount
+  const caveats = [
+    map.imputedCount > 0
+      ? `${map.imputedCount.toLocaleString()} of ${total.toLocaleString()} cells are imputed by position mean.`
+      : null,
+    scope === "sequence"
+      ? `${map.assayedCount.toLocaleString()} of ${map.sequenceLength.toLocaleString()} residues were assayed.`
+      : null,
+    map.truncated
+      ? `Showing the first ${map.positions.length} of ${map.totalPositions.toLocaleString()} sites.`
+      : null,
+  ].filter(Boolean)
+
+  return (
+    <LayerCard className="panel-card chart-card substitution-map-card">
+      <div className="panel-heading">
+        <div>
+          <Text variant="heading3" as="h2">
+            Single-mutant effects
+          </Text>
+          {caveats.length > 0 && (
+            <Text variant="secondary" size="sm">
+              {caveats.join(" ")}
+            </Text>
+          )}
+        </div>
+        <div className="panel-heading-controls">
+          <Tabs
+            size="sm"
+            variant="segmented"
+            value={scope}
+            onValueChange={(value) => onScopeChange(value as MapScope)}
+            tabs={[
+              { value: "assayed", label: "Assayed sites" },
+              { value: "sequence", label: "Whole sequence" },
+            ]}
+          />
+          <Badge variant="neutral">{map.measuredCount.toLocaleString()} measured</Badge>
+        </div>
+      </div>
+      <Chart echarts={echarts} options={substitutionMapOptions(map)} height={430} />
+      <ul className="substitution-map-legend">
+        <li>
+          <span className="swatch measured" />
+          Measured
+        </li>
+        <li>
+          <span className="swatch imputed" aria-hidden="true">
+            ×
+          </span>
+          Imputed from the position mean
+        </li>
+        <li>
+          <span className="swatch parent" />
+          Parent residue
+        </li>
+      </ul>
+    </LayerCard>
+  )
+}
+
+function ScoreHistogramPanel({ histogram }: { histogram: ScoreHistogram }) {
+  return (
+    <LayerCard className="panel-card chart-card">
+      <div className="panel-heading">
+        <div>
+          <Text variant="heading3" as="h2">
+            Functional score distribution
+          </Text>
+          <Text variant="secondary" size="sm">
+            Scores run from {histogram.min.toFixed(2)} to {histogram.max.toFixed(2)} with a median
+            of {histogram.median.toFixed(2)}.
+          </Text>
+        </div>
+        <Badge variant="neutral">{histogram.singleCount.toLocaleString()} singles</Badge>
+      </div>
+      <Chart echarts={echarts} options={scoreHistogramOptions(histogram)} height={280} />
+    </LayerCard>
+  )
 }
 
 function LandscapeExplorer({
@@ -780,6 +1077,7 @@ function LandscapeExplorer({
   preview,
   posteriorPreview,
   draft,
+  draftName,
   publish,
   publishedExamples,
   onBack,
@@ -792,6 +1090,7 @@ function LandscapeExplorer({
   preview: PreviewResponse | null
   posteriorPreview: PosteriorPreviewResponse | null
   draft: DraftResponse | null
+  draftName: string
   publish: (name: string) => Promise<void>
   publishedExamples: CodeExamples | null
   onBack: () => void
@@ -832,6 +1131,7 @@ function LandscapeExplorer({
         <PosteriorPreviewResults
           preview={posteriorPreview}
           draft={draft}
+          draftName={draftName}
           publish={publish}
           examples={publishedExamples}
         />
@@ -839,6 +1139,7 @@ function LandscapeExplorer({
         <PreviewResults
           preview={preview}
           draft={draft}
+          draftName={draftName}
           publish={publish}
           examples={publishedExamples}
         />
@@ -868,6 +1169,72 @@ function mutationExample(model: ModelSummary | null): string {
     .join("+")
 }
 
+const AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY"
+const TOKEN_SEPARATOR = /[+:,\s]+/
+
+function CompactSequence({ sequence, parent }: { sequence: string; parent: string }) {
+  return (
+    <span className="mono-value compact-sequence">
+      {sequence.split("").map((residue, index) => {
+        const substituted = residue !== parent[index]
+        return (
+          <span
+            // Position is the identity here. Residues repeat, so the character cannot key it.
+            // biome-ignore lint/suspicious/noArrayIndexKey: index is the site index
+            key={index}
+            className={substituted ? "substituted" : undefined}
+            title={substituted ? `${parent[index]} replaced by ${residue}` : undefined}
+          >
+            {residue}
+          </span>
+        )
+      })}
+    </span>
+  )
+}
+
+interface VariantSuggestions {
+  prefix: string
+  kind: "site" | "substitution"
+  options: string[]
+}
+
+// Completes the token under the caret only. Splitting on the separators the parser accepts
+// keeps the suggestion aligned with whatever the user is part-way through typing, so a
+// finished substitution earlier in the string is never rewritten.
+function variantSuggestions(model: ModelSummary | null, text: string): VariantSuggestions | null {
+  if (!model) return null
+  const parts = text.split(TOKEN_SEPARATOR)
+  const token = (parts.at(-1) ?? "").toUpperCase()
+  const prefix = text.slice(0, text.length - (parts.at(-1) ?? "").length)
+  const shape = token.match(/^([A-Z]?)(\d*)([A-Z]?)$/)
+  if (!shape) return null
+  const [, parent, digits, mutant] = shape
+
+  const taken = new Set(
+    parts
+      .slice(0, -1)
+      .map((part) => part.toUpperCase().replace(/[^0-9]/g, ""))
+      .filter(Boolean),
+  )
+  const sites = model.positions
+    .map((position, index) => ({ position, parent: model.wtCompact[index] ?? "" }))
+    .filter((site) => !taken.has(String(site.position)))
+    .filter((site) => !parent || site.parent === parent)
+    .filter((site) => String(site.position).startsWith(digits))
+
+  const exact = sites.find((site) => String(site.position) === digits)
+  if (digits && exact && (parent === exact.parent || parent === "")) {
+    const options = AMINO_ACIDS.split("")
+      .filter((amino) => amino !== exact.parent)
+      .filter((amino) => !mutant || amino.startsWith(mutant))
+      .map((amino) => `${exact.parent}${exact.position}${amino}`)
+    if (options.length > 0) return { prefix, kind: "substitution", options }
+  }
+  const options = sites.map((site) => `${site.parent}${site.position}`)
+  return options.length > 0 ? { prefix, kind: "site", options } : null
+}
+
 function ExactQueryPanel({
   selectedModel,
   draft,
@@ -890,6 +1257,10 @@ function ExactQueryPanel({
   const [queryError, setQueryError] = useState<string | null>(null)
 
   const latestPosterior = posteriorResults.at(-1)
+  const suggestions = useMemo(
+    () => variantSuggestions(selectedModel, mutation),
+    [selectedModel, mutation],
+  )
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -924,16 +1295,13 @@ function ExactQueryPanel({
           <Text variant="heading3" as="h2">
             Query an exact variant
           </Text>
-          <Text variant="secondary" size="sm">
-            Enter {mutationExample(selectedModel)}. Separate substitutions with + or a colon. You
-            may use lowercase. Use WT for the parent.
-          </Text>
         </div>
       </div>
       <form className="query-form" onSubmit={(event) => void submit(event)}>
         <Input
           size="sm"
           label="Mutation set"
+          labelTooltip={`Parent residue, position, then the new residue, for example ${mutationExample(selectedModel)}. Separate substitutions with + or a colon. Lowercase works. Type WT for the parent sequence.`}
           placeholder={mutationExample(selectedModel)}
           value={mutation}
           onChange={(event) => setMutation(event.currentTarget.value)}
@@ -956,6 +1324,31 @@ function ExactQueryPanel({
           </div>
         )}
       </form>
+      {suggestions && (
+        <div className="variant-suggestions">
+          <Text variant="secondary" size="xs">
+            {suggestions.kind === "site" ? "Mutable sites" : "Replacement residues"}
+          </Text>
+          <div className="variant-suggestion-row">
+            {suggestions.options.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className="variant-chip"
+                onClick={() =>
+                  setMutation(
+                    suggestions.kind === "site"
+                      ? `${suggestions.prefix}${option}`
+                      : `${suggestions.prefix}${option}+`,
+                  )
+                }
+              >
+                {suggestions.kind === "site" ? option : option.slice(-1)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {latestPosterior && (
         <div className="posterior-query-results" aria-live="polite">
           <div className="panel-heading">
@@ -1082,6 +1475,73 @@ function PosteriorDistributionPlot({ result }: { result: PosteriorQueryResult })
   )
 }
 
+function NumberStepper({
+  label,
+  tooltip,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string
+  tooltip: string
+  value: number
+  min: number
+  max: number
+  onChange: (next: number) => void
+}) {
+  // The field holds a string so an empty box stays empty while typing. Committing
+  // an unparseable value would otherwise snap the caret back to the clamped number.
+  const [text, setText] = useState(String(value))
+  useEffect(() => setText(String(value)), [value])
+
+  function commit(raw: string) {
+    const parsed = Number(raw)
+    if (!Number.isFinite(parsed)) {
+      setText(String(value))
+      return
+    }
+    onChange(Math.max(min, Math.min(max, Math.round(parsed))))
+  }
+
+  return (
+    <div className="number-stepper">
+      <Input
+        size="sm"
+        label={label}
+        labelTooltip={tooltip}
+        type="number"
+        min={min}
+        max={max}
+        value={text}
+        onChange={(event) => setText(event.currentTarget.value)}
+        onBlur={(event) => commit(event.currentTarget.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") commit(event.currentTarget.value)
+        }}
+      />
+      <div className="number-stepper-buttons">
+        <Button
+          size="sm"
+          variant="secondary"
+          aria-label={`Decrease ${label.toLowerCase()}`}
+          icon={<Minus />}
+          disabled={value <= min}
+          onClick={() => onChange(Math.max(min, value - 1))}
+        />
+        <Button
+          size="sm"
+          variant="secondary"
+          aria-label={`Increase ${label.toLowerCase()}`}
+          icon={<Plus />}
+          disabled={value >= max}
+          onClick={() => onChange(Math.min(max, value + 1))}
+        />
+      </div>
+    </div>
+  )
+}
+
 function SamplePanel({
   selectedModel,
   sampleSize,
@@ -1092,9 +1552,11 @@ function SamplePanel({
   depthWeights,
   setDepthWeights,
   running,
+  stages,
   applyPreview,
   hasPreview,
 }: SamplingProps & { hasPreview: boolean }) {
+  const depthCeiling = selectedModel?.positions.length ?? 1
   return (
     <LayerCard className="panel-card sample-controls">
       <div className="panel-heading">
@@ -1102,29 +1564,26 @@ function SamplePanel({
           <Text variant="heading3" as="h2">
             Sample the landscape
           </Text>
-          <Text variant="secondary" size="sm">
-            Set the unique sample size and mutation-depth mix.
-          </Text>
         </div>
       </div>
       <div className="sample-control-grid">
         <Input
           size="sm"
           label="Variants"
+          labelTooltip={`Unique genotypes to draw, up to ${sampleLimit.toLocaleString()} for this landscape.`}
           type="number"
           min={1}
           max={sampleLimit}
           value={sampleSize}
           onChange={(event) => setSampleSize(Number(event.currentTarget.value))}
         />
-        <Input
-          size="sm"
+        <NumberStepper
           label="Maximum depth"
-          type="number"
-          min={1}
-          max={selectedModel?.positions.length ?? 1}
+          tooltip={`Most substitutions from the parent in one variant. Depth 1 is a single mutant, depth 2 a double. This landscape has ${depthCeiling} mutable sites.`}
           value={maxDepth}
-          onChange={(event) => changeMaxDepth(Number(event.currentTarget.value))}
+          min={1}
+          max={depthCeiling}
+          onChange={changeMaxDepth}
         />
         {Object.keys(depthWeights).map((rawDepth) => {
           const depth = Number(rawDepth)
@@ -1132,16 +1591,17 @@ function SamplePanel({
             <Input
               size="sm"
               key={depth}
-              label={`Depth ${depth}`}
+              label={`Depth ${depth} share`}
+              labelTooltip={`Relative share of the sample given to ${depth}-substitution variants. Set 0 to leave depth ${depth} out.`}
               type="number"
               min={0}
               step={0.1}
               value={depthWeights[depth]}
               onChange={(event) =>
-                setDepthWeights((current) => ({
-                  ...current,
+                setDepthWeights({
+                  ...depthWeights,
                   [depth]: Number(event.currentTarget.value),
-                }))
+                })
               }
             />
           )
@@ -1158,11 +1618,7 @@ function SamplePanel({
           {hasPreview ? "Update sample" : "Sample landscape"}
         </Button>
       </div>
-      {running && (
-        <Text variant="secondary" size="xs">
-          Complete references can take about 20 seconds on a cold run.
-        </Text>
-      )}
+      <BuildProgress stages={stages} />
     </LayerCard>
   )
 }
@@ -1207,9 +1663,6 @@ function PosteriorParameterPanel({
           <Text variant="heading3" as="h2">
             Oracle ensemble
           </Text>
-          <Text variant="secondary" size="sm">
-            Set the readout calibration, stable oracle seed, and ensemble size.
-          </Text>
         </div>
         {locked && <Badge variant="neutral">Fixed oracle</Badge>}
       </div>
@@ -1217,6 +1670,7 @@ function PosteriorParameterPanel({
         <Select
           size="sm"
           label="Readout calibration"
+          labelTooltip="Which empirical prior supplies the typical assay range used by the saturating readout."
           value={priorId}
           items={{ "combinatorial-v2": "Combinatorial v2" }}
           disabled={locked}
@@ -1225,6 +1679,7 @@ function PosteriorParameterPanel({
         <Input
           size="sm"
           label="Oracle seed"
+          labelTooltip="Picks one draw from the posterior to act as the benchmark oracle. Every query against this landscape answers from that single draw, so results stay comparable across runs."
           type="number"
           step={1}
           value={oracleSeed}
@@ -1234,7 +1689,7 @@ function PosteriorParameterPanel({
         <Input
           size="sm"
           label="Oracle draws"
-          labelTooltip="More draws give smoother ensemble ranges and take longer."
+          labelTooltip="How many posterior draws the uncertainty ranges are estimated from. This affects the shaded intervals only, never the oracle itself. More draws give smoother ranges and take longer."
           type="number"
           min={2}
           max={200}
@@ -1246,8 +1701,8 @@ function PosteriorParameterPanel({
       <Banner
         size="sm"
         variant="secondary"
-        title="Transferred empirical prior"
-        description="Version one pools pairwise interaction statistics from 30 landscapes across 14 proteins."
+        title="Empirical readout prior"
+        description="Measured combinatorial landscapes supply the typical assay range. Target singles set the local fitness scale."
       />
     </LayerCard>
   )
@@ -1278,9 +1733,6 @@ function ParameterPanel({
           <Text variant="heading3" as="h2">
             Landscape behaviour
           </Text>
-          <Text variant="secondary" size="sm">
-            Set the fitness readout, pairwise effects, and repeatable seed.
-          </Text>
         </div>
         {locked && <Badge variant="neutral">Fixed</Badge>}
       </div>
@@ -1288,7 +1740,7 @@ function ParameterPanel({
         <Input
           size="sm"
           label="Ruggedness"
-          labelTooltip="Gaussian genotype-stable noise before the fitness readout."
+          labelTooltip="Standard deviation of the Gaussian noise added before the fitness readout. The draw is pinned to the genotype, so the same variant always returns the same number. Raising it creates more local optima."
           type="number"
           min={0}
           max={5}
@@ -1300,7 +1752,7 @@ function ParameterPanel({
         <Input
           size="sm"
           label="Fitness headroom"
-          labelTooltip="Positive range available to combined beneficial mutations."
+          labelTooltip="Upper asymptote of the global-epistasis readout, in units of wild-type fitness. It caps how far stacked beneficial mutations can climb, which is what produces diminishing returns."
           type="number"
           min={1}
           max={10}
@@ -1312,6 +1764,7 @@ function ParameterPanel({
         <Input
           size="sm"
           label="Pairwise sigma"
+          labelTooltip="Standard deviation of the random coupling drawn for each contacting pair of sites. Zero leaves only the couplings implied by the measured data. Raising it above zero worsened the headline metrics on both reference proteins."
           type="number"
           min={0}
           max={5}
@@ -1323,6 +1776,7 @@ function ParameterPanel({
         <Input
           size="sm"
           label="Pairwise alpha"
+          labelTooltip="Multiplier on the whole pairwise term. Only pairs of sites in structural contact contribute, so this scales specific epistasis without touching the additive part."
           type="number"
           min={0}
           max={10}
@@ -1334,6 +1788,7 @@ function ParameterPanel({
         <Input
           size="sm"
           label="Seed"
+          labelTooltip="Seeds the noise draws and the random couplings. The same seed and parameters rebuild an identical landscape."
           type="number"
           step={1}
           value={value.seed}
@@ -1361,14 +1816,122 @@ function ParameterPanel({
   )
 }
 
+interface BuildStage {
+  name: string
+  startedAt: number
+  endedAt: number | null
+}
+
+function formatElapsed(milliseconds: number): string {
+  return `${(Math.max(milliseconds, 0) / 1000).toFixed(1)}s`
+}
+
+function BuildProgress({ stages }: { stages: BuildStage[] }) {
+  const open = stages.some((stage) => stage.endedAt === null)
+  const [now, setNow] = useState(() => performance.now())
+
+  useEffect(() => {
+    if (!open) return
+    // The reading held from the last run is stale, so take a fresh one before the first tick.
+    setNow(performance.now())
+    const timer = window.setInterval(() => setNow(performance.now()), 100)
+    return () => window.clearInterval(timer)
+  }, [open])
+
+  if (stages.length === 0) return null
+  const first = stages[0]
+  const last = stages[stages.length - 1]
+  const total = (last.endedAt ?? now) - first.startedAt
+
+  return (
+    <section className="build-progress">
+      <ul className="build-stage-list">
+        {stages.map((stage) => (
+          <li
+            className={stage.endedAt === null ? "build-stage running" : "build-stage done"}
+            key={stage.name}
+          >
+            <span className="build-stage-dot" />
+            <Text size="sm">{stage.name}</Text>
+            <Text variant="secondary" size="xs">
+              {formatElapsed((stage.endedAt ?? now) - stage.startedAt)}
+            </Text>
+          </li>
+        ))}
+      </ul>
+      <Badge variant={open ? "purple" : "neutral"}>{formatElapsed(total)} total</Badge>
+    </section>
+  )
+}
+
+function PanelHint({ content }: { content: string }) {
+  return (
+    <Tooltip content={content} delay={150}>
+      <button type="button" className="panel-hint" aria-label={content}>
+        <Info size={15} weight="bold" />
+      </button>
+    </Tooltip>
+  )
+}
+
+function LandscapeMapPanel({ graph, heading }: { graph: LandscapeGraph; heading: string }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selected = graph.nodes.find((node) => node.id === selectedId) ?? null
+  // A selection that survives into a new sample is dropped by the lookup above, so the panel
+  // needs no reset effect.
+  const reached = selected ? (reachableFrom(graph, selected.id)?.size ?? 1) - 1 : 0
+
+  return (
+    <LayerCard className="panel-card chart-card">
+      <div className="panel-heading">
+        <div>
+          <Text variant="heading3" as="h2">
+            {heading}
+          </Text>
+          <Text variant="secondary" size="sm">
+            Click a marker to trace what it connects to. Move right for mutation depth and up for
+            higher fitness. Drag to pan and scroll to zoom.
+          </Text>
+        </div>
+        {selected ? (
+          <div className="map-selection">
+            <Badge variant="purple">
+              {selected.id === "wt" ? "Parent" : selected.variant}, {reached} connected
+            </Badge>
+            <Button size="sm" variant="secondary" onClick={() => setSelectedId(null)}>
+              Clear
+            </Button>
+          </div>
+        ) : (
+          <Badge variant="neutral">{graph.nodes.length} variants</Badge>
+        )}
+      </div>
+      <Chart
+        echarts={echarts}
+        options={landscapeGraphOptions(graph, selectedId)}
+        height={430}
+        onEvents={{
+          click: (params) => {
+            if (params.dataType !== "node") return
+            const id = (params.data as { id?: string })?.id
+            if (id) setSelectedId((current) => (current === id ? null : id))
+          },
+        }}
+      />
+    </LayerCard>
+  )
+}
+
 function PreviewResults({
   preview,
   draft,
+  draftName,
   publish,
   examples,
 }: {
   preview: PreviewResponse
   draft: DraftResponse | null
+  draftName: string
   publish: (name: string) => Promise<void>
   examples: CodeExamples | null
 }) {
@@ -1391,25 +1954,7 @@ function PreviewResults({
         <Chart echarts={echarts} options={fitnessProfileOptions(preview.profiles)} height={320} />
       </LayerCard>
 
-      <LayerCard className="panel-card chart-card">
-        <div className="panel-heading">
-          <div>
-            <Text variant="heading3" as="h2">
-              Interactive landscape map
-            </Text>
-            <Text variant="secondary" size="sm">
-              Paths run from the parent to sampled variants. Move right for mutation depth and up
-              for higher fitness. Drag to pan and scroll to zoom.
-            </Text>
-          </div>
-          <Badge variant="neutral">{preview.sample.graph.nodes.length} variants</Badge>
-        </div>
-        <Chart
-          echarts={echarts}
-          options={landscapeGraphOptions(preview.sample.graph)}
-          height={430}
-        />
-      </LayerCard>
+      <LandscapeMapPanel graph={preview.sample.graph} heading="Interactive landscape map" />
 
       {preview.notices.map((notice) => (
         <Banner key={notice} size="sm" variant="secondary" description={notice} />
@@ -1418,12 +1963,12 @@ function PreviewResults({
       {preview.walsh && (
         <Grid variant="2up" gap="sm">
           <LayerCard className="panel-card chart-card">
-            <Text variant="heading3" as="h2">
-              Interaction order
-            </Text>
-            <Text variant="secondary" size="sm">
-              Fraction of variance assigned to each Walsh order.
-            </Text>
+            <div className="panel-heading">
+              <Text variant="heading3" as="h2">
+                Interaction order
+              </Text>
+              <PanelHint content="Fraction of fitness variance carried by each Walsh order. Order 1 is additive, order 2 pairwise, and so on. The measured bars need every combination of the mutated sites, so this panel only appears for a combinatorially complete reference. An uploaded DMS has no ground truth to decompose and gets no bars." />
+            </div>
             <Chart echarts={echarts} options={walshOptions(preview.walsh)} height={250} />
           </LayerCard>
           <MetricTable rows={preview.metrics} />
@@ -1432,7 +1977,7 @@ function PreviewResults({
 
       <SampleTable preview={preview} />
 
-      {draft && <PublishPanel onPublish={publish} />}
+      {draft && <PublishPanel defaultName={draftName} onPublish={publish} />}
       {examples && <CodePanel examples={examples} />}
     </div>
   )
@@ -1441,11 +1986,13 @@ function PreviewResults({
 function PosteriorPreviewResults({
   preview,
   draft,
+  draftName,
   publish,
   examples,
 }: {
   preview: PosteriorPreviewResponse
   draft: DraftResponse | null
+  draftName: string
   publish: (name: string) => Promise<void>
   examples: CodeExamples | null
 }) {
@@ -1491,8 +2038,8 @@ function PosteriorPreviewResults({
                 Do reliable method decisions persist as the query budget grows?
               </Text>
               <Text variant="secondary" size="sm">
-                Solid lines show the development panel. Dashed lines show the external protein
-                panel. Accuracy pools method pairs with a reliable measured winner.
+                Solid lines show SSMuLA, dashed lines show CombinGym, and dotted lines show
+                GraphFLA. Accuracy uses method pairs with a reliable measured winner.
               </Text>
             </div>
             <Badge variant="blue">Budget sensitivity</Badge>
@@ -1519,31 +2066,14 @@ function PosteriorPreviewResults({
         <Chart echarts={echarts} options={posteriorProfileOptions(preview.profile)} height={340} />
       </LayerCard>
 
-      <LayerCard className="panel-card chart-card">
-        <div className="panel-heading">
-          <div>
-            <Text variant="heading3" as="h2">
-              Synthetic landscape map
-            </Text>
-            <Text variant="secondary" size="sm">
-              Colour shows fitness. Larger purple borders show greater variation across draws.
-            </Text>
-          </div>
-          <Badge variant="neutral">{preview.sample.graph.nodes.length} variants</Badge>
-        </div>
-        <Chart
-          echarts={echarts}
-          options={landscapeGraphOptions(preview.sample.graph)}
-          height={430}
-        />
-      </LayerCard>
+      <LandscapeMapPanel graph={preview.sample.graph} heading="Synthetic landscape map" />
 
       {preview.notices.map((notice) => (
         <Banner key={notice} size="sm" variant="secondary" description={notice} />
       ))}
 
       <PosteriorSampleTable preview={preview} />
-      {draft && <PublishPanel onPublish={publish} />}
+      {draft && <PublishPanel defaultName={draftName} onPublish={publish} />}
       {examples && <CodePanel examples={examples} />}
     </div>
   )
@@ -1592,7 +2122,7 @@ function PosteriorSampleTable({ preview }: { preview: PosteriorPreviewResponse }
                 </Table.Cell>
                 <Table.Cell>{row.additiveFitness.toFixed(3)}</Table.Cell>
                 <Table.Cell>
-                  <span className="mono-value">{row.sequence}</span>
+                  <CompactSequence sequence={row.sequence} parent={preview.source.wtCompact} />
                 </Table.Cell>
               </Table.Row>
             ))}
@@ -1675,7 +2205,7 @@ function SampleTable({ preview }: { preview: PreviewResponse }) {
                   </Table.Cell>
                 )}
                 <Table.Cell>
-                  <span className="mono-value">{row.sequence}</span>
+                  <CompactSequence sequence={row.sequence} parent={preview.source.wtCompact} />
                 </Table.Cell>
               </Table.Row>
             ))}
@@ -1686,8 +2216,14 @@ function SampleTable({ preview }: { preview: PreviewResponse }) {
   )
 }
 
-function PublishPanel({ onPublish }: { onPublish: (name: string) => Promise<void> }) {
-  const [name, setName] = useState("")
+function PublishPanel({
+  defaultName,
+  onPublish,
+}: {
+  defaultName: string
+  onPublish: (name: string) => Promise<void>
+}) {
+  const [name, setName] = useState(defaultName)
   const [publishing, setPublishing] = useState(false)
   const [publishError, setPublishError] = useState<string | null>(null)
 
@@ -1756,12 +2292,16 @@ function CodePanel({ examples }: { examples: CodeExamples }) {
       <Grid variant="2up" gap="sm">
         <div>
           <Text bold>Local Python</Text>
-          <pre className="code-preview">{examples.localPython}</pre>
+          <pre className="code-preview">
+            <code className="language-python">{highlightPython(examples.localPython)}</code>
+          </pre>
           <ClipboardText size="sm" text="Copy local Python" textToCopy={examples.localPython} />
         </div>
         <div>
           <Text bold>Hosted API</Text>
-          <pre className="code-preview">{examples.hostedPython}</pre>
+          <pre className="code-preview">
+            <code className="language-python">{highlightPython(examples.hostedPython)}</code>
+          </pre>
           <ClipboardText size="sm" text="Copy hosted Python" textToCopy={examples.hostedPython} />
         </div>
       </Grid>
@@ -1769,40 +2309,153 @@ function CodePanel({ examples }: { examples: CodeExamples }) {
   )
 }
 
-function CustomUploadPanel({ onCreated }: { onCreated: (draft: DraftResponse) => void }) {
-  type StructureMode = "none" | "upload" | "esmfold"
+function ColumnMapper({
+  inspection,
+  mapping,
+  onChange,
+}: {
+  inspection: CsvInspection
+  mapping: ColumnMapping
+  onChange: (next: ColumnMapping) => void
+}) {
+  const schema = inspection.schemas.find((entry) => entry.id === mapping.schema)
+  const headerItems = Object.fromEntries(inspection.headers.map((header) => [header, header]))
+
+  return (
+    <div className="column-mapper">
+      <Select
+        label="Row layout"
+        size="sm"
+        value={mapping.schema}
+        onValueChange={(value) => {
+          const next = inspection.schemas.find((entry) => entry.id === value)
+          if (!next) return
+          onChange({
+            schema: next.id,
+            columns: Object.fromEntries(
+              next.roles
+                .filter((role) => role.guess)
+                .map((role) => [role.id, role.guess as string]),
+            ),
+          })
+        }}
+        items={Object.fromEntries(
+          inspection.schemas.map((entry) => [entry.id, entry.label] as const),
+        )}
+        className="full-width"
+      />
+      <div className="column-mapper-roles">
+        {schema?.roles.map((role) => (
+          <Select
+            key={role.id}
+            label={role.label}
+            size="sm"
+            value={mapping.columns[role.id] ?? ""}
+            onValueChange={(value) =>
+              onChange({
+                ...mapping,
+                columns: { ...mapping.columns, [role.id]: String(value) },
+              })
+            }
+            items={headerItems}
+          />
+        ))}
+      </div>
+      {inspection.sampleRows.length > 0 && (
+        <div className="csv-preview">
+          <table>
+            <thead>
+              <tr>
+                {inspection.headers.map((header) => (
+                  <th key={header}>{header}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {inspection.sampleRows.slice(0, 4).map((row, rowIndex) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: sample rows have no identifier
+                <tr key={rowIndex}>
+                  {row.map((cell, cellIndex) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: cells are positional
+                    <td key={cellIndex}>{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CustomUploadPanel({
+  onCreated,
+}: {
+  onCreated: (draft: DraftResponse, name: string) => void
+}) {
+  const [intake, setIntake] = useState<"files" | "mavedb">("files")
+  const [landscapeName, setLandscapeName] = useState("")
   const [dmsCsv, setDmsCsv] = useState("")
   const [dmsName, setDmsName] = useState("")
   const [wtFasta, setWtFasta] = useState("")
   const [fastaName, setFastaName] = useState("")
-  const [structureMode, setStructureMode] = useState<StructureMode>("none")
-  const [structureText, setStructureText] = useState("")
-  const [structureName, setStructureName] = useState("")
-  const [structureFormat, setStructureFormat] = useState<"pdb" | "cif" | "mmcif" | undefined>()
+  const [inspection, setInspection] = useState<CsvInspection | null>(null)
+  const [mapping, setMapping] = useState<ColumnMapping | null>(null)
+  const [mappingEdited, setMappingEdited] = useState(false)
+  const [mapperOpen, setMapperOpen] = useState(false)
+  const [wildTypeScore, setWildTypeScore] = useState("")
+  const [reference, setReference] = useState("")
+  const [record, setRecord] = useState<MaveDbImport | null>(null)
+  const [fetching, setFetching] = useState(false)
   const [creating, setCreating] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
 
-  async function readFile(
-    file: File,
-    setter: (text: string) => void,
-    setName: (name: string) => void,
-  ) {
-    setter(await file.text())
-    setName(file.name)
+  const complete =
+    mapping !== null &&
+    (inspection?.schemas
+      .find((entry) => entry.id === mapping.schema)
+      ?.roles.every((role) => mapping.columns[role.id]) ??
+      false)
+  const needsBaseline = mapping?.schema === "hgvs" || mapping?.schema === "variants"
+
+  function applyInspection(next: CsvInspection) {
+    setInspection(next)
+    setMappingEdited(false)
+    setMapping(next.detected)
+    setMapperOpen(next.detected === null)
   }
 
-  async function readStructure(file: File) {
-    const extension = file.name.split(".").pop()?.toLowerCase()
-    setStructureFormat(extension === "cif" || extension === "mmcif" ? extension : "pdb")
-    await readFile(file, setStructureText, setStructureName)
+  async function acceptCsv(text: string, fileName: string) {
+    setDmsCsv(text)
+    setDmsName(fileName)
+    setInspection(null)
+    setMapping(null)
+    setUploadError(null)
+    try {
+      applyInspection(await inspectCsv(text))
+    } catch (cause) {
+      setUploadError(cause instanceof Error ? cause.message : "That CSV could not be read.")
+    }
   }
 
-  function chooseStructureMode(value: StructureMode) {
-    setStructureMode(value)
-    if (value !== "upload") {
-      setStructureText("")
-      setStructureName("")
-      setStructureFormat(undefined)
+  async function importRecord() {
+    setFetching(true)
+    setUploadError(null)
+    try {
+      const next = await importMaveDb(reference)
+      setRecord(next)
+      setDmsCsv(next.dmsCsv)
+      setDmsName(`${next.urn}.csv`)
+      setWtFasta(next.wtFasta)
+      setFastaName(next.targetName)
+      applyInspection(next.inspection)
+      setLandscapeName((current) => current || next.title.slice(0, 80))
+    } catch (cause) {
+      setRecord(null)
+      setUploadError(cause instanceof Error ? cause.message : "That MaveDB record failed to load.")
+    } finally {
+      setFetching(false)
     }
   }
 
@@ -1810,15 +2463,16 @@ function CustomUploadPanel({ onCreated }: { onCreated: (draft: DraftResponse) =>
     event.preventDefault()
     setCreating(true)
     setUploadError(null)
+    const baseline = Number.parseFloat(wildTypeScore)
     try {
       const next = await createDraft({
         dmsCsv,
         wtFasta,
-        structureText: structureMode === "upload" ? structureText || undefined : undefined,
-        structureFormat: structureMode === "upload" ? structureFormat : undefined,
-        structureInference: structureMode === "esmfold" ? "esmfold" : "none",
+        columnMap:
+          mapping && (mappingEdited || inspection?.detected === null) ? mapping : undefined,
+        wildTypeScore: needsBaseline && Number.isFinite(baseline) ? baseline : undefined,
       })
-      onCreated(next)
+      onCreated(next, landscapeName.trim())
     } catch (cause) {
       setUploadError(cause instanceof Error ? cause.message : "The upload failed.")
     } finally {
@@ -1829,59 +2483,133 @@ function CustomUploadPanel({ onCreated }: { onCreated: (draft: DraftResponse) =>
   return (
     <form className="upload-form source-upload-form" onSubmit={(event) => void submit(event)}>
       {uploadError && <Banner variant="error" title="Upload failed" description={uploadError} />}
-      <div className="drop-zone-grid">
-        <DropFileField
-          label="DMS CSV"
-          description="single-site columns or variant and fitness columns"
-          accept=".csv,text/csv"
-          fileName={dmsName}
-          required
-          onFile={(file) => readFile(file, setDmsCsv, setDmsName)}
-        />
-        <DropFileField
-          label="WT FASTA"
-          description="Parent amino-acid sequence"
-          accept=".fasta,.fa,.faa,text/plain"
-          fileName={fastaName}
-          required
-          onFile={(file) => readFile(file, setWtFasta, setFastaName)}
-        />
-      </div>
-      <Banner
+      <Tabs
         size="sm"
-        variant="secondary"
-        title="Two supported DMS formats"
-        description="Use position, wildtype, mutant, fitness for singles. Use variant, fitness for WT, singles, and optional combinations."
+        variant="segmented"
+        value={intake}
+        onValueChange={(value) => setIntake(value as "files" | "mavedb")}
+        tabs={[
+          { value: "files", label: "Files" },
+          { value: "mavedb", label: "MaveDB" },
+        ]}
+        className="source-mode-tabs"
+        listClassName="source-mode-tab-list"
       />
-      <Select
-        label="Structure source"
-        size="sm"
-        value={structureMode}
-        onValueChange={(value) => chooseStructureMode(String(value) as StructureMode)}
-        items={{
-          none: "No structure",
-          upload: "Upload PDB or mmCIF",
-          esmfold: "Infer with ESMFold",
-        }}
-        className="full-width"
-      />
-      {structureMode === "upload" && (
-        <DropFileField
-          label="Structure"
-          description="PDB, CIF, or mmCIF"
-          accept=".pdb,.cif,.mmcif,chemical/x-pdb"
-          fileName={structureName}
-          required
-          onFile={readStructure}
-        />
+
+      {intake === "files" ? (
+        <div className="drop-zone-grid">
+          <DropFileField
+            label="DMS CSV"
+            description="any layout, map the columns below"
+            accept=".csv,text/csv"
+            fileName={dmsName}
+            onFile={(file) => file.text().then((text) => acceptCsv(text, file.name))}
+          />
+          <DropFileField
+            label="WT FASTA"
+            description="Parent amino-acid sequence"
+            accept=".fasta,.fa,.faa,text/plain"
+            fileName={fastaName}
+            onFile={async (file) => {
+              setWtFasta(await file.text())
+              setFastaName(file.name)
+            }}
+          />
+        </div>
+      ) : (
+        <div className="mavedb-intake">
+          <Input
+            size="sm"
+            label="Score-set URN or URL"
+            labelTooltip="Paste a mavedb.org score-set link or a urn:mavedb identifier. The target protein sequence arrives with the scores, so no FASTA is needed."
+            placeholder="urn:mavedb:00001222-b-2"
+            value={reference}
+            onChange={(event) => setReference(event.currentTarget.value)}
+          />
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={<Download />}
+            loading={fetching}
+            disabled={!reference.trim() || fetching}
+            onClick={() => void importRecord()}
+          >
+            Fetch score set
+          </Button>
+          {record && (
+            <dl className="compact-facts mavedb-facts">
+              <div>
+                <dt>Target</dt>
+                <dd>{record.targetName}</dd>
+              </div>
+              <div>
+                <dt>Variants</dt>
+                <dd>{record.numVariants.toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt>Licence</dt>
+                <dd>{record.license || "Not stated"}</dd>
+              </div>
+            </dl>
+          )}
+        </div>
       )}
-      {structureMode === "esmfold" && (
+
+      <Input
+        size="sm"
+        label="Landscape name"
+        labelTooltip="Names this landscape in the sidebar and the library."
+        maxLength={80}
+        placeholder={record?.title ?? "My DMS landscape"}
+        value={landscapeName}
+        onChange={(event) => setLandscapeName(event.currentTarget.value)}
+      />
+
+      {inspection && mapping && (
+        <div className="mapping-summary">
+          <Text size="sm">
+            {inspection.rowCount.toLocaleString()} rows read as{" "}
+            <strong>
+              {inspection.schemas.find((entry) => entry.id === mapping.schema)?.label.toLowerCase()}
+            </strong>
+            .
+          </Text>
+          <Button size="xs" variant="ghost" onClick={() => setMapperOpen((open) => !open)}>
+            {mapperOpen ? "Hide columns" : "Change columns"}
+          </Button>
+        </div>
+      )}
+      {inspection && !mapping && (
         <Banner
-          variant="secondary"
-          title="ESMFold inference"
-          description="The server predicts and caches the parent structure. The limit is 400 residues."
+          size="sm"
+          variant="alert"
+          title="Columns not recognised"
+          description="Pick the row layout and map each column by hand."
         />
       )}
+      {inspection && mapperOpen && (
+        <ColumnMapper
+          inspection={inspection}
+          mapping={mapping ?? { schema: inspection.schemas[0].id, columns: {} }}
+          onChange={(next) => {
+            setMappingEdited(true)
+            setMapping(next)
+          }}
+        />
+      )}
+      {needsBaseline && (
+        <Input
+          size="sm"
+          type="number"
+          step="any"
+          label="Wild-type score"
+          labelTooltip="The raw score a wild-type variant carries in this file. Every fitness is shifted so wild type sits at 0. Leave blank to use the file's own wild-type or synonymous rows, or 0 when it has none."
+          placeholder="From the file"
+          value={wildTypeScore}
+          onChange={(event) => setWildTypeScore(event.currentTarget.value)}
+        />
+      )}
+
       <div className="source-upload-action">
         <Text variant="secondary" size="xs">
           Uploaded data remains a temporary draft until you save the landscape.
@@ -1891,11 +2619,9 @@ function CustomUploadPanel({ onCreated }: { onCreated: (draft: DraftResponse) =>
           size="sm"
           variant="primary"
           loading={creating}
-          disabled={
-            !dmsCsv || !wtFasta || (structureMode === "upload" && !structureText) || creating
-          }
+          disabled={!dmsCsv || !wtFasta || !complete || creating}
         >
-          Use uploaded data
+          Use this data
         </Button>
       </div>
     </form>
@@ -2201,7 +2927,7 @@ function leaderboardChartOptions(entries: LeaderboardEntry[]): KumoChartOption {
         name: "Success rate",
         data: entries.map((entry) => Number((entry.successRate * 100).toFixed(2))),
         barMaxWidth: 22,
-        itemStyle: { color: "#f6821f", borderRadius: [0, 4, 4, 0] },
+        itemStyle: { color: "#27ae60", borderRadius: [0, 4, 4, 0] },
         label: { show: true, position: "right", formatter: "{c}%" },
       },
     ],

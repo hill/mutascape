@@ -6,13 +6,19 @@ import {
   posteriorDistributionOptions,
   posteriorProfileOptions,
   posteriorQueryOptions,
+  reachableFrom,
+  scoreHistogramOptions,
+  substitutionMapOptions,
   walshOptions,
 } from "./charts"
 import type {
   BenchmarkValidity,
+  LandscapeGraph,
   PosteriorProfilePoint,
   PosteriorQueryResult,
   ProfilePoint,
+  ScoreHistogram,
+  SubstitutionMap,
 } from "./types"
 
 const point = (depth: number, median: number): ProfilePoint => ({
@@ -108,25 +114,63 @@ test("benchmarkBudgetOptions keeps matched development and external series", () 
   expect(series[1].lineStyle.type).toBe("dashed")
 })
 
-test("landscapeGraphOptions makes the mutation paths interactive", () => {
-  const options = landscapeGraphOptions({
-    nodes: [
-      { id: "wt", variant: "wt", depth: 0, fitness: 0, sampled: false },
-      { id: "V39A", variant: "V39A", depth: 1, fitness: 0.4, sampled: true },
-    ],
-    edges: [{ source: "wt", target: "V39A" }],
-  })
-  const series = options.series as Array<{
-    type: string
-    roam: boolean
-    data: Array<{ name: string }>
-    links: Array<{ source: string; target: string }>
-  }>
+const walk: LandscapeGraph = {
+  nodes: [
+    { id: "wt", variant: "wt", depth: 0, fitness: 0, sampled: false },
+    { id: "V39A", variant: "V39A", depth: 1, fitness: 0.4, sampled: true },
+    { id: "V39A+D40G", variant: "V39A+D40G", depth: 2, fitness: 0.7, sampled: true },
+    { id: "G41L", variant: "G41L", depth: 1, fitness: -0.3, sampled: true },
+  ],
+  edges: [
+    { source: "wt", target: "V39A" },
+    { source: "V39A", target: "V39A+D40G" },
+  ],
+}
 
-  expect(series[0].type).toBe("graph")
-  expect(series[0].roam).toBeTrue()
-  expect(series[0].data.map((node) => node.name)).toEqual(["wt", "V39A"])
-  expect(series[0].links).toEqual([{ source: "wt", target: "V39A" }])
+describe("landscapeGraphOptions", () => {
+  test("makes the mutation paths interactive", () => {
+    const options = landscapeGraphOptions(walk)
+    const series = options.series as Array<{
+      type: string
+      roam: boolean
+      data: Array<{ name: string; symbol: string }>
+      links: Array<{ source: string; target: string }>
+    }>
+
+    expect(series[0].type).toBe("graph")
+    expect(series[0].roam).toBeTrue()
+    expect(series[0].data.map((node) => node.name)).toEqual(["wt", "V39A", "V39A+D40G", "G41L"])
+    expect(series[0].data[0].symbol).toBe("rect")
+    expect(series[0].data[1].symbol).toBe("circle")
+    expect(series[0].links.map((link) => link.source)).toEqual(["wt", "V39A"])
+  })
+
+  test("dims everything the selected variant does not connect to", () => {
+    const series = landscapeGraphOptions(walk, "V39A").series as Array<{
+      data: Array<{ id: string; itemStyle: { opacity: number } }>
+      links: Array<{ source: string; lineStyle: { opacity: number } }>
+    }>
+    const opacity = Object.fromEntries(
+      series[0].data.map((node) => [node.id, node.itemStyle.opacity]),
+    )
+
+    expect(opacity["V39A+D40G"]).toBeGreaterThan(0.5)
+    expect(opacity.wt).toBeGreaterThan(0.5)
+    expect(opacity.G41L).toBeLessThan(0.2)
+    expect(series[0].links.every((link) => link.lineStyle.opacity > 0.2)).toBeTrue()
+  })
+})
+
+describe("reachableFrom", () => {
+  test("walks both directions from the picked variant", () => {
+    expect([...(reachableFrom(walk, "V39A") ?? [])].sort()).toEqual(["V39A", "V39A+D40G", "wt"])
+    expect(reachableFrom(walk, "G41L")).toEqual(new Set(["G41L"]))
+  })
+
+  test("returns null when nothing is picked", () => {
+    expect(reachableFrom(walk, null)).toBeNull()
+    expect(reachableFrom(walk, "missing")).toBeNull()
+  })
 })
 
 const posteriorResult: PosteriorQueryResult = {
@@ -162,4 +206,106 @@ test("posterior charts expose intervals, oracle draws, and distributions", () =>
   expect(profileSeries.some((series) => series.name === "Fixed oracle")).toBeTrue()
   expect(querySeries.some((series) => series.name === "80% interval")).toBeTrue()
   expect(distributionSeries[0].data.reduce((sum, value) => sum + value, 0)).toBe(5)
+})
+
+describe("substitutionMapOptions", () => {
+  const grid = (positionCount: number): SubstitutionMap => ({
+    positions: Array.from({ length: positionCount }, (_, index) => index + 1),
+    aminoAcids: "ACDEFGHIKLMNPQRSTVWY",
+    wildTypeCompact: "A".repeat(positionCount),
+    assayed: Array.from({ length: positionCount }, (_, index) => index),
+    measured: [[0, 5, 0.5]],
+    imputed: [[0, 6, -0.25]],
+    wildTypeCells: [[0, 0]],
+    measuredCount: 1,
+    imputedCount: 1,
+    bound: 0.5,
+    scope: "assayed",
+    assayedCount: positionCount,
+    sequenceLength: positionCount,
+    totalPositions: positionCount,
+    truncated: false,
+  })
+
+  test("centres the colour scale on wild type and splits the series", () => {
+    const options = substitutionMapOptions(grid(4))
+    const xAxis = options.xAxis as { data: string[] }
+    const yAxis = options.yAxis as { data: string[] }
+    const series = options.series as Array<{ name: string; data: number[][] }>
+    const visualMap = options.visualMap as { min: number; max: number }
+
+    expect(xAxis.data).toEqual(["A1", "A2", "A3", "A4"])
+    expect(yAxis.data.length).toBe(20)
+    expect(visualMap.min).toBe(-0.5)
+    expect(visualMap.max).toBe(0.5)
+    expect(series.map((item) => item.name)).toEqual([
+      "Measured",
+      "Imputed",
+      "Parent",
+      "Imputed marker",
+    ])
+    expect(series[0]?.data).toEqual([[0, 5, 0.5, 0]])
+    expect(series[1]?.data).toEqual([[0, 6, -0.25, 1]])
+    expect(series[3]?.data).toEqual([[0, 6, -0.25, 1]])
+  })
+
+  test("marks imputed cells with a symbol so colour still carries the score", () => {
+    const series = substitutionMapOptions(grid(4)).series as Array<{
+      name: string
+      type: string
+      symbol?: string
+      itemStyle?: { opacity?: number }
+    }>
+    const imputed = series.find((item) => item.name === "Imputed")
+    const marker = series.find((item) => item.name === "Imputed marker")
+
+    expect(imputed?.itemStyle?.opacity).toBeUndefined()
+    expect(marker?.type).toBe("scatter")
+    expect(marker?.symbol).toStartWith("path://")
+  })
+
+  test("adds a zoom slider only for wide scans", () => {
+    expect(substitutionMapOptions(grid(12)).dataZoom).toBeUndefined()
+    expect(substitutionMapOptions(grid(60)).dataZoom).toBeTruthy()
+  })
+})
+
+describe("scoreHistogramOptions", () => {
+  const histogram: ScoreHistogram = {
+    centres: [-1, 0, 1],
+    binWidth: 1,
+    singles: [2, 5, 1],
+    higherOrder: [0, 1, 0],
+    singleCount: 8,
+    higherOrderCount: 1,
+    wildType: 0,
+    median: -0.1,
+    min: -1.4,
+    max: 1.4,
+  }
+
+  test("stacks the counts and marks the parent", () => {
+    const options = scoreHistogramOptions(histogram)
+    const series = options.series as Array<{
+      name: string
+      stack?: string
+      data: number[]
+      markLine?: { data: Array<{ xAxis: number }> }
+    }>
+
+    expect(series.map((item) => item.name)).toEqual(["Single mutants", "Combinations"])
+    expect(series.every((item) => item.stack === "scores")).toBeTrue()
+    expect(series[0]?.data).toEqual([2, 5, 1])
+    expect(series[0]?.markLine?.data[0]?.xAxis).toBe(1)
+  })
+
+  test("hides the legend when nothing is above depth one", () => {
+    const options = scoreHistogramOptions({
+      ...histogram,
+      higherOrder: [0, 0, 0],
+      higherOrderCount: 0,
+    })
+
+    expect(options.legend).toBeUndefined()
+  })
 })

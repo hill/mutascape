@@ -4,17 +4,19 @@
   "type": "module",
   "scripts": {
     "dev": "bun serve.ts --watch",
-    "build": "bun build src/main.tsx --outdir dist --target browser --minify",
+    "build": "rm -rf dist && bun build src/main.tsx --outdir dist --target browser --minify --splitting",
     "format": "biome check --write src",
     "lint": "biome check src",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
   "dependencies": {
+    "3dmol": "^2.5.5",
     "@cloudflare/kumo": "^2.8.0",
     "@phosphor-icons/react": "^2.1.10",
     "@tanstack/react-router": "^1.170.25",
     "echarts": "^6.0.0",
+    "katex": "^0.18.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
@@ -23,6 +25,7 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/bun": "latest",
+    "@types/katex": "^0.16.8",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "happy-dom": "^18.0.1",

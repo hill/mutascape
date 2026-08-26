@@ -1,0 +1,350 @@
+{
+  "api": [
+    {
+      "entries": [
+        {
+          "name": "from_dms",
+          "notes": [
+            {
+              "kind": "text",
+              "text": "`dms` accepts a CSV path or a DataFrame. Supported forms follow."
+            },
+            {
+              "items": [
+                "`position, wildtype, mutant, fitness` for single mutants.",
+                "`variant, fitness` for WT, singles, and optional combinations.",
+                "`mutations, fitness` where mutations contains mapping objects."
+              ],
+              "kind": "list"
+            }
+          ],
+          "parameters": [
+            {
+              "annotation": "DMSInput",
+              "default": "",
+              "keywordOnly": false,
+              "name": "dms"
+            },
+            {
+              "annotation": "str | Path | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "fasta"
+            },
+            {
+              "annotation": "str | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "wt_sequence"
+            },
+            {
+              "annotation": "float",
+              "default": "0.0",
+              "keywordOnly": true,
+              "name": "wild_type_fitness"
+            },
+            {
+              "annotation": "int | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "maximum_depth"
+            },
+            {
+              "annotation": "str",
+              "default": "'combinatorial-v2'",
+              "keywordOnly": true,
+              "name": "prior_id"
+            }
+          ],
+          "returns": "PosteriorLandscape",
+          "signature": "from_dms(dms: DMSInput, *, fasta: str | Path | None = None, wt_sequence: str | None = None, wild_type_fitness: float = 0.0, maximum_depth: int | None = None, prior_id: str = 'combinatorial-v2') -> PosteriorLandscape",
+          "summary": "Build a generator from DMS observations and a wild-type sequence."
+        },
+        {
+          "name": "load_oracle",
+          "notes": [],
+          "parameters": [
+            {
+              "annotation": "str | Path | Mapping[str, object]",
+              "default": "",
+              "keywordOnly": false,
+              "name": "manifest"
+            },
+            {
+              "annotation": "DMSInput",
+              "default": "",
+              "keywordOnly": true,
+              "name": "dms"
+            },
+            {
+              "annotation": "str | Path | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "fasta"
+            },
+            {
+              "annotation": "str | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "wt_sequence"
+            },
+            {
+              "annotation": "float | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "wild_type_fitness"
+            }
+          ],
+          "returns": "DMSPairwiseLandscape",
+          "signature": "load_oracle(manifest: str | Path | Mapping[str, object], *, dms: DMSInput, fasta: str | Path | None = None, wt_sequence: str | None = None, wild_type_fitness: float | None = None) -> DMSPairwiseLandscape",
+          "summary": "Recreate and verify one fixed oracle from its saved manifest."
+        }
+      ],
+      "title": "Load data"
+    },
+    {
+      "entries": [
+        {
+          "name": "LandscapeGenerator.draw",
+          "notes": [],
+          "parameters": [
+            {
+              "annotation": "int",
+              "default": "",
+              "keywordOnly": false,
+              "name": "seed"
+            }
+          ],
+          "returns": "DMSPairwiseLandscape",
+          "signature": "LandscapeGenerator.draw(seed: int) -> DMSPairwiseLandscape",
+          "summary": "Draw one fixed oracle from the versioned default generator."
+        },
+        {
+          "name": "MutationDomain.count",
+          "notes": [],
+          "parameters": [
+            {
+              "annotation": "int | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "depth"
+            }
+          ],
+          "returns": "int",
+          "signature": "MutationDomain.count(*, depth: int | None = None) -> int",
+          "summary": "Count variants at one depth or across the declared depth range."
+        },
+        {
+          "name": "MutationDomain.sample",
+          "notes": [],
+          "parameters": [
+            {
+              "annotation": "int",
+              "default": "",
+              "keywordOnly": true,
+              "name": "depth"
+            },
+            {
+              "annotation": "int",
+              "default": "",
+              "keywordOnly": true,
+              "name": "n"
+            },
+            {
+              "annotation": "int",
+              "default": "0",
+              "keywordOnly": true,
+              "name": "seed"
+            }
+          ],
+          "returns": "list[Mutant]",
+          "signature": "MutationDomain.sample(*, depth: int, n: int, seed: int = 0) -> list[Mutant]",
+          "summary": "Sample distinct supported variants at a fixed mutation depth."
+        }
+      ],
+      "title": "Draw an oracle"
+    },
+    {
+      "entries": [
+        {
+          "name": "Oracle.score_many",
+          "notes": [],
+          "parameters": [
+            {
+              "annotation": "list[VariantLike]",
+              "default": "",
+              "keywordOnly": false,
+              "name": "variants"
+            }
+          ],
+          "returns": "Series",
+          "signature": "Oracle.score_many(variants: list[VariantLike]) -> Series",
+          "summary": "Score variants and return values indexed by canonical mutation labels."
+        },
+        {
+          "name": "Oracle.evaluate",
+          "notes": [],
+          "parameters": [
+            {
+              "annotation": "VariantLike",
+              "default": "",
+              "keywordOnly": false,
+              "name": "mutations"
+            }
+          ],
+          "returns": "float",
+          "signature": "Oracle.evaluate(mutations: VariantLike) -> float",
+          "summary": "Evaluate one genotype without enumerating the mutation domain."
+        }
+      ],
+      "title": "Query an oracle"
+    },
+    {
+      "entries": [
+        {
+          "name": "run_campaign",
+          "notes": [],
+          "parameters": [
+            {
+              "annotation": "SearchMethod",
+              "default": "",
+              "keywordOnly": false,
+              "name": "method"
+            },
+            {
+              "annotation": "",
+              "default": "",
+              "keywordOnly": false,
+              "name": "oracle"
+            },
+            {
+              "annotation": "Sequence[VariantLike]",
+              "default": "",
+              "keywordOnly": false,
+              "name": "candidates"
+            },
+            {
+              "annotation": "int",
+              "default": "",
+              "keywordOnly": true,
+              "name": "budget"
+            },
+            {
+              "annotation": "int",
+              "default": "96",
+              "keywordOnly": true,
+              "name": "batch_size"
+            },
+            {
+              "annotation": "int",
+              "default": "0",
+              "keywordOnly": true,
+              "name": "seed"
+            },
+            {
+              "annotation": "float",
+              "default": "0.0",
+              "keywordOnly": true,
+              "name": "noise"
+            }
+          ],
+          "returns": "CampaignResult",
+          "signature": "run_campaign(method: SearchMethod, oracle, candidates: Sequence[VariantLike], *, budget: int, batch_size: int = 96, seed: int = 0, noise: float = 0.0) -> CampaignResult",
+          "summary": "Run one method against one landscape and score it."
+        },
+        {
+          "name": "Campaign.sample",
+          "notes": [],
+          "parameters": [
+            {
+              "annotation": "int",
+              "default": "",
+              "keywordOnly": false,
+              "name": "n"
+            },
+            {
+              "annotation": "int | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "seed"
+            }
+          ],
+          "returns": "list[Mutant]",
+          "signature": "Campaign.sample(n: int, *, seed: int | None = None) -> list[Mutant]",
+          "summary": "Draw distinct unmeasured candidates uniformly."
+        },
+        {
+          "name": "Campaign.measure",
+          "notes": [
+            {
+              "kind": "text",
+              "text": "A repeat is free and returns the original read, because a campaign that already holds a measurement does not buy it twice. A variant the budget cannot reach returns `nan`, so a caller taking an argmax can never select a variant it did not pay for."
+            }
+          ],
+          "parameters": [
+            {
+              "annotation": "VariantLike | Iterable[VariantLike]",
+              "default": "",
+              "keywordOnly": false,
+              "name": "variants"
+            }
+          ],
+          "returns": "NDArray[float64]",
+          "signature": "Campaign.measure(variants: VariantLike | Iterable[VariantLike]) -> NDArray[float64]",
+          "summary": "Assay a batch and return its reads, spending one query per new variant."
+        },
+        {
+          "name": "Campaign.encode",
+          "notes": [],
+          "parameters": [
+            {
+              "annotation": "Iterable[VariantLike] | None",
+              "default": "None",
+              "keywordOnly": false,
+              "name": "variants"
+            }
+          ],
+          "returns": "NDArray[float32]",
+          "signature": "Campaign.encode(variants: Iterable[VariantLike] | None = None) -> NDArray[float32]",
+          "summary": "One-hot design over the substitutions the candidate set contains."
+        },
+        {
+          "name": "CampaignResult.to_dict",
+          "notes": [],
+          "parameters": [],
+          "returns": "dict[str, float | int]",
+          "signature": "CampaignResult.to_dict() -> dict[str, float | int]",
+          "summary": "Flatten the scalar metrics, dropping the per-query history."
+        }
+      ],
+      "title": "Run a campaign"
+    }
+  ],
+  "campaign": {
+    "batchSize": 48,
+    "bestFound": 0.5373671548870553,
+    "budget": 192,
+    "candidateCount": 1000,
+    "optimum": 0.5417182035504813,
+    "queries": 192,
+    "rounds": 4,
+    "simpleRegret": 0.0015650984101668985
+  },
+  "oracle": {
+    "domain": "MutationDomain(positions=118, substitutions=2121, maximum_depth=4)",
+    "domainSize": 802303875712,
+    "labels": [
+      "WT",
+      "A29H",
+      "R60D",
+      "A29H+R60D"
+    ],
+    "scores": [
+      0.0,
+      0.2443804979999999,
+      0.2505309890000005,
+      0.483612229232981
+    ],
+    "seed": 42
+  }
+}

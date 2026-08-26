@@ -1,5 +1,8 @@
 """Tests for the small public generator and oracle interface."""
 
+import subprocess
+import sys
+
 import pandas as pd
 import pytest
 
@@ -135,3 +138,14 @@ def test_variant_input_requires_constituent_singles():
 
     with pytest.raises(ValueError, match="constituent singles for C2D"):
         from_dms(variants, wt_sequence="AC")
+
+
+def test_core_import_does_not_load_fastapi():
+    subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import sys; import mutascape; assert 'fastapi' not in sys.modules",
+        ],
+        check=True,
+    )

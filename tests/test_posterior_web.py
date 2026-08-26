@@ -2,16 +2,14 @@
 
 import pytest
 
-from mutascape.posterior_web import (
-    DEFAULT_PRIOR_ID,
-    list_prior_metadata,
-    load_prior_bundle,
+from mutascape.priors import DEFAULT_PRIOR_ID, list_prior_metadata, load_prior_bundle
+from web.models import parse_custom_source
+from web.posterior import (
     posterior_from_source,
     posterior_shape_summary,
     preview_posterior,
     query_posterior,
 )
-from mutascape.web_models import parse_custom_source
 
 FASTA = ">WT\nAC\n"
 VARIANTS = """variant,fitness
@@ -68,7 +66,9 @@ def test_query_preserves_observations_and_samples_unseen_combinations(source):
     changed = query_posterior(posterior, entries, **{**kwargs, "seed": 18})
 
     assert first == second
-    assert first[0]["fixedOracleFitness"] == pytest.approx(2.1)
+    # The upload puts WT at 1.0 and the double at 2.1, and every observation reaches the
+    # posterior relative to wild type.
+    assert first[0]["fixedOracleFitness"] == pytest.approx(1.1)
     assert first[0]["posteriorStd"] == pytest.approx(0.0)
     assert first[1]["posteriorStd"] > 0
     assert first[1]["fixedOracleFitness"] != changed[1]["fixedOracleFitness"]
@@ -132,7 +132,7 @@ def test_shape_summary_separates_posterior_from_an_additive_surrogate(source):
 
 
 def test_shape_summary_declines_an_unenumerable_domain(monkeypatch):
-    import mutascape.posterior_web as module
+    import web.posterior as module
 
     monkeypatch.setattr(module, "MAX_SHAPE_CUBE", 2)
     parsed, _ = parse_custom_source(VARIANTS, FASTA)

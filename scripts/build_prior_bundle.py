@@ -24,14 +24,14 @@ from mutascape.benchmarks.datasets import (
 )
 from mutascape.benchmarks.splits import has_informative_singles, mutation_order_split
 from mutascape.completion import LandscapePrior
-from mutascape.posterior_web import PRIOR_ROOT
+from mutascape.priors import DEFAULT_PRIOR_ID, PRIOR_ROOT
 
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ssmula-root", type=Path)
     parser.add_argument("--combingym-root", type=Path)
-    parser.add_argument("--prior-id", default="combinatorial-v2")
+    parser.add_argument("--prior-id", default=DEFAULT_PRIOR_ID)
     parser.add_argument("--name", default="Combinatorial landscape prior v2")
     parser.add_argument("--created", required=True, help="ISO date stamp for the bundle")
     parser.add_argument("--max-order", type=int, default=2)

@@ -6,6 +6,8 @@ export interface ModelParameters {
   seed: number
 }
 
+export type DmsSchema = "singles" | "variants" | "hgvs"
+
 export interface SourceSummary {
   wtLength: number
   measuredRows: number
@@ -15,7 +17,7 @@ export interface SourceSummary {
   structureMethod?: "none" | "uploaded" | "esmfold"
   observationCount?: number
   higherOrderRows?: number
-  dmsSchema?: "singles" | "variants"
+  dmsSchema?: DmsSchema
   wildTypeFitness?: number
   supportedSubstitutions?: number
   previewCapacity?: number
@@ -41,6 +43,8 @@ export interface ModelSummary {
 }
 
 export interface DraftSummary {
+  skippedRows: Record<string, number>
+  wildTypeScoreAssumed: boolean
   positions: number[]
   positionCount: number
   wtLength: number
@@ -54,7 +58,7 @@ export interface DraftSummary {
   structureMethod: "none" | "uploaded" | "esmfold"
   observationCount: number
   higherOrderRows: number
-  dmsSchema: "singles" | "variants"
+  dmsSchema: DmsSchema
   wildTypeFitness: number
   supportedSubstitutions: number
   previewCapacity: number
@@ -64,6 +68,114 @@ export interface DraftResponse {
   id: string
   expiresAt: string
   summary: DraftSummary
+}
+
+export type MapScope = "assayed" | "sequence"
+
+export interface SubstitutionMap {
+  positions: number[]
+  aminoAcids: string
+  wildTypeCompact: string
+  assayed: number[]
+  measured: number[][]
+  imputed: number[][]
+  wildTypeCells: number[][]
+  measuredCount: number
+  imputedCount: number
+  bound: number
+  scope: MapScope
+  assayedCount: number
+  sequenceLength: number
+  totalPositions: number
+  truncated: boolean
+}
+
+export type StructureSource = "rcsb" | "upload" | "esmfold"
+
+export interface StructureResidue {
+  position: number
+  residue: number
+  parent: string
+  structureResidue: string
+  matched: boolean
+  effect: number | null
+}
+
+export interface StructureView {
+  pdb: string
+  format: "pdb" | "mmcif"
+  chains: string[]
+  chainId: string
+  chainLength: number
+  residueCount: number
+  identity: number
+  bound: number
+  residues: StructureResidue[]
+  unmatched: number[]
+  mismatched: number[]
+  method: StructureSource
+  label: string
+}
+
+export interface StructureRequestOptions {
+  kind: StructureSource
+  pdbId?: string
+  structureText?: string
+  structureFormat?: string
+  chainId?: string
+}
+
+export interface ScoreHistogram {
+  centres: number[]
+  binWidth: number
+  singles: number[]
+  higherOrder: number[]
+  singleCount: number
+  higherOrderCount: number
+  wildType: number
+  median: number
+  min: number
+  max: number
+}
+
+export interface CsvSchemaRole {
+  id: string
+  label: string
+  guess: string | null
+}
+
+export interface CsvSchemaOption {
+  id: DmsSchema
+  label: string
+  complete: boolean
+  roles: CsvSchemaRole[]
+}
+
+export interface ColumnMapping {
+  schema: DmsSchema
+  columns: Record<string, string>
+}
+
+export interface CsvInspection {
+  headers: string[]
+  rowCount: number
+  sampleRows: string[][]
+  schemas: CsvSchemaOption[]
+  detected: ColumnMapping | null
+}
+
+export interface MaveDbImport {
+  urn: string
+  title: string
+  shortDescription: string
+  targetName: string
+  recordUrl: string
+  numVariants: number
+  license: string
+  publications: string[]
+  wtFasta: string
+  dmsCsv: string
+  inspection: CsvInspection
 }
 
 export interface ProfilePoint {
@@ -162,6 +274,8 @@ export interface DraftUpload {
   structureText?: string
   structureFormat?: "pdb" | "cif" | "mmcif"
   structureInference?: "none" | "esmfold"
+  columnMap?: ColumnMapping
+  wildTypeScore?: number
 }
 
 export type PreviewSource = {

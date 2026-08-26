@@ -1,18 +1,84 @@
 import { afterEach, describe, expect, test } from "bun:test"
 import { TooltipProvider } from "@cloudflare/kumo"
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router"
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { createAppRouter } from "./router"
 
 const originalFetch = globalThis.fetch
+let restoreCanvas: (() => void) | null = null
 
 afterEach(() => {
   cleanup()
   globalThis.fetch = originalFetch
+  restoreCanvas?.()
+  restoreCanvas = null
 })
 
+// happy-dom has no 2D context, so ECharts throws the moment a canvas chart mounts.
+// Every drawing call is a no-op returning the context itself, which keeps chained calls
+// such as createLinearGradient().addColorStop() alive.
+function stubCanvasContext() {
+  const prototype = Object.getPrototypeOf(document.createElement("canvas"))
+  const original = prototype.getContext
+  const context: Record<string, unknown> = { measureText: () => ({ width: 0 }) }
+  const proxy: Record<string, unknown> = new Proxy(context, {
+    get: (target, key) => target[key as string] ?? (() => proxy),
+    set: (target, key, value) => {
+      target[key as string] = value
+      return true
+    },
+  })
+  prototype.getContext = () => proxy
+  restoreCanvas = () => {
+    prototype.getContext = original
+  }
+}
+
 describe("landscape builder", () => {
+  test("loads documentation in the shared application shell", async () => {
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ models: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })) as unknown as typeof fetch
+    const router = createAppRouter(createMemoryHistory({ initialEntries: ["/docs"] }))
+    render(<RouterProvider router={router} />)
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Introduction",
+      }),
+    ).toBeTruthy()
+    expect(screen.queryByText(/Python 3\.14/)).toBeNull()
+    expect(screen.getByText(/MutationDomain\(positions=118/)).toBeTruthy()
+    expect(document.querySelector(".language-python .token-keyword")?.textContent).toBe("from")
+    expect(document.querySelector(".language-python .token-string")?.textContent).toBe(
+      '"data/creilov/creilov.csv"',
+    )
+    expect(screen.getByRole("img", { name: /Fitness distributions/ }).getAttribute("src")).toBe(
+      "/assets/docs/oracle-profile.svg",
+    )
+    expect(screen.getByRole("button", { name: "Documentation" })).toBeTruthy()
+    const pageOutline = screen.getByRole("complementary", { name: "On this page" })
+    expect(within(pageOutline).getByRole("link", { name: "Quick start" })).toBeTruthy()
+
+    await userEvent.click(screen.getByRole("button", { name: "Benchmarking" }))
+
+    expect(
+      await screen.findByRole("heading", { name: "Benchmark under an assay budget" }),
+    ).toBeTruthy()
+    expect(router.state.location.pathname).toBe("/docs/benchmarking")
+    expect(
+      screen.getByRole("img", { name: /Best fitness found by random search/ }).getAttribute("src"),
+    ).toBe("/assets/docs/campaign-trace.svg")
+    await userEvent.click(screen.getByRole("button", { name: "Create landscape" }))
+
+    expect(await screen.findByRole("heading", { name: "Create landscape" })).toBeTruthy()
+    expect(router.state.location.pathname).toBe("/")
+    expect(document.title).toBe("mutascape")
+  })
+
   test("uses routes for stable page navigation", async () => {
     globalThis.fetch = (() => new Promise(() => {})) as unknown as typeof fetch
     const router = createAppRouter(createMemoryHistory({ initialEntries: ["/"] }))
@@ -44,7 +110,7 @@ describe("landscape builder", () => {
     expect(screen.getByLabelText(/DMS CSV/)).toBeTruthy()
     expect(screen.getByLabelText(/WT FASTA/)).toBeTruthy()
     expect(
-      (screen.getByRole("button", { name: "Use uploaded data" }) as HTMLButtonElement).disabled,
+      (screen.getByRole("button", { name: "Use this data" }) as HTMLButtonElement).disabled,
     ).toBe(true)
 
     await userEvent.click(screen.getByRole("button", { name: "Landscape library" }))
@@ -221,5 +287,79 @@ describe("landscape builder", () => {
     expect(await screen.findByRole("heading", { name: "Leaderboards" })).toBeTruthy()
     expect(await screen.findByText("My optimiser")).toBeTruthy()
     expect(screen.getByRole("button", { name: "Create leaderboard" })).toBeTruthy()
+  })
+
+  test("draws the substitution grid for the selected source", async () => {
+    stubCanvasContext()
+    const model = {
+      id: "gb1_headline",
+      name: "GB1 reference",
+      kind: "reference",
+      description: "Reference landscape",
+      positions: [39, 40],
+      wtCompact: "VD",
+      parameters: {
+        noiseSigma: 0.3,
+        alpha: 1.5,
+        pairwiseSigma: 0,
+        combinatorialUpside: 3,
+        seed: 42,
+      },
+      createdAt: null,
+    }
+    globalThis.fetch = (async (input) => {
+      const url = String(input)
+      const body =
+        url === "/api/v1/models"
+          ? { models: [model] }
+          : url === "/api/v1/substitution-maps"
+            ? {
+                positions: [39, 40],
+                aminoAcids: "ACDEFGHIKLMNPQRSTVWY",
+                wildTypeCompact: "VD",
+                assayed: [0, 1],
+                measured: [[0, 5, 0.4]],
+                imputed: [[1, 6, -0.2]],
+                wildTypeCells: [
+                  [0, 17],
+                  [1, 2],
+                ],
+                measuredCount: 1,
+                imputedCount: 3,
+                bound: 0.4,
+                scope: "assayed",
+                assayedCount: 2,
+                sequenceLength: 2,
+                totalPositions: 2,
+                truncated: false,
+              }
+            : url === "/api/v1/score-histograms"
+              ? {
+                  centres: [-0.5, 0, 0.5],
+                  binWidth: 0.5,
+                  singles: [1, 2, 1],
+                  higherOrder: [0, 0, 0],
+                  singleCount: 4,
+                  higherOrderCount: 0,
+                  wildType: 0,
+                  median: 0,
+                  min: -0.6,
+                  max: 0.6,
+                }
+              : model
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })
+    }) as typeof fetch
+    const router = createAppRouter(createMemoryHistory({ initialEntries: ["/"] }))
+    render(<RouterProvider router={router} />)
+
+    expect(await screen.findByRole("heading", { name: "Single-mutant effects" })).toBeTruthy()
+    expect(screen.getByText("1 measured")).toBeTruthy()
+    expect(screen.getByText(/3 of 4 cells are imputed/)).toBeTruthy()
+    expect(
+      await screen.findByRole("heading", { name: "Functional score distribution" }),
+    ).toBeTruthy()
   })
 })

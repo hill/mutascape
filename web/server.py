@@ -1,29 +1,29 @@
-"""FastAPI service and static host for the mutascape benchmark oracle."""
+"""FastAPI service and static host for the Mutascape benchmark studio."""
 
+import json
+import threading
+from collections.abc import Callable, Iterator
 from pathlib import Path
+from queue import Queue
 from typing import Annotated, Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from mutascape.posterior_web import (
-    DEFAULT_PRIOR_ID,
-    fixed_posterior_entries,
-    list_prior_metadata,
-    load_prior_bundle,
-    posterior_from_source,
-    preview_posterior,
-    query_posterior,
-)
-from mutascape.web_models import (
+from mutascape.priors import DEFAULT_PRIOR_ID, list_prior_metadata, load_prior_bundle
+from web.mavedb import MaveDbError, fetch_score_set
+from web.models import (
     BenchmarkParameters,
     LandscapeRegistry,
     ModelStore,
+    Progress,
+    _noop_progress,
     build_custom_landscape,
     build_reference_landscape,
     evaluate_entries,
+    inspect_dms_csv,
     parse_custom_source,
     preview_cache_key,
     preview_custom,
@@ -31,11 +31,27 @@ from mutascape.web_models import (
     reference_catalogue_entries,
     reference_detail,
     reference_posterior_source,
+    score_histogram,
+    substitution_map,
+)
+from web.posterior import (
+    fixed_posterior_entries,
+    posterior_from_source,
+    preview_posterior,
+    query_posterior,
+)
+from web.structure import (
+    MAX_STRUCTURE_BYTES,
+    describe_structure,
+    fetch_rcsb,
+    fold_with_esmfold,
+    mean_effects,
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 WEB_ROOT = REPO_ROOT / "web"
 LOGO_PATH = REPO_ROOT / "docs" / "logo_ai_image.png"
+KATEX_ROOT = WEB_ROOT / "node_modules" / "katex" / "dist"
 MAX_REQUEST_BYTES = 25_000_000
 
 
@@ -65,6 +81,14 @@ class ParameterInput(ApiModel):
         )
 
 
+class ColumnMap(ApiModel):
+    schema_id: Literal["singles", "variants", "hgvs"] = Field(alias="schema")
+    columns: dict[str, str] = Field(min_length=1)
+
+    def domain(self) -> dict[str, Any]:
+        return {"schema": self.schema_id, "columns": self.columns}
+
+
 class DraftCreate(ApiModel):
     dms_csv: str = Field(min_length=1)
     wt_fasta: str = Field(min_length=1)
@@ -72,6 +96,16 @@ class DraftCreate(ApiModel):
     structure_format: Literal["pdb", "cif", "mmcif"] | None = None
     chain_id: str | None = Field(default=None, max_length=16)
     structure_inference: Literal["none", "esmfold"] = "none"
+    column_map: ColumnMap | None = None
+    wild_type_score: float | None = None
+
+
+class CsvInspectRequest(ApiModel):
+    dms_csv: str = Field(min_length=1)
+
+
+class MaveDbImportRequest(ApiModel):
+    reference: str = Field(min_length=1, max_length=512)
 
 
 class PreviewSource(ApiModel):
@@ -94,6 +128,24 @@ class PreviewRequest(ApiModel):
     source: PreviewSource
     parameters: ParameterInput
     sample: PreviewSample
+
+
+class SubstitutionMapRequest(ApiModel):
+    source: PreviewSource
+    scope: Literal["assayed", "sequence"] = "assayed"
+
+
+class ScoreHistogramRequest(ApiModel):
+    source: PreviewSource
+
+
+class StructureRequest(ApiModel):
+    source: PreviewSource
+    kind: Literal["rcsb", "upload", "esmfold"]
+    pdb_id: str | None = Field(default=None, max_length=16)
+    structure_text: str | None = Field(default=None, max_length=MAX_STRUCTURE_BYTES)
+    structure_format: str | None = Field(default=None, max_length=16)
+    chain_id: str | None = Field(default=None, max_length=8)
 
 
 class PublishRequest(ApiModel):
@@ -243,6 +295,21 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
             ),
         }
 
+    @app.post("/api/v1/csv-inspections")
+    def inspect_csv(payload: CsvInspectRequest) -> dict[str, Any]:
+        try:
+            return inspect_dms_csv(payload.dms_csv)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/v1/mavedb-imports")
+    def import_mavedb(payload: MaveDbImportRequest) -> dict[str, Any]:
+        try:
+            record = fetch_score_set(payload.reference)
+        except MaveDbError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {**record, "inspection": inspect_dms_csv(record["dmsCsv"])}
+
     @app.post("/api/v1/drafts", status_code=201)
     def create_draft(payload: DraftCreate, request: Request) -> dict[str, Any]:
         try:
@@ -254,6 +321,8 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
                 chain_id=payload.chain_id,
                 structure_inference=payload.structure_inference,
                 structure_cache_dir=_store(request).path.parent / "structures",
+                column_map=payload.column_map.domain() if payload.column_map else None,
+                wild_type_score=payload.wild_type_score,
             )
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
@@ -264,6 +333,8 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
             "structureFormat": payload.structure_format,
             "chainId": payload.chain_id,
             "structureInference": payload.structure_inference,
+            "columnMap": payload.column_map.domain() if payload.column_map else None,
+            "wildTypeScore": payload.wild_type_score,
         }
         draft = _store(request).create_draft(source, uploads)
         return {
@@ -272,8 +343,58 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
             "summary": summary,
         }
 
+    @app.post("/api/v1/substitution-maps")
+    def substitution_grid(payload: SubstitutionMapRequest, request: Request) -> dict[str, Any]:
+        source, _, _ = _posterior_source(payload.source, request)
+        return substitution_map(source, scope=payload.scope)
+
+    @app.post("/api/v1/structures")
+    def structure_view(payload: StructureRequest, request: Request) -> dict[str, Any]:
+        source, _, _ = _posterior_source(payload.source, request)
+        cache = _store(request).path.parent / "structures"
+        try:
+            text, suffix, label = _structure_text(payload, source, cache)
+            described = describe_structure(
+                text,
+                suffix=suffix,
+                wt_sequence=str(source["wtSequence"]),
+                positions=[int(position) for position in source["positions"]],
+                wild_type={int(key): value for key, value in source["wildType"].items()},
+                chain_id=payload.chain_id,
+                effects=mean_effects(source["dmsRows"]),
+            )
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {**described, "method": payload.kind, "label": label}
+
+    @app.post("/api/v1/score-histograms")
+    def score_distribution(payload: ScoreHistogramRequest, request: Request) -> dict[str, Any]:
+        source, _, _ = _posterior_source(payload.source, request)
+        try:
+            return score_histogram(source)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
     @app.post("/api/v1/previews")
     def preview(payload: PreviewRequest, request: Request) -> dict[str, Any]:
+        return _run_preview(payload, request, _noop_progress)
+
+    @app.post("/api/v1/preview-events")
+    def preview_events(payload: PreviewRequest, request: Request) -> StreamingResponse:
+        return _stage_stream(lambda progress: _run_preview(payload, request, progress))
+
+    @app.post("/api/v1/posterior-preview-events")
+    def posterior_preview_events(
+        payload: PosteriorPreviewRequest,
+        request: Request,
+    ) -> StreamingResponse:
+        return _stage_stream(lambda progress: _run_posterior_preview(payload, request, progress))
+
+    def _run_preview(
+        payload: PreviewRequest,
+        request: Request,
+        progress: Progress,
+    ) -> dict[str, Any]:
         store = _store(request)
         parameters = payload.parameters.domain()
         draft_source: dict[str, Any] | None = None
@@ -313,6 +434,7 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
                     parameters,
                     payload.sample.size,
                     weights,
+                    progress=progress,
                 )
             elif payload.source.kind == "draft":
                 assert draft_source is not None
@@ -321,6 +443,7 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
                     parameters,
                     payload.sample.size,
                     weights,
+                    progress=progress,
                 )
             else:
                 assert published_model is not None
@@ -331,6 +454,7 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
                     weights,
                     model_id=published_model["id"],
                     name=published_model["name"],
+                    progress=progress,
                 )
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
@@ -497,6 +621,13 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
         payload: PosteriorPreviewRequest,
         request: Request,
     ) -> dict[str, Any]:
+        return _run_posterior_preview(payload, request, _noop_progress)
+
+    def _run_posterior_preview(
+        payload: PosteriorPreviewRequest,
+        request: Request,
+        progress: Progress,
+    ) -> dict[str, Any]:
         source, source_summary, model = _posterior_source(payload.source, request)
         prior_id, seed = _resolve_posterior_settings(
             model,
@@ -504,6 +635,7 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
             requested_seed=payload.seed,
         )
         try:
+            progress("Fitting the posterior")
             posterior, prior = posterior_from_source(source, prior_id)
             result = preview_posterior(
                 posterior,
@@ -515,6 +647,7 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
                 },
                 seed=seed,
                 ensemble_size=payload.ensemble_size,
+                progress=progress,
             )
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
@@ -566,7 +699,9 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
 
     @app.get("/landscapes")
     @app.get("/leaderboards")
-    def routed_page() -> FileResponse:
+    @app.get("/docs")
+    @app.get("/docs/{docs_page}")
+    def routed_page(docs_page: str = "") -> FileResponse:
         return FileResponse(WEB_ROOT / "index.html")
 
     @app.get("/landscapes/{landscape_id}")
@@ -582,15 +717,99 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
         return FileResponse(LOGO_PATH, media_type="image/png")
 
     app.mount(
+        "/assets/docs",
+        StaticFiles(directory=WEB_ROOT / "assets" / "docs", check_dir=False),
+        name="docs-assets",
+    )
+    app.mount(
+        "/assets/fonts",
+        StaticFiles(directory=WEB_ROOT / "assets" / "fonts", check_dir=False),
+        name="fonts",
+    )
+    app.mount(
+        "/vendor/katex",
+        StaticFiles(directory=KATEX_ROOT, check_dir=False),
+        name="katex",
+    )
+    app.mount(
         "/dist",
-        StaticFiles(directory=WEB_ROOT / "dist", check_dir=False),
+        _RevalidatedStatic(directory=WEB_ROOT / "dist", check_dir=False),
         name="dist",
     )
     return app
 
 
+class _RevalidatedStatic(StaticFiles):
+    """Serves files under a fixed name, so the browser has to check the ETag every load.
+
+    The bundle keeps the same path across rebuilds. Without this a browser holds an old
+    build for as long as its heuristic freshness lasts, and the page silently runs stale code.
+    """
+
+    def file_response(self, *args: Any, **kwargs: Any) -> Response:
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 def _store(request: Request) -> ModelStore:
     return request.app.state.model_store
+
+
+def _stage_stream(build: Callable[[Progress], dict[str, Any]]) -> StreamingResponse:
+    """Run a build on a worker thread, forwarding its stage names as they happen.
+
+    The builders are synchronous and CPU-bound, so the only way to report a stage
+    while one is still running is to hand it a queue and drain that queue here.
+    """
+    events: Queue[tuple[str, Any]] = Queue()
+
+    def worker() -> None:
+        try:
+            result = build(lambda stage: events.put(("stage", stage)))
+            events.put(("result", result))
+        except HTTPException as exc:
+            events.put(("error", {"status": exc.status_code, "detail": exc.detail}))
+        except Exception as exc:  # noqa: BLE001
+            events.put(("error", {"status": 500, "detail": str(exc)}))
+
+    def frames() -> Iterator[str]:
+        thread = threading.Thread(target=worker, daemon=True)
+        thread.start()
+        while True:
+            kind, payload = events.get()
+            yield f"event: {kind}\ndata: {json.dumps(payload)}\n\n"
+            if kind in {"result", "error"}:
+                break
+        thread.join()
+
+    return StreamingResponse(
+        frames(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
+    )
+
+
+def _structure_text(
+    payload: StructureRequest,
+    source: dict[str, Any],
+    cache: Path,
+) -> tuple[str, str, str]:
+    """Resolve one structure request to its text, file format, and a name for the panel."""
+    if payload.kind == "rcsb":
+        if not payload.pdb_id:
+            raise ValueError("enter a PDB ID")
+        text, suffix, identifier = fetch_rcsb(payload.pdb_id, cache_dir=cache)
+        return text, suffix, identifier
+    if payload.kind == "upload":
+        if not payload.structure_text:
+            raise ValueError("upload a structure file")
+        suffix = (payload.structure_format or "pdb").lower().lstrip(".")
+        if suffix not in {"pdb", "cif", "mmcif"}:
+            raise ValueError("structure format must be pdb, cif, or mmcif")
+        return payload.structure_text, suffix, "Uploaded file"
+    sequence = str(source["wtSequence"])
+    return fold_with_esmfold(sequence, cache_dir=cache), "pdb", "ESMFold"
 
 
 def _posterior_source(
@@ -690,12 +909,13 @@ def _examples(
     wildtype = wt_compact[0] if wt_compact else "A"
     mutant = "G" if wildtype == "A" else "A"
     mutation = f"{wildtype}{positions[0]}{mutant}" if positions else "A1G"
-    is_posterior = model_id.endswith("_posterior") or (
+    bundled = reference_detail(model_id) if model is None else None
+    is_posterior = (bundled is not None and bundled["kind"] == "posterior") or (
         model is not None and model["modelKind"] == "posterior"
     )
     if is_posterior:
         seed = (
-            int(reference_detail(model_id)["posteriorSettings"]["oracleSeed"])
+            int(bundled["posteriorSettings"]["oracleSeed"])
             if model is None
             else int(model["oracleSeed"])
         )

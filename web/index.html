@@ -5,10 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Create synthetic, combinatorially complete protein fitness landscapes."
+      content="Build and benchmark synthetic combinatorial protein fitness landscapes."
     />
-    <title>mutascape landscape builder</title>
+    <title>mutascape</title>
+    <link rel="icon" type="image/png" href="/assets/logo.png" />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/assets/fonts/inter-latin-wght-normal.woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/assets/fonts/fonts.css" />
     <link rel="stylesheet" href="/dist/main.css" />
+    <!-- Served rather than bundled. The bundler inlines all 61 KaTeX font faces as data
+         URLs, so the stylesheet grows past 1.5 MB and every page pays for it. -->
+    <link rel="stylesheet" href="/vendor/katex/katex.min.css" />
   </head>
   <body>
     <div id="root"></div>

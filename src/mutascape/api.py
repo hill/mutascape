@@ -9,6 +9,7 @@ import pandas as pd
 
 from mutascape.completion import DMSPairwiseLandscape, PosteriorLandscape
 from mutascape.mutant import Mutant, parse_variant
+from mutascape.priors import DEFAULT_PRIOR_ID, load_prior_bundle
 
 type DMSInput = str | Path | pd.DataFrame
 
@@ -20,7 +21,7 @@ def from_dms(
     wt_sequence: str | None = None,
     wild_type_fitness: float = 0.0,
     maximum_depth: int | None = None,
-    prior_id: str = "combinatorial-v2",
+    prior_id: str = DEFAULT_PRIOR_ID,
 ) -> PosteriorLandscape:
     """Build a generator from DMS observations and a wild-type sequence.
 
@@ -37,8 +38,6 @@ def from_dms(
         sequence,
         wild_type_fitness=float(wild_type_fitness),
     )
-    from mutascape.posterior_web import load_prior_bundle
-
     _, prior = load_prior_bundle(prior_id)
     return PosteriorLandscape.condition(
         sequence,

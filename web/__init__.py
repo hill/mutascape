@@ -1,0 +1,1 @@
+"""Mutascape benchmark studio application."""

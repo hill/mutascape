@@ -46,6 +46,7 @@ class CampaignResult:
     history: pd.DataFrame
 
     def to_dict(self) -> dict[str, float | int]:
+        """Flatten the scalar metrics, dropping the per-query history."""
         return {
             "best_found": self.best_found,
             "best_observed": self.best_observed,

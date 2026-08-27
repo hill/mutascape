@@ -40,6 +40,19 @@ Replace the single latent phenotype with simple folding and activity constraints
 - [ ] Add structure-based contact triangles or communities as higher-order terms.
 - [ ] Compare real contact graphs with degree-matched shuffled graphs.
 
+## Whole-protein single-site completion
+
+- [ ] Add `from_dms(..., complete="esm2")` as an optional public mode.
+- [ ] Score every missing single substitution with ESM-2, including positions absent from the DMS.
+- [ ] Calibrate model scores to the assay scale with measured single mutants.
+- [ ] Keep measured wild type and single-mutant fitness values exact.
+- [ ] Label each query value as measured, imputed, or synthetic.
+- [ ] Keep strict measured-library mode as the default and preserve frozen publication results.
+- [ ] Test imputation by hiding measured singles and reporting held-out calibration and error.
+- [ ] Update the Python API, tests, documentation, and studio together.
+- [ ] Load model weights only when the user selects completion mode.
+- [ ] Support lazy queries across the whole protein without enumerating its sequence space.
+
 ## Evaluation
 
 - [x] Measure held-out correlation, error, NDCG, and top-variant recall.

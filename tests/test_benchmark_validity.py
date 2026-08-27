@@ -1,12 +1,25 @@
 import pandas as pd
 import pytest
 
+from mutascape.benchmarks.datasets import (
+    GRAPHFLA_EXTERNAL_MANIFEST,
+    LandscapeDataset,
+    LandscapeSpec,
+)
 from mutascape.benchmarks.validity import (
     measured_rank_reliability,
     pairwise_winner_transfer,
     reliability_adjusted_transfer,
 )
-from scripts.run_search_transfer import _transfer, _validate_scores, _with_ensemble_arms
+from scripts.freeze_benchmark_validity import _arm_metrics, _reliability_floor
+from scripts.run_search_transfer import (
+    _include_posterior_baseline,
+    _target_eligibility,
+    _target_sources,
+    _transfer,
+    _validate_scores,
+    _with_ensemble_arms,
+)
 
 
 def _scores() -> pd.DataFrame:
@@ -32,6 +45,82 @@ def _scores() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _binary_dataset() -> LandscapeDataset:
+    sequences = ["AAA", "CAA", "ACA", "AAC", "CCA"]
+    fitness = [0.0, 1.0, -1.0, 0.5, 0.3]
+    variants = pd.DataFrame(
+        {
+            "sequence": sequences,
+            "fitness": fitness,
+            "depth": [0, 1, 1, 1, 2],
+            "mutations": [
+                {},
+                {1: "C"},
+                {2: "C"},
+                {3: "C"},
+                {1: "C", 2: "C"},
+            ],
+        }
+    )
+    spec = LandscapeSpec(
+        name="toy",
+        protein="toy-protein",
+        source="combingym",
+        relative_path="toy.csv",
+        fitness_column="fitness",
+        sequence_column="sequence",
+        depth_column="depth",
+    )
+    return LandscapeDataset(
+        spec=spec,
+        variants=variants,
+        wild_type_sequence="AAA",
+        mutable_positions=(1, 2, 3),
+        alphabets={1: ("A", "C"), 2: ("A", "C"), 3: ("A", "C")},
+    )
+
+
+def _write_transfer_run(root) -> None:
+    pd.DataFrame(
+        {
+            "dataset": ["trpb-a", "trpb-b", "gb1"],
+            "protein": ["TrpB", "TrpB", "GB1"],
+            "arm": ["example"] * 3,
+            "method": ["search"] * 3,
+            "trial": [0] * 3,
+            "regret": [0.0] * 3,
+        }
+    ).to_csv(root / "scores.csv", index=False)
+    pd.DataFrame(
+        {
+            "dataset": ["trpb-a", "trpb-b", "gb1"],
+            "arm": ["example"] * 3,
+            "kendall_tau": [1.0, 1.0, 0.0],
+        }
+    ).to_csv(root / "transfer.csv", index=False)
+    pd.DataFrame(
+        {
+            "dataset": ["trpb-a", "trpb-b", "gb1"],
+            "arm": ["example"] * 3,
+            "correct_pairs": [9, 9, 0],
+            "scored_pairs": [10, 10, 10],
+        }
+    ).to_csv(root / "pairwise_transfer.csv", index=False)
+    pd.DataFrame(
+        {
+            "dataset": ["trpb-a", "trpb-b", "gb1"],
+            "arm": ["example"] * 3,
+            "meets_reliability_floor": [True, True, False],
+        }
+    ).to_csv(root / "reliability_adjusted_transfer.csv", index=False)
+    pd.DataFrame(
+        {
+            "dataset": ["trpb-a", "trpb-b", "gb1"],
+            "split_half_lower": [0.9, 0.8, 0.1],
+        }
+    ).to_csv(root / "measured_reliability.csv", index=False)
+
+
 def test_pairwise_winner_transfer_uses_only_reliable_real_pairs():
     result = pairwise_winner_transfer(_scores(), seed=1, n_bootstrap=200)
     by_arm = result.set_index("arm")
@@ -41,6 +130,43 @@ def test_pairwise_winner_transfer_uses_only_reliable_real_pairs():
     assert by_arm.loc["reverse", "winner_accuracy"] == 0.0
     assert by_arm.loc["tie", "scored_pairs"] == 3
     assert by_arm.loc["tie", "winner_accuracy"] == 0.0
+
+
+def test_target_sources_can_select_combingym_or_both_collections():
+    assert _target_sources("combingym") == {"combingym"}
+    assert _target_sources("all") == {"combingym", "ssmula"}
+
+
+def test_graphfla_manifest_names_the_assayed_proteins():
+    proteins = {spec.name: spec.protein for spec in GRAPHFLA_EXTERNAL_MANIFEST}
+
+    assert proteins["GraphFLA_Lunzer2005_fitness"] == "IMDH"
+    assert proteins["GraphFLA_Michael2024_LamB"] == "phage-lambda-J"
+    assert proteins["GraphFLA_Schulz2025"] == "COV107-23"
+    assert proteins["GraphFLA_Poelwijk2019"] == "eqFP611"
+
+
+def test_target_eligibility_applies_supported_domain_coverage():
+    included = _target_eligibility(_binary_dataset(), minimum_coverage=0.5, minimum_candidates=4)
+    excluded = _target_eligibility(_binary_dataset(), minimum_coverage=0.75, minimum_candidates=4)
+
+    assert included["supported_domain"] == 8
+    assert included["finite_candidates"] == 5
+    assert included["coverage"] == pytest.approx(0.625)
+    assert included["included"]
+    assert not excluded["included"]
+    assert excluded["reason"] == "coverage below 0.750"
+
+
+def test_frozen_metrics_give_each_protein_one_weight(tmp_path):
+    _write_transfer_run(tmp_path)
+
+    metrics = _arm_metrics(tmp_path, "example")
+
+    assert metrics["kendallTau"] == pytest.approx(0.5)
+    assert metrics["pairwiseAccuracy"] == pytest.approx(0.45)
+    assert metrics["reliabilityPassRate"] == pytest.approx(0.5)
+    assert _reliability_floor(tmp_path) == pytest.approx(0.475)
 
 
 def test_rank_reliability_and_adjusted_transfer():
@@ -101,6 +227,12 @@ def test_ensemble_rows_cover_each_primary_stochastic_comparator():
     assert means.loc["dms_pairwise_mean", "regret"] == pytest.approx(0.2)
     assert means.loc["potts_low_mean", "regret"] == pytest.approx(0.3)
     assert means.loc["rmf_high_mean", "regret"] == pytest.approx(0.6)
+
+
+def test_primary_protocol_does_not_build_the_exploratory_prior():
+    assert not _include_posterior_baseline("primary")
+    assert _include_posterior_baseline("full")
+    assert _include_posterior_baseline(None)
 
 
 @pytest.mark.filterwarnings("error")

@@ -201,12 +201,12 @@ def _graphfla_spec(filename: str, protein: str, reference_sequence: str) -> Land
 # One condition per protein family, selected before the external transfer run.
 # Each table is a complete Cartesian landscape with at least 512 variants.
 GRAPHFLA_EXTERNAL_MANIFEST: tuple[LandscapeSpec, ...] = (
-    _graphfla_spec("Lunzer2005_fitness.csv", "HisA-HisF", "DDFAGR"),
-    _graphfla_spec("Michael2024_LamB.csv", "LamB", "000000000"),
+    _graphfla_spec("Lunzer2005_fitness.csv", "IMDH", "DDFAGR"),
+    _graphfla_spec("Michael2024_LamB.csv", "phage-lambda-J", "000000000"),
     _graphfla_spec("Wu2020_Bk79.csv", "H3N2-haemagglutinin", "EEFDFA"),
     _graphfla_spec("Bank2016a.csv", "Hsp90", "QFGFSAAAE"),
-    _graphfla_spec("Schulz2025.csv", "ParB", "0000000000"),
-    _graphfla_spec("Poelwijk2019.csv", "beta-lactamase", "0000000000000"),
+    _graphfla_spec("Schulz2025.csv", "COV107-23", "0000000000"),
+    _graphfla_spec("Poelwijk2019.csv", "eqFP611", "0000000000000"),
     _graphfla_spec("Moulana2023_S309.csv", "SARS-CoV-2-RBD", "000000000000000"),
 )
 

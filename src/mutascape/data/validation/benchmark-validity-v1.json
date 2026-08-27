@@ -1,58 +1,63 @@
 {
   "id": "benchmark-validity-v1",
-  "panel": "SSMuLA development panel",
+  "aggregation": "protein-balanced",
   "nLandscapes": 16,
+  "nProteinGroups": 6,
   "nMethods": 12,
   "budget": 96,
   "trials": 10,
   "draws": 3,
-  "measuredReliabilityFloor": 0.249096,
-  "external": {
-    "panel": "GraphFLA protein panel",
+  "measuredReliabilityFloor": 0.350871,
+  "combingym": {
+    "nLandscapes": 8,
+    "nProteinGroups": 6,
+    "nMethods": 12,
+    "budget": 96,
+    "trials": 10,
+    "draws": 3,
+    "kendallTau": 0.363636,
+    "pairwiseAccuracy": 0.678147,
+    "reliabilityPassRate": 0.833333
+  },
+  "graphfla": {
     "nLandscapes": 7,
+    "nProteinGroups": 7,
     "nMethods": 12,
     "budget": 96,
     "trials": 10,
     "draws": 3,
     "kendallTau": 0.644061,
-    "pairwiseAccuracy": 0.741935,
+    "pairwiseAccuracy": 0.719243,
     "reliabilityPassRate": 0.571429
   },
   "methods": [
     {
       "id": "dms_pairwise_mean",
       "label": "Mutascape",
-      "kendallTau": 0.45407,
-      "pairwiseAccuracy": 0.786948,
-      "reliabilityPassRate": 0.6875
+      "kendallTau": 0.432895,
+      "pairwiseAccuracy": 0.818524,
+      "reliabilityPassRate": 0.783333
     },
     {
       "id": "potts_low_mean",
       "label": "Potts",
-      "kendallTau": 0.401156,
-      "pairwiseAccuracy": 0.758157,
-      "reliabilityPassRate": 0.625
+      "kendallTau": 0.342653,
+      "pairwiseAccuracy": 0.786557,
+      "reliabilityPassRate": 0.616667
     },
     {
       "id": "rmf_high_mean",
       "label": "RMF",
-      "kendallTau": 0.457599,
-      "pairwiseAccuracy": 0.823417,
-      "reliabilityPassRate": 0.6875
-    },
-    {
-      "id": "posterior_mean",
-      "label": "Prior model",
-      "kendallTau": 0.248097,
-      "pairwiseAccuracy": 0.714012,
-      "reliabilityPassRate": 0.5625
+      "kendallTau": 0.465448,
+      "pairwiseAccuracy": 0.819508,
+      "reliabilityPassRate": 0.633333
     },
     {
       "id": "additive",
       "label": "Additive",
-      "kendallTau": 0.292655,
-      "pairwiseAccuracy": 0.698656,
-      "reliabilityPassRate": 0.5
+      "kendallTau": 0.296777,
+      "pairwiseAccuracy": 0.737229,
+      "reliabilityPassRate": 0.583333
     }
   ],
   "budgetCurve": {
@@ -66,85 +71,121 @@
       {
         "id": "dms_pairwise_mean",
         "label": "Mutascape",
-        "developmentKendall": [
-          0.529109,
-          0.45407,
-          0.505293,
+        "ssmulaKendall": [
+          0.556437,
+          0.432895,
+          0.516959,
           0.462002
         ],
-        "externalKendall": [
+        "combingymKendall": [
+          0.363636,
+          0.363636,
+          0.540259,
+          0.411377
+        ],
+        "graphflaKendall": [
           0.439388,
           0.644061,
           0.656508,
           1.0
         ],
-        "developmentWinners": [
-          0.885481,
-          0.786948,
-          0.737194,
-          0.644501
+        "ssmulaWinners": [
+          0.895208,
+          0.818524,
+          0.822301,
+          0.814184
         ],
-        "externalWinners": [
-          0.863874,
-          0.741935,
-          0.848485,
-          0.640449
+        "combingymWinners": [
+          0.691111,
+          0.678147,
+          0.798853,
+          0.745726
+        ],
+        "graphflaWinners": [
+          0.73539,
+          0.719243,
+          0.821008,
+          0.759988
         ]
       },
       {
         "id": "potts_low_mean",
         "label": "Potts",
-        "developmentKendall": [
-          0.446113,
-          0.401156,
-          0.550279,
-          0.498202
+        "ssmulaKendall": [
+          0.495275,
+          0.342653,
+          0.566505,
+          0.53698
         ],
-        "externalKendall": [
+        "combingymKendall": [
+          0.454545,
+          0.424242,
+          0.616249,
+          0.440204
+        ],
+        "graphflaKendall": [
           0.336528,
           0.641689,
           0.603269,
           1.0
         ],
-        "developmentWinners": [
-          0.811861,
-          0.758157,
-          0.706013,
-          0.644501
+        "ssmulaWinners": [
+          0.793862,
+          0.786557,
+          0.789398,
+          0.821609
         ],
-        "externalWinners": [
-          0.764398,
-          0.780645,
-          0.838384,
-          0.662921
+        "combingymWinners": [
+          0.710582,
+          0.666124,
+          0.779872,
+          0.781739
+        ],
+        "graphflaWinners": [
+          0.684556,
+          0.759942,
+          0.812605,
+          0.777531
         ]
       },
       {
         "id": "rmf_high_mean",
         "label": "RMF",
-        "developmentKendall": [
-          0.515416,
-          0.457599,
-          0.341686,
-          0.325748
+        "ssmulaKendall": [
+          0.393239,
+          0.465448,
+          0.348821,
+          0.405298
         ],
-        "externalKendall": [
+        "combingymKendall": [
+          0.30303,
+          0.371289,
+          0.297772,
+          0.212121
+        ],
+        "graphflaKendall": [
           0.230283,
           0.387702,
           0.431788,
           0.60553
         ],
-        "developmentWinners": [
-          0.865031,
-          0.823417,
-          0.728285,
-          0.680307
+        "ssmulaWinners": [
+          0.842451,
+          0.819508,
+          0.743886,
+          0.804078
         ],
-        "externalWinners": [
-          0.748691,
-          0.787097,
-          0.959596,
-          0.910112
+        "combingymWinners": [
+          0.729418,
+          0.637532,
+          0.710738,
+          0.789401
+        ],
+        "graphflaWinners": [
+          0.670669,
+          0.778502,
+          0.950649,
+          0.940003
         ]
       }
     ]

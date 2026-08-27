@@ -8,7 +8,8 @@ Example:
 
     uv run python scripts/run_search_transfer.py \
         --ssmula-root .mutascape/benchmark-data/ssmula \
-        --combingym-root .mutascape/benchmark-data/combingym
+        --combingym-root .mutascape/benchmark-data/combingym \
+        --target-source combingym
 """
 
 import argparse
@@ -45,15 +46,35 @@ from mutascape.benchmarks.validity import (
 )
 from mutascape.completion import LandscapePrior, PosteriorLandscape
 
+TARGET_SOURCES = ("ssmula", "combingym")
+
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ssmula-root", type=Path, required=True)
     parser.add_argument("--combingym-root", type=Path)
     parser.add_argument(
+        "--target-source",
+        choices=[*TARGET_SOURCES, "all"],
+        default="ssmula",
+        help="Score SSMuLA, CombinGym, or both through protein-group holdout",
+    )
+    parser.add_argument(
+        "--minimum-coverage",
+        type=float,
+        default=0.5,
+        help="Minimum finite coverage of the single-supported mutation domain",
+    )
+    parser.add_argument(
+        "--minimum-candidates",
+        type=int,
+        default=384,
+        help="Minimum finite candidates, fixed across every query budget",
+    )
+    parser.add_argument(
         "--graphfla-root",
         type=Path,
-        help="Score the fixed external GraphFLA panel using a prior fitted on the other sources",
+        help="Score the GraphFLA collection using a prior fitted on the other sources",
     )
     parser.add_argument(
         "--output", type=Path, default=Path("notebooks/iclr/output_search_transfer")
@@ -103,6 +124,11 @@ def _regret(values: np.ndarray, best: float) -> float:
     return (top - best) / (top - bottom)
 
 
+def _include_posterior_baseline(generators: str | None) -> bool:
+    """Keep the older empirical-prior arm outside the primary comparison."""
+    return generators != "primary"
+
+
 def _validate_scores(scores: pd.DataFrame, *, expected_trials: int) -> None:
     """Reject incomplete or invalid trial tables before aggregation."""
     key = ["dataset", "arm", "method", "trial"]
@@ -126,7 +152,7 @@ def _score_landscape(dataset, prior, args, fold_index, dataset_index) -> list[di
     cube = supported_cube(dataset, split.train)
     measured, coverage = measured_tensor(dataset, cube)
     mask = np.isfinite(measured)
-    if int(mask.sum()) < 4:
+    if int(mask.sum()) < 4 or coverage < args.minimum_coverage:
         return []
 
     space = SearchSpace.from_cube(cube, mask)
@@ -144,10 +170,11 @@ def _score_landscape(dataset, prior, args, fold_index, dataset_index) -> list[di
         "measured": space.arm_values(measured),
         "additive": space.arm_values(additive_tensor(split.train, cube)),
     }
-    for draw, tensor in enumerate(
-        posterior_tensors(posterior, cube, n_samples=args.draws, seed=seed)
-    ):
-        arms[f"posterior_{draw}"] = space.arm_values(tensor)
+    if _include_posterior_baseline(args.generators):
+        for draw, tensor in enumerate(
+            posterior_tensors(posterior, cube, n_samples=args.draws, seed=seed)
+        ):
+            arms[f"posterior_{draw}"] = space.arm_values(tensor)
     if args.generators:
         if args.generators == "primary":
             generators = build_primary_generators(
@@ -188,6 +215,7 @@ def _score_landscape(dataset, prior, args, fold_index, dataset_index) -> list[di
                     {
                         "dataset": dataset.name,
                         "protein": dataset.protein,
+                        "source": dataset.spec.source,
                         "arm": arm,
                         "method": method,
                         "trial": trial,
@@ -199,6 +227,42 @@ def _score_landscape(dataset, prior, args, fold_index, dataset_index) -> list[di
                     }
                 )
     return rows
+
+
+def _target_sources(value: str) -> set[str]:
+    """Expand the target-source CLI value into source names."""
+    return set(TARGET_SOURCES) if value == "all" else {value}
+
+
+def _target_eligibility(
+    dataset,
+    minimum_coverage: float,
+    minimum_candidates: int = 384,
+) -> dict[str, object]:
+    """Record whether one measured landscape supports the search task."""
+    split = mutation_order_split(dataset.variants, max_train_depth=1)
+    informative = has_informative_singles(split.train)
+    cube = supported_cube(dataset, split.train)
+    measured, coverage = measured_tensor(dataset, cube)
+    finite = int(np.isfinite(measured).sum())
+    reason = "included"
+    if not informative:
+        reason = "single mutants carry no variance"
+    elif finite < minimum_candidates:
+        reason = f"fewer than {minimum_candidates} finite candidates"
+    elif coverage < minimum_coverage:
+        reason = f"coverage below {minimum_coverage:.3f}"
+    return {
+        "dataset": dataset.name,
+        "protein": dataset.protein,
+        "source": dataset.spec.source,
+        "supported_domain": cube.size,
+        "finite_candidates": finite,
+        "coverage": coverage,
+        "informative_singles": informative,
+        "included": reason == "included",
+        "reason": reason,
+    }
 
 
 def _fold_rows(fold, fold_index, cube_names, args) -> list[dict[str, object]]:
@@ -218,7 +282,7 @@ def _fold_rows(fold, fold_index, cube_names, args) -> list[dict[str, object]]:
     return rows
 
 
-def _external_rows(dataset, prior, index, args) -> list[dict[str, object]]:
+def _graphfla_rows(dataset, prior, index, args) -> list[dict[str, object]]:
     started = time.perf_counter()
     rows = _score_landscape(dataset, prior, args, index, 0)
     print(
@@ -292,8 +356,11 @@ def _with_ensemble_arms(scores: pd.DataFrame) -> pd.DataFrame:
         selected = scores.loc[scores["arm"].str.startswith(f"{prefix}_")]
         if selected.empty:
             continue
+        group_columns = ["dataset", "protein", "method", "trial"]
+        if "source" in selected:
+            group_columns.insert(2, "source")
         ensemble = (
-            selected.groupby(["dataset", "protein", "method", "trial"], as_index=False)["regret"]
+            selected.groupby(group_columns, as_index=False)["regret"]
             .mean()
             .assign(arm=f"{prefix}_mean")
         )
@@ -303,6 +370,12 @@ def _with_ensemble_arms(scores: pd.DataFrame) -> pd.DataFrame:
 
 def main() -> None:
     args = _parse_args()
+    if not 0.0 <= args.minimum_coverage <= 1.0:
+        raise SystemExit("minimum coverage must be between zero and one")
+    if args.minimum_candidates < 4:
+        raise SystemExit("minimum candidates must be at least four")
+    if args.target_source in {"combingym", "all"} and args.combingym_root is None:
+        raise SystemExit("CombinGym targets require --combingym-root")
     training_datasets = load_ssmula_landscapes(args.ssmula_root, strict=False)
     if args.combingym_root is not None:
         training_datasets = training_datasets + load_combingym_landscapes(
@@ -317,21 +390,30 @@ def main() -> None:
             targets = [dataset for dataset in targets if dataset.name in set(args.only)]
         prior = LandscapePrior.fit(training_datasets, max_order=args.max_order)
         batches = Parallel(n_jobs=args.jobs, verbose=10)(
-            delayed(_external_rows)(dataset, prior, index, args)
+            delayed(_graphfla_rows)(dataset, prior, index, args)
             for index, dataset in enumerate(targets)
         )
-        validation_panel = "graphfla_external"
+        validation_panel = "graphfla"
     else:
-        cube_names = {
-            dataset.name for dataset in training_datasets if dataset.spec.source == "ssmula"
-        }
+        target_sources = _target_sources(args.target_source)
+        target_candidates = [
+            dataset for dataset in training_datasets if dataset.spec.source in target_sources
+        ]
+        eligibility = pd.DataFrame(
+            _target_eligibility(dataset, args.minimum_coverage, args.minimum_candidates)
+            for dataset in target_candidates
+        )
+        eligibility.to_csv(args.output / "target_eligibility.csv", index=False)
+        cube_names = set(eligibility.loc[eligibility["included"], "dataset"])
         if args.only:
             cube_names = {name for name in cube_names if name in set(args.only)}
+        if not cube_names:
+            raise SystemExit("no target landscapes meet the selection rules")
         folds = list(iter_protein_holdouts(training_datasets))
         batches = Parallel(n_jobs=args.jobs, verbose=10)(
             delayed(_fold_rows)(fold, index, cube_names, args) for index, fold in enumerate(folds)
         )
-        validation_panel = "protein_holdout"
+        validation_panel = f"{args.target_source}_protein_holdout"
     scores = pd.DataFrame([row for batch in batches for row in batch])
     if scores.empty:
         raise SystemExit("no landscapes scored")
@@ -351,6 +433,9 @@ def main() -> None:
     summary = {
         "budget": args.budget,
         "validation_panel": validation_panel,
+        "target_source": "graphfla" if args.graphfla_root is not None else args.target_source,
+        "minimum_coverage": args.minimum_coverage,
+        "minimum_candidates": args.minimum_candidates,
         "floor_policy": args.floor_policy,
         "global_epistasis": args.global_epistasis,
         "dms_pairwise_coupling": args.dms_pairwise_coupling,
@@ -359,6 +444,8 @@ def main() -> None:
         "posterior_draws": args.draws,
         "acquisition_pool": 20_000,
         "n_landscapes": int(scores["dataset"].nunique()),
+        "n_protein_groups": int(scores["protein"].nunique()),
+        "landscapes": sorted(scores["dataset"].unique()),
         "n_methods": int(scores["method"].nunique()),
         "wall_seconds": time.perf_counter() - started,
         "median_regret": scores.groupby(["arm", "method"])["regret"]

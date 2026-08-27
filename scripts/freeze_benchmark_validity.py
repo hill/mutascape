@@ -10,7 +10,6 @@ METHODS = (
     ("dms_pairwise_mean", "Mutascape"),
     ("potts_low_mean", "Potts"),
     ("rmf_high_mean", "RMF"),
-    ("posterior_mean", "Prior model"),
     ("additive", "Additive"),
 )
 CURVE_METHODS = METHODS[:3]
@@ -27,8 +26,23 @@ def _parse_run(value: str) -> tuple[int, Path]:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--development", action="append", type=_parse_run, required=True)
-    parser.add_argument("--external", action="append", type=_parse_run, required=True)
+    parser.add_argument(
+        "--ssmula",
+        "--development",
+        dest="ssmula",
+        action="append",
+        type=_parse_run,
+        required=True,
+    )
+    parser.add_argument("--combingym", action="append", type=_parse_run, required=True)
+    parser.add_argument(
+        "--graphfla",
+        "--external",
+        dest="graphfla",
+        action="append",
+        type=_parse_run,
+        required=True,
+    )
     parser.add_argument("--primary-budget", type=int, default=96)
     parser.add_argument(
         "--output",
@@ -50,28 +64,49 @@ def _load_runs(values: list[tuple[int, Path]]) -> dict[int, Path]:
 
 
 def _arm_metrics(root: Path, arm: str) -> dict[str, float]:
+    proteins = pd.read_csv(root / "scores.csv")[["dataset", "protein"]].drop_duplicates()
     transfer = pd.read_csv(root / "transfer.csv")
     pairwise = pd.read_csv(root / "pairwise_transfer.csv")
     adjusted = pd.read_csv(root / "reliability_adjusted_transfer.csv")
-    arm_transfer = transfer.loc[transfer["arm"] == arm, "kendall_tau"]
-    arm_pairs = pairwise.loc[pairwise["arm"] == arm, ["correct_pairs", "scored_pairs"]].sum()
-    scored_pairs = int(arm_pairs["scored_pairs"])
-    if arm_transfer.empty or scored_pairs == 0:
+    arm_transfer = transfer.loc[transfer["arm"] == arm].merge(proteins, on="dataset")
+    arm_pairs = pairwise.loc[pairwise["arm"] == arm].merge(proteins, on="dataset")
+    if arm_transfer.empty or arm_pairs.empty:
         raise ValueError(f"{root} has no complete metrics for {arm}")
+    protein_transfer = arm_transfer.groupby("protein")["kendall_tau"].median()
+    protein_pairs = arm_pairs.groupby("protein")[["correct_pairs", "scored_pairs"]].sum()
+    protein_pairs = protein_pairs.loc[protein_pairs["scored_pairs"] > 0]
+    if protein_pairs.empty:
+        raise ValueError(f"{root} has no reliable method pairs for {arm}")
+    protein_adjusted = (
+        adjusted.loc[adjusted["arm"] == arm]
+        .merge(proteins, on="dataset")
+        .groupby("protein")["meets_reliability_floor"]
+        .mean()
+    )
     return {
-        "kendallTau": round(float(arm_transfer.median()), 6),
-        "pairwiseAccuracy": round(float(arm_pairs["correct_pairs"] / scored_pairs), 6),
-        "reliabilityPassRate": round(
-            float(adjusted.loc[adjusted["arm"] == arm, "meets_reliability_floor"].mean()),
-            6,
+        "kendallTau": round(float(protein_transfer.median()), 6),
+        "pairwiseAccuracy": round(
+            float((protein_pairs["correct_pairs"] / protein_pairs["scored_pairs"]).mean()), 6
         ),
+        "reliabilityPassRate": round(float(protein_adjusted.mean()), 6),
     }
+
+
+def _reliability_floor(root: Path) -> float:
+    proteins = pd.read_csv(root / "scores.csv")[["dataset", "protein"]].drop_duplicates()
+    reliability = pd.read_csv(root / "measured_reliability.csv").merge(proteins, on="dataset")
+    protein_floors = reliability.groupby("protein")["split_half_lower"].median()
+    if protein_floors.empty:
+        raise ValueError(f"{root} has no measured reliability estimates")
+    return round(float(protein_floors.median()), 6)
 
 
 def _metadata(root: Path) -> dict[str, object]:
     summary = json.loads((root / "summary.json").read_text())
+    n_protein_groups = pd.read_csv(root / "scores.csv")["protein"].nunique()
     return {
         "nLandscapes": int(summary["n_landscapes"]),
+        "nProteinGroups": int(n_protein_groups),
         "nMethods": int(summary["n_methods"]),
         "budget": int(summary["budget"]),
         "trials": int(summary["seeds"]),
@@ -81,33 +116,38 @@ def _metadata(root: Path) -> dict[str, object]:
 
 def main() -> None:
     args = _parse_args()
-    development = _load_runs(args.development)
-    external = _load_runs(args.external)
-    if set(development) != set(external):
-        raise ValueError("development and external runs must use the same budgets")
-    if args.primary_budget not in development:
+    ssmula = _load_runs(args.ssmula)
+    combingym = _load_runs(args.combingym)
+    graphfla = _load_runs(args.graphfla)
+    if not (set(ssmula) == set(combingym) == set(graphfla)):
+        raise ValueError("SSMuLA, CombinGym, and GraphFLA runs must use the same budgets")
+    if args.primary_budget not in ssmula:
         raise ValueError("primary budget is absent")
 
-    development_root = development[args.primary_budget]
-    external_root = external[args.primary_budget]
-    reliability = pd.read_csv(development_root / "measured_reliability.csv")
-    development_metadata = _metadata(development_root)
-    external_metadata = _metadata(external_root)
-    external_primary = _arm_metrics(external_root, "dms_pairwise_mean")
-    budgets = sorted(development)
+    ssmula_root = ssmula[args.primary_budget]
+    combingym_root = combingym[args.primary_budget]
+    graphfla_root = graphfla[args.primary_budget]
+    ssmula_metadata = _metadata(ssmula_root)
+    combingym_metadata = _metadata(combingym_root)
+    graphfla_metadata = _metadata(graphfla_root)
+    combingym_primary = _arm_metrics(combingym_root, "dms_pairwise_mean")
+    graphfla_primary = _arm_metrics(graphfla_root, "dms_pairwise_mean")
+    budgets = sorted(ssmula)
     output = {
         "id": "benchmark-validity-v1",
-        "panel": "SSMuLA development panel",
-        **development_metadata,
-        "measuredReliabilityFloor": round(float(reliability["split_half_lower"].median()), 6),
-        "external": {
-            "panel": "GraphFLA protein panel",
-            **external_metadata,
-            **external_primary,
+        "aggregation": "protein-balanced",
+        **ssmula_metadata,
+        "measuredReliabilityFloor": _reliability_floor(ssmula_root),
+        "combingym": {
+            **combingym_metadata,
+            **combingym_primary,
+        },
+        "graphfla": {
+            **graphfla_metadata,
+            **graphfla_primary,
         },
         "methods": [
-            {"id": arm, "label": label, **_arm_metrics(development_root, arm)}
-            for arm, label in METHODS
+            {"id": arm, "label": label, **_arm_metrics(ssmula_root, arm)} for arm, label in METHODS
         ],
         "budgetCurve": {
             "budgets": budgets,
@@ -115,18 +155,24 @@ def main() -> None:
                 {
                     "id": arm,
                     "label": label,
-                    "developmentKendall": [
-                        _arm_metrics(development[budget], arm)["kendallTau"] for budget in budgets
+                    "ssmulaKendall": [
+                        _arm_metrics(ssmula[budget], arm)["kendallTau"] for budget in budgets
                     ],
-                    "externalKendall": [
-                        _arm_metrics(external[budget], arm)["kendallTau"] for budget in budgets
+                    "combingymKendall": [
+                        _arm_metrics(combingym[budget], arm)["kendallTau"] for budget in budgets
                     ],
-                    "developmentWinners": [
-                        _arm_metrics(development[budget], arm)["pairwiseAccuracy"]
+                    "graphflaKendall": [
+                        _arm_metrics(graphfla[budget], arm)["kendallTau"] for budget in budgets
+                    ],
+                    "ssmulaWinners": [
+                        _arm_metrics(ssmula[budget], arm)["pairwiseAccuracy"] for budget in budgets
+                    ],
+                    "combingymWinners": [
+                        _arm_metrics(combingym[budget], arm)["pairwiseAccuracy"]
                         for budget in budgets
                     ],
-                    "externalWinners": [
-                        _arm_metrics(external[budget], arm)["pairwiseAccuracy"]
+                    "graphflaWinners": [
+                        _arm_metrics(graphfla[budget], arm)["pairwiseAccuracy"]
                         for budget in budgets
                     ],
                 }

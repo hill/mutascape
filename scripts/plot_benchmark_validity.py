@@ -11,30 +11,37 @@ ARMS = [
     "dms_pairwise_mean",
     "potts_low_mean",
     "rmf_high_mean",
-    "posterior_mean",
     "additive",
 ]
-LABELS = ["Mutascape", "Potts", "RMF", "Empirical prior", "Additive"]
-COLOURS = ["#e8792e", "#3d6ddd", "#55b685", "#7d65b5", "#808791"]
+LABELS = ["Mutascape", "Potts", "RMF", "Additive"]
+COLOURS = ["#e8792e", "#3d6ddd", "#55b685", "#808791"]
 
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--development", type=Path, required=True)
-    parser.add_argument("--external", type=Path)
+    parser.add_argument("--ssmula", type=Path, required=True)
+    parser.add_argument("--combingym", type=Path, required=True)
+    parser.add_argument("--graphfla", type=Path, required=True)
     parser.add_argument(
-        "--development-budget",
+        "--ssmula-budget",
         action="append",
         type=_parse_budget_run,
         default=[],
-        help="Add one BUDGET=PATH run to the budget-sensitivity figure",
+        help="Add one BUDGET=PATH SSMuLA run to the budget figure",
     )
     parser.add_argument(
-        "--external-budget",
+        "--combingym-budget",
         action="append",
         type=_parse_budget_run,
         default=[],
-        help="Add one BUDGET=PATH run to the external budget-sensitivity figure",
+        help="Add one BUDGET=PATH CombinGym run to the budget figure",
+    )
+    parser.add_argument(
+        "--graphfla-budget",
+        action="append",
+        type=_parse_budget_run,
+        default=[],
+        help="Add one BUDGET=PATH GraphFLA run to the budget figure",
     )
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
@@ -49,20 +56,43 @@ def _parse_budget_run(value: str) -> tuple[int, Path]:
 
 
 def _metrics(root: Path) -> tuple[pd.Series, pd.Series, pd.Series]:
+    proteins = pd.read_csv(root / "scores.csv")[["dataset", "protein"]].drop_duplicates()
     transfer = pd.read_csv(root / "transfer.csv")
     pairwise = pd.read_csv(root / "pairwise_transfer.csv")
     adjusted = pd.read_csv(root / "reliability_adjusted_transfer.csv")
-    tau = transfer.groupby("arm")["kendall_tau"].median().reindex(ARMS)
-    pair_totals = pairwise.groupby("arm")[["correct_pairs", "scored_pairs"]].sum()
-    winners = (pair_totals["correct_pairs"] / pair_totals["scored_pairs"]).reindex(ARMS)
-    reliability = adjusted.groupby("arm")["meets_reliability_floor"].mean().reindex(ARMS)
+    tau = (
+        transfer.merge(proteins, on="dataset")
+        .groupby(["arm", "protein"])["kendall_tau"]
+        .median()
+        .groupby("arm")
+        .median()
+        .reindex(ARMS)
+    )
+    protein_pairs = (
+        pairwise.merge(proteins, on="dataset")
+        .groupby(["arm", "protein"])[["correct_pairs", "scored_pairs"]]
+        .sum()
+    )
+    protein_pairs = protein_pairs.loc[protein_pairs["scored_pairs"] > 0]
+    winners = (
+        (protein_pairs["correct_pairs"] / protein_pairs["scored_pairs"])
+        .groupby("arm")
+        .mean()
+        .reindex(ARMS)
+    )
+    reliability = (
+        adjusted.merge(proteins, on="dataset")
+        .groupby(["arm", "protein"])["meets_reliability_floor"]
+        .mean()
+        .groupby("arm")
+        .mean()
+        .reindex(ARMS)
+    )
     return tau, winners, reliability
 
 
-def plot_summary(development: Path, external: Path | None, output: Path) -> None:
-    panels = [("Development", development)]
-    if external is not None and (external / "transfer.csv").exists():
-        panels.append(("External protein panel", external))
+def plot_summary(ssmula: Path, combingym: Path, graphfla: Path, output: Path) -> None:
+    panels = [("SSMuLA", ssmula), ("CombinGym", combingym), ("GraphFLA", graphfla)]
     figure, axes = plt.subplots(
         1,
         len(panels),
@@ -82,8 +112,7 @@ def plot_summary(development: Path, external: Path | None, output: Path) -> None
             label="Reliability pass",
             color="#55b685",
         )
-        if len(panels) > 1:
-            axis.set_title(title, loc="left", fontweight="bold")
+        axis.set_title(title, loc="left", fontweight="bold")
         axis.set_yticks(y, LABELS)
         axis.invert_yaxis()
         axis.set_xlim(0, 1)
@@ -107,8 +136,8 @@ def plot_summary(development: Path, external: Path | None, output: Path) -> None
     plt.close(figure)
 
 
-def plot_landscapes(development: Path, output: Path) -> None:
-    transfer = pd.read_csv(development / "transfer.csv")
+def plot_landscapes(ssmula: Path, output: Path) -> None:
+    transfer = pd.read_csv(ssmula / "transfer.csv")
     pivot = transfer.loc[transfer["arm"].isin(ARMS)].pivot(
         index="dataset", columns="arm", values="kendall_tau"
     )
@@ -137,13 +166,16 @@ def plot_landscapes(development: Path, output: Path) -> None:
 
 
 def plot_budget_curve(
-    development: list[tuple[int, Path]],
-    external: list[tuple[int, Path]],
+    ssmula: list[tuple[int, Path]],
+    combingym: list[tuple[int, Path]],
+    graphfla: list[tuple[int, Path]],
     output: Path,
 ) -> None:
-    panels = [("Development", sorted(development))]
-    if external:
-        panels.append(("External protein panel", sorted(external)))
+    panels = [
+        ("SSMuLA", sorted(ssmula)),
+        ("CombinGym", sorted(combingym)),
+        ("GraphFLA", sorted(graphfla)),
+    ]
     figure, axes = plt.subplots(
         1,
         len(panels),
@@ -153,10 +185,14 @@ def plot_budget_curve(
     )
     for axis, (title, runs) in zip(axes[0], panels):
         budgets = [budget for budget, _ in runs]
-        tables = [pd.read_csv(root / "transfer.csv") for _, root in runs]
+        tables = []
+        for _, root in runs:
+            proteins = pd.read_csv(root / "scores.csv")[["dataset", "protein"]].drop_duplicates()
+            tables.append(pd.read_csv(root / "transfer.csv").merge(proteins, on="dataset"))
         for arm, label, colour in zip(ARMS[:3], LABELS[:3], COLOURS[:3]):
             distributions = [
-                table.loc[table["arm"] == arm, "kendall_tau"].dropna() for table in tables
+                table.loc[table["arm"] == arm].groupby("protein")["kendall_tau"].median().dropna()
+                for table in tables
             ]
             medians = [values.median() for values in distributions]
             lower = [values.quantile(0.25) for values in distributions]
@@ -181,10 +217,15 @@ def plot_budget_curve(
 def main() -> None:
     args = _parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    plot_summary(args.development, args.external, args.output)
-    plot_landscapes(args.development, args.output)
-    if args.development_budget:
-        plot_budget_curve(args.development_budget, args.external_budget, args.output)
+    plot_summary(args.ssmula, args.combingym, args.graphfla, args.output)
+    plot_landscapes(args.ssmula, args.output)
+    if args.ssmula_budget:
+        plot_budget_curve(
+            args.ssmula_budget,
+            args.combingym_budget,
+            args.graphfla_budget,
+            args.output,
+        )
 
 
 if __name__ == "__main__":

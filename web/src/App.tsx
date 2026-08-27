@@ -42,6 +42,7 @@ import {
   DataZoomComponent,
   GridComponent,
   LegendComponent,
+  MarkLineComponent,
   TooltipComponent,
   VisualMapComponent,
 } from "echarts/components"
@@ -51,6 +52,7 @@ import {
   type ChangeEvent,
   type DragEvent,
   type FormEvent,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -74,8 +76,6 @@ import {
   streamPreview,
 } from "./api"
 import {
-  benchmarkBudgetOptions,
-  benchmarkValidityOptions,
   fitnessProfileOptions,
   landscapeGraphOptions,
   posteriorProfileOptions,
@@ -117,6 +117,7 @@ echarts.use([
   ScatterChart,
   GridComponent,
   LegendComponent,
+  MarkLineComponent,
   TooltipComponent,
   VisualMapComponent,
   DataZoomComponent,
@@ -201,7 +202,7 @@ export default function App({
   const [models, setModels] = useState<ModelSummary[]>([])
   const [draft, setDraft] = useState<DraftResponse | null>(null)
   const [draftModel, setDraftModel] = useState<ModelSummary | null>(null)
-  const [selectedId, setSelectedId] = useState("creilov_dms_pairwise")
+  const [selectedId, setSelectedId] = useState("")
   const [parameters, setParameters] = useState<ModelParameters>(DEFAULT_PARAMETERS)
   const [sampleSize, setSampleSize] = useState(10_000)
   const [maxDepth, setMaxDepth] = useState(4)
@@ -239,8 +240,10 @@ export default function App({
     try {
       const items = await listModels()
       setModels(items)
+      // An empty selection is the starting state, not a stale one, so it survives a
+      // refresh. Only an id that has disappeared from the catalogue gets repointed.
       setSelectedId((current) =>
-        !items.some((model) => model.id === current) && current !== draft?.id
+        current && current !== draft?.id && !items.some((model) => model.id === current)
           ? (items[0]?.id ?? "")
           : current,
       )
@@ -804,7 +807,7 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
             value={sourceMode}
             onValueChange={(value) => setSourceMode(value as "preset" | "upload")}
             tabs={[
-              { value: "preset", label: "Preset data" },
+              { value: "preset", label: "Choose source" },
               { value: "upload", label: "Upload DMS" },
             ]}
             className="source-mode-tabs"
@@ -816,7 +819,7 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
                 label="Landscape source"
                 labelTooltip="A reference has every combination measured, so a synthetic landscape built on it can be scored against ground truth. A posterior is built from single mutants alone and fills the combinations from the transferred prior, which is what your own DMS gets."
                 size="sm"
-                value={selectedModel?.id}
+                value={selectedModel?.id ?? ""}
                 onValueChange={(value) => value && selectModel(String(value))}
                 items={modelItems}
                 loading={loadingModels}
@@ -830,6 +833,13 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
                         ? "Combinatorially complete"
                         : "Completed from the prior"}
                     </Badge>
+                    <PanelHint
+                      content={
+                        selectedModel.kind === "reference"
+                          ? "Every combination of the mutable sites is measured. A synthetic landscape built on this source can therefore be scored against real ground truth."
+                          : "A deep mutational scan measures single mutants, never the combinations. Those singles act as observations, and the bundled prior supplies the pairwise structure learnt from other proteins. Conditioning one on the other gives a distribution over landscapes rather than one answer, which is why the panels show shaded bands. The oracle seed fixes a single draw so every query stays reproducible."
+                      }
+                    />
                   </div>
                   <Text size="sm">{selectedModel.description}</Text>
                   <dl className="compact-facts">
@@ -887,6 +897,7 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
             value={parameters}
             onChange={setParameters}
             locked={parametersLocked}
+            hasSource={selectedModel !== null}
             hasStructure={hasStructure}
             canFitNonlinearity={canFitNonlinearity}
           />
@@ -894,6 +905,16 @@ function LandscapeBuilder(props: LandscapeBuilderProps) {
       </Grid>
 
       {intakeReport && <IntakeReport summary={intakeReport} />}
+      {!selectedModel && sourceMode === "preset" && (
+        <LayerCard className="compact-empty panel-card">
+          <Empty
+            size="base"
+            icon={<Flask size={36} />}
+            title="No source data"
+            description="Choose a source above or upload your own DMS."
+          />
+        </LayerCard>
+      )}
       {substitutionMap && (
         <SubstitutionMapPanel map={substitutionMap} scope={mapScope} onScopeChange={setMapScope} />
       )}
@@ -1033,12 +1054,14 @@ function SubstitutionMapPanel({
           <span className="swatch measured" />
           Measured
         </li>
-        <li>
-          <span className="swatch imputed" aria-hidden="true">
-            ×
-          </span>
-          Imputed from the position mean
-        </li>
+        {map.imputedCount > 0 && (
+          <li>
+            <span className="swatch imputed" aria-hidden="true">
+              ×
+            </span>
+            Imputed from the position mean
+          </li>
+        )}
         <li>
           <span className="swatch parent" />
           Parent residue
@@ -1712,6 +1735,7 @@ interface ParameterPanelProps {
   value: ModelParameters
   onChange: (value: ModelParameters) => void
   locked: boolean
+  hasSource: boolean
   hasStructure: boolean
   canFitNonlinearity: boolean
 }
@@ -1720,6 +1744,7 @@ function ParameterPanel({
   value,
   onChange,
   locked,
+  hasSource,
   hasStructure,
   canFitNonlinearity,
 }: ParameterPanelProps) {
@@ -1796,7 +1821,7 @@ function ParameterPanel({
           onChange={(event) => set("seed", Number(event.currentTarget.value))}
         />
       </div>
-      {!hasStructure && (
+      {hasSource && !hasStructure && (
         <Banner
           size="sm"
           variant="secondary"
@@ -1804,7 +1829,7 @@ function ParameterPanel({
           description="Pairwise sigma and alpha stay inactive for this model."
         />
       )}
-      {!canFitNonlinearity && (
+      {hasSource && !canFitNonlinearity && (
         <Banner
           size="sm"
           variant="alert"
@@ -1874,23 +1899,39 @@ function PanelHint({ content }: { content: string }) {
   )
 }
 
+function useNarrowViewport(query = "(max-width: 760px)"): boolean {
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== "undefined" && (window.matchMedia?.(query).matches ?? false),
+  )
+  useEffect(() => {
+    const media = window.matchMedia?.(query)
+    if (!media) return
+    const update = () => setNarrow(media.matches)
+    update()
+    media.addEventListener("change", update)
+    return () => media.removeEventListener("change", update)
+  }, [query])
+  return narrow
+}
+
 function LandscapeMapPanel({ graph, heading }: { graph: LandscapeGraph; heading: string }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const narrow = useNarrowViewport()
   const selected = graph.nodes.find((node) => node.id === selectedId) ?? null
   // A selection that survives into a new sample is dropped by the lookup above, so the panel
   // needs no reset effect.
   const reached = selected ? (reachableFrom(graph, selected.id)?.size ?? 1) - 1 : 0
+  const deepest = Math.max(...graph.nodes.map((node) => node.depth), 0)
 
   return (
-    <LayerCard className="panel-card chart-card">
+    <LayerCard className="panel-card chart-card landscape-map-card">
       <div className="panel-heading">
         <div>
           <Text variant="heading3" as="h2">
             {heading}
           </Text>
           <Text variant="secondary" size="sm">
-            Click a marker to trace what it connects to. Move right for mutation depth and up for
-            higher fitness. Drag to pan and scroll to zoom.
+            Click a marker to trace its mutation path. Scroll to zoom.
           </Text>
         </div>
         {selected ? (
@@ -1903,13 +1944,16 @@ function LandscapeMapPanel({ graph, heading }: { graph: LandscapeGraph; heading:
             </Button>
           </div>
         ) : (
-          <Badge variant="neutral">{graph.nodes.length} variants</Badge>
+          <div className="map-selection">
+            <Badge variant="neutral">{graph.nodes.length} variants</Badge>
+            <Badge variant="neutral">up to {deepest} mutations</Badge>
+          </div>
         )}
       </div>
       <Chart
         echarts={echarts}
         options={landscapeGraphOptions(graph, selectedId)}
-        height={430}
+        height={narrow ? 300 : 430}
         onEvents={{
           click: (params) => {
             if (params.dataType !== "node") return
@@ -1918,6 +1962,19 @@ function LandscapeMapPanel({ graph, heading }: { graph: LandscapeGraph; heading:
           },
         }}
       />
+    </LayerCard>
+  )
+}
+
+function NoticeCard({ heading, children }: { heading: string; children: ReactNode }) {
+  return (
+    <LayerCard className="panel-card notice-card">
+      <div className="panel-heading">
+        <Text variant="heading3" as="h2">
+          {heading}
+        </Text>
+      </div>
+      {children}
     </LayerCard>
   )
 }
@@ -1937,31 +1994,27 @@ function PreviewResults({
 }) {
   return (
     <div className="results-stack">
-      <LayerCard className="panel-card chart-card">
-        <div className="panel-heading">
-          <div>
-            <Text variant="heading3" as="h2">
-              Fitness by mutation depth
-            </Text>
-            <Text variant="secondary" size="sm">
-              Median, middle half, and 5 to 95% range.
-            </Text>
-          </div>
-          <Badge variant={preview.cached ? "green" : "neutral"} appearance="dot">
-            {preview.cached ? "Cached" : "Calculated"}
-          </Badge>
-        </div>
-        <Chart echarts={echarts} options={fitnessProfileOptions(preview.profiles)} height={320} />
-      </LayerCard>
-
       <LandscapeMapPanel graph={preview.sample.graph} heading="Interactive landscape map" />
 
-      {preview.notices.map((notice) => (
-        <Banner key={notice} size="sm" variant="secondary" description={notice} />
-      ))}
+      <Grid variant="2up" gap="sm">
+        <LayerCard className="panel-card chart-card">
+          <div className="panel-heading">
+            <div>
+              <Text variant="heading3" as="h2">
+                Fitness by mutation depth
+              </Text>
+              <Text variant="secondary" size="sm">
+                Median, middle half, and 5 to 95% range.
+              </Text>
+            </div>
+            <Badge variant={preview.cached ? "green" : "neutral"} appearance="dot">
+              {preview.cached ? "Cached" : "Calculated"}
+            </Badge>
+          </div>
+          <Chart echarts={echarts} options={fitnessProfileOptions(preview.profiles)} height={320} />
+        </LayerCard>
 
-      {preview.walsh && (
-        <Grid variant="2up" gap="sm">
+        {preview.walsh && (
           <LayerCard className="panel-card chart-card">
             <div className="panel-heading">
               <Text variant="heading3" as="h2">
@@ -1971,9 +2024,18 @@ function PreviewResults({
             </div>
             <Chart echarts={echarts} options={walshOptions(preview.walsh)} height={250} />
           </LayerCard>
-          <MetricTable rows={preview.metrics} />
-        </Grid>
-      )}
+        )}
+
+        {preview.walsh && <MetricTable rows={preview.metrics} />}
+
+        {preview.notices.length > 0 && (
+          <NoticeCard heading="Notices">
+            {preview.notices.map((notice) => (
+              <Banner key={notice} size="sm" variant="secondary" description={notice} />
+            ))}
+          </NoticeCard>
+        )}
+      </Grid>
 
       <SampleTable preview={preview} />
 
@@ -1998,79 +2060,39 @@ function PosteriorPreviewResults({
 }) {
   return (
     <div className="results-stack">
-      <Banner
-        size="sm"
-        variant="secondary"
-        title={preview.prior.name}
-        description={`The readout calibration uses ${preview.prior.nLandscapes} landscapes across ${preview.prior.nProteins} proteins. Each draw adds stable random pair interactions at coupling ${preview.settings.coupling}.`}
-      />
-      <LayerCard className="panel-card chart-card">
-        <div className="panel-heading">
-          <div>
-            <Text variant="heading3" as="h2">
-              Does the benchmark rank search methods correctly?
-            </Text>
-            <Text variant="secondary" size="sm">
-              {preview.benchmarkValidity.nMethods} methods, budget{" "}
-              {preview.benchmarkValidity.budget}, across {preview.benchmarkValidity.nLandscapes}{" "}
-              complete development landscapes.
-            </Text>
-          </div>
-          <Badge variant="green">Task transfer</Badge>
-        </div>
-        <Chart
-          echarts={echarts}
-          options={benchmarkValidityOptions(preview.benchmarkValidity)}
-          height={360}
-        />
-        <Banner
-          size="sm"
-          variant="secondary"
-          title={`${preview.benchmarkValidity.external.nLandscapes}-landscape external protein panel`}
-          description={`Rank transfer ${preview.benchmarkValidity.external.kendallTau.toFixed(3)}, pairwise winner accuracy ${(100 * preview.benchmarkValidity.external.pairwiseAccuracy).toFixed(1)}%, reliability pass rate ${(100 * preview.benchmarkValidity.external.reliabilityPassRate).toFixed(1)}%.`}
-        />
-      </LayerCard>
-      {preview.benchmarkValidity.budgetCurve && (
+      <LandscapeMapPanel graph={preview.sample.graph} heading="Synthetic landscape map" />
+
+      <Grid variant="2up" gap="sm">
         <LayerCard className="panel-card chart-card">
           <div className="panel-heading">
             <div>
               <Text variant="heading3" as="h2">
-                Do reliable method decisions persist as the query budget grows?
+                Fitness variation by mutation depth
               </Text>
               <Text variant="secondary" size="sm">
-                Solid lines show SSMuLA, dashed lines show CombinGym, and dotted lines show
-                GraphFLA. Accuracy uses method pairs with a reliable measured winner.
+                Bands pool fixed oracle draws. Lines compare one oracle with the additive model.
               </Text>
             </div>
-            <Badge variant="blue">Budget sensitivity</Badge>
+            <Badge variant="purple">{preview.settings.ensembleSize} draws</Badge>
           </div>
           <Chart
             echarts={echarts}
-            options={benchmarkBudgetOptions(preview.benchmarkValidity)}
-            height={380}
+            options={posteriorProfileOptions(preview.profile)}
+            height={340}
           />
         </LayerCard>
-      )}
-      <LayerCard className="panel-card chart-card">
-        <div className="panel-heading">
-          <div>
-            <Text variant="heading3" as="h2">
-              Fitness variation by mutation depth
-            </Text>
-            <Text variant="secondary" size="sm">
-              Bands pool fixed oracle draws. Lines compare one oracle with the additive model.
-            </Text>
-          </div>
-          <Badge variant="purple">{preview.settings.ensembleSize} draws</Badge>
-        </div>
-        <Chart echarts={echarts} options={posteriorProfileOptions(preview.profile)} height={340} />
-      </LayerCard>
 
-      <LandscapeMapPanel graph={preview.sample.graph} heading="Synthetic landscape map" />
-
-      {preview.notices.map((notice) => (
-        <Banner key={notice} size="sm" variant="secondary" description={notice} />
-      ))}
+        <NoticeCard heading={preview.prior.name}>
+          <Banner
+            size="sm"
+            variant="secondary"
+            description={`The readout calibration uses ${preview.prior.nLandscapes} landscapes across ${preview.prior.nProteins} proteins. Each draw adds stable random pair interactions at coupling ${preview.settings.coupling}.`}
+          />
+          {preview.notices.map((notice) => (
+            <Banner key={notice} size="sm" variant="secondary" description={notice} />
+          ))}
+        </NoticeCard>
+      </Grid>
 
       <PosteriorSampleTable preview={preview} />
       {draft && <PublishPanel defaultName={draftName} onPublish={publish} />}

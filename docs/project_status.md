@@ -102,7 +102,7 @@ These components remain useful for ablations. They are outside the default gener
 - `scripts/freeze_benchmark_validity.py` checks and freezes the four-budget result.
 - `scripts/run_topology_benchmark.py` runs secondary shape checks.
 - `scripts/plot_benchmark_validity.py` builds the manuscript figures.
-- `src/mutascape/data/validation/benchmark-validity-v1.json` drives the studio chart.
+- `src/mutascape/data/validation/benchmark-validity-v1.json` holds the frozen four-budget result.
 - `tests/test_benchmark_validity.py` checks the task metrics.
 - `tests/test_benchmark_generators.py` checks exact anchors and lazy equivalence.
 

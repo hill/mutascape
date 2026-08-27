@@ -82,6 +82,8 @@ export interface SubstitutionMap {
   wildTypeCells: number[][]
   measuredCount: number
   imputedCount: number
+  lower: number
+  upper: number
   bound: number
   scope: MapScope
   assayedCount: number
@@ -364,50 +366,6 @@ export interface PosteriorSampleRow {
   upper80: number
 }
 
-export interface BenchmarkValidityMethod {
-  id: string
-  label: string
-  kendallTau: number
-  pairwiseAccuracy: number
-  reliabilityPassRate: number
-}
-
-export interface BenchmarkBudgetSeries {
-  id: string
-  label: string
-  developmentKendall: number[]
-  externalKendall: number[]
-  developmentWinners: number[]
-  externalWinners: number[]
-}
-
-export interface BenchmarkValidity {
-  id: string
-  panel: string
-  nLandscapes: number
-  nMethods: number
-  budget: number
-  trials: number
-  draws?: number
-  measuredReliabilityFloor: number
-  external: {
-    panel: string
-    nLandscapes: number
-    nMethods: number
-    budget: number
-    trials: number
-    draws?: number
-    kendallTau: number
-    pairwiseAccuracy: number
-    reliabilityPassRate: number
-  }
-  methods: BenchmarkValidityMethod[]
-  budgetCurve?: {
-    budgets: number[]
-    series: BenchmarkBudgetSeries[]
-  }
-}
-
 export interface PosteriorPreviewResponse {
   source: Pick<ModelSummary, "id" | "name" | "kind" | "positions" | "wtCompact">
   prior: PriorMetadata
@@ -418,7 +376,6 @@ export interface PosteriorPreviewResponse {
     coupling: number
   }
   profile: PosteriorProfilePoint[]
-  benchmarkValidity: BenchmarkValidity
   sample: {
     requested: number
     returnedRows: number

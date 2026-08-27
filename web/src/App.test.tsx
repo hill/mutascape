@@ -35,6 +35,13 @@ function stubCanvasContext() {
   }
 }
 
+// Nothing is selected when the builder mounts, so a test that needs a source has to
+// pick one the way a reader would.
+async function chooseSource(name: string) {
+  await userEvent.click(await screen.findByRole("combobox", { name: /Landscape source/ }))
+  await userEvent.click(await screen.findByRole("option", { name }))
+}
+
 describe("landscape builder", () => {
   test("loads documentation in the shared application shell", async () => {
     globalThis.fetch = (async () =>
@@ -97,7 +104,7 @@ describe("landscape builder", () => {
       "/assets/logo.png",
     )
     expect(screen.getAllByRole("button", { name: "Collapse sidebar" })).toHaveLength(1)
-    expect(screen.getByRole("tab", { name: "Preset data" })).toBeTruthy()
+    expect(screen.getByRole("tab", { name: "Choose source" })).toBeTruthy()
 
     await userEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }))
     expect(
@@ -235,6 +242,8 @@ describe("landscape builder", () => {
     )
     render(<RouterProvider router={router} />)
 
+    // The button stays disabled until the catalogue lands, so the chips gate the click.
+    await screen.findByRole("button", { name: "V39" })
     await userEvent.type(await screen.findByRole("textbox", { name: "Mutation set" }), "V39A+D40G")
     await userEvent.click(screen.getByRole("button", { name: "Score variant" }))
 
@@ -326,6 +335,8 @@ describe("landscape builder", () => {
                 ],
                 measuredCount: 1,
                 imputedCount: 3,
+                lower: -0.2,
+                upper: 0.4,
                 bound: 0.4,
                 scope: "assayed",
                 assayedCount: 2,
@@ -354,6 +365,7 @@ describe("landscape builder", () => {
     }) as typeof fetch
     const router = createAppRouter(createMemoryHistory({ initialEntries: ["/"] }))
     render(<RouterProvider router={router} />)
+    await chooseSource("GB1 reference")
 
     expect(await screen.findByRole("heading", { name: "Single-mutant effects" })).toBeTruthy()
     expect(screen.getByText("1 measured")).toBeTruthy()

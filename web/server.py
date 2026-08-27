@@ -346,7 +346,7 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
     @app.post("/api/v1/substitution-maps")
     def substitution_grid(payload: SubstitutionMapRequest, request: Request) -> dict[str, Any]:
         source, _, _ = _posterior_source(payload.source, request)
-        return substitution_map(source, scope=payload.scope)
+        return substitution_map(source, scope=payload.scope, impute_missing=False)
 
     @app.post("/api/v1/structures")
     def structure_view(payload: StructureRequest, request: Request) -> dict[str, Any]:

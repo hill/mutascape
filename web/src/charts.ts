@@ -1,7 +1,6 @@
 import type { KumoChartOption } from "@cloudflare/kumo"
 import type { SeriesOption } from "echarts"
 import type {
-  BenchmarkValidity,
   LandscapeGraph,
   PosteriorProfilePoint,
   PosteriorQueryResult,
@@ -17,6 +16,7 @@ const SYNTHETIC = "#27ae60"
 // Cells stop being readable below roughly this width, so wider scans get a zoom slider
 // rather than more columns squeezed into the same card.
 const ZOOM_THRESHOLD = 24
+const RAMP_STOPS = 33
 export const DIVERGING = ["#2166ac", "#92c5de", "#f7f7f7", "#f4a582", "#b2182b"]
 
 function profileMap(points: ProfilePoint[]): Map<number, ProfilePoint> {
@@ -205,51 +205,65 @@ export function reachableFrom(graph: LandscapeGraph, id: string | null): Set<str
   return found
 }
 
+// Every variant at one depth would otherwise land on a single vertical line and overplot,
+// so each node takes a fixed offset within its column. Keyed on the id rather than drawn at
+// random, because the panel re-renders on every selection and nodes must not move.
+function columnOffset(id: string): number {
+  let hash = 2166136261
+  for (let index = 0; index < id.length; index++) {
+    hash ^= id.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return ((hash >>> 0) / 4294967295 - 0.5) * 0.62
+}
+
 export function landscapeGraphOptions(
   graph: LandscapeGraph,
   selectedId: string | null = null,
 ): KumoChartOption {
   const fitness = graph.nodes.map((node) => node.fitness)
-  const minimum = Math.min(...fitness)
-  const maximum = Math.max(...fitness)
-  const range = maximum - minimum || 1
+  const lower = Math.min(...fitness, 0)
+  const upper = Math.max(...fitness, 0)
+  const maximumDepth = Math.max(...graph.nodes.map((node) => node.depth), 1)
   const maximumUncertainty = Math.max(...graph.nodes.map((node) => node.posteriorStd ?? 0), 0)
   const reachable = reachableFrom(graph, selectedId)
+  // Naming the strongest few variants is what makes the peaks readable without clicking.
+  // Only the two extremes get a standing label. Naming a cluster of near-equal peaks stacks
+  // long variant strings on top of each other, and hideOverlap does not apply to graph series.
+  const ranked = [...graph.nodes]
+    .filter((node) => node.id !== "wt")
+    .sort((first, second) => second.fitness - first.fitness)
+  const named = new Set(
+    [ranked.at(0)?.id, ranked.at(-1)?.id].filter((id): id is string => id !== undefined),
+  )
   const data = graph.nodes.map((node) => {
     const inPath = reachable === null || reachable.has(node.id)
+    const parent = node.id === "wt"
+    const labelled = parent || node.id === selectedId || (inPath && named.has(node.id))
     return {
       id: node.id,
       name: node.variant,
       variant: node.variant,
       fitness: node.fitness,
       depth: node.depth,
-      value: [node.depth, node.fitness],
-      x: node.depth * 190,
-      y: ((maximum - node.fitness) / range) * 430,
-      symbol: node.id === "wt" ? "rect" : "circle",
+      posteriorStd: node.posteriorStd,
+      value: [parent ? 0 : node.depth + columnOffset(node.id), node.fitness],
+      symbol: parent ? "rect" : "circle",
       symbolSize:
-        (node.id === "wt" ? 18 : node.sampled ? 14 : 10) +
+        (parent ? 15 : node.sampled ? 11 : 7) +
         (node.id === selectedId ? 6 : 0) +
-        (maximumUncertainty > 0 ? ((node.posteriorStd ?? 0) / maximumUncertainty) * 8 : 0),
+        (maximumUncertainty > 0 ? ((node.posteriorStd ?? 0) / maximumUncertainty) * 6 : 0),
       label: {
-        show: node.id === "wt" || node.id === selectedId,
-        formatter: node.id === "wt" ? "WT" : undefined,
-        position: "right" as const,
+        show: labelled,
+        formatter: parent ? "Parent" : node.variant,
+        position: parent ? ("bottom" as const) : ("top" as const),
+        fontSize: 10,
+        color: "#3f3f46",
       },
       itemStyle: {
-        opacity: inPath ? (node.sampled || node.id === "wt" ? 0.95 : 0.7) : 0.12,
-        borderColor:
-          node.id === selectedId
-            ? "#0f172a"
-            : node.posteriorStd !== undefined
-              ? "#7c3aed"
-              : "transparent",
-        borderWidth:
-          node.id === selectedId
-            ? 3
-            : maximumUncertainty > 0
-              ? 1 + ((node.posteriorStd ?? 0) / maximumUncertainty) * 3
-              : 0,
+        opacity: inPath ? (node.sampled || parent ? 0.95 : 0.55) : 0.1,
+        borderColor: node.id === selectedId ? "#0f172a" : "#ffffff",
+        borderWidth: node.id === selectedId ? 3 : 1,
       },
     }
   })
@@ -258,46 +272,93 @@ export function landscapeGraphOptions(
     lineStyle: {
       opacity:
         reachable === null || (reachable.has(edge.source) && reachable.has(edge.target))
-          ? 0.3
-          : 0.04,
+          ? 0.28
+          : 0.03,
     },
   }))
   return {
     animationDurationUpdate: 180,
     aria: { enabled: true },
+    grid: { left: 56, right: 74, top: 18, bottom: 46 },
     tooltip: {
       trigger: "item",
-      valueFormatter: (value: unknown) =>
-        Array.isArray(value) && typeof value[1] === "number"
-          ? `depth ${value[0]}, fitness ${value[1].toFixed(3)}`
-          : String(value),
+      // Variant labels carry residues read out of an uploaded FASTA, so they are escaped
+      // before reaching the tooltip HTML.
+      dangerousHtmlFormatter: (params: unknown) => {
+        const node = (params as { data?: Record<string, unknown> }).data
+        if (!node || typeof node.variant !== "string") return ""
+        const depth = node.depth === 0 ? "parent" : `${node.depth} mutation(s)`
+        const label = node.id === "wt" ? "Parent" : escapeHtml(node.variant)
+        const spread =
+          typeof node.posteriorStd === "number" ? `, spread ${node.posteriorStd.toFixed(3)}` : ""
+        return `${label}<br>${depth}, fitness ${(node.fitness as number).toFixed(3)}${spread}`
+      },
     },
+    xAxis: {
+      type: "value",
+      name: "Mutations from parent",
+      nameLocation: "middle",
+      nameGap: 26,
+      // Whole units either side, because ECharts steps ticks from the minimum. A fractional
+      // pad would put every label on a half mutation.
+      min: -1,
+      max: maximumDepth + 1,
+      interval: 1,
+      // The dashed parent line is the only reference the plot needs at zero.
+      axisLine: { onZero: false },
+      axisLabel: {
+        formatter: (value: number) =>
+          value < 0 || value > maximumDepth ? "" : value === 0 ? "Parent" : String(value),
+      },
+      splitLine: { show: false },
+    },
+    yAxis: {
+      type: "value",
+      name: "Fitness",
+      nameLocation: "middle",
+      nameGap: 38,
+      scale: true,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { lineStyle: { color: "#f1f1f3" } },
+    },
+    dataZoom: [
+      { type: "inside", xAxisIndex: 0, filterMode: "none" },
+      { type: "inside", yAxisIndex: 0, filterMode: "none" },
+    ],
     visualMap: {
       type: "continuous",
-      min: minimum,
-      max: maximum,
+      min: lower,
+      max: upper,
       dimension: 1,
       seriesIndex: 0,
-      orient: "horizontal",
-      left: "center",
-      bottom: 0,
-      calculable: false,
-      text: ["Higher fitness", "Lower fitness"],
-      inRange: { color: ["#334155", "#f59e0b", "#ef4444"] },
+      show: false,
+      inRange: { color: divergingStops(Math.min(lower, -1e-6), Math.max(upper, 1e-6)) },
     },
     series: [
       {
         type: "graph",
-        layout: "none",
-        roam: true,
-        scaleLimit: { min: 0.55, max: 4 },
+        coordinateSystem: "cartesian2d",
         cursor: "pointer",
         data,
         links,
-        lineStyle: { color: "source", width: 1 },
+        labelLayout: { hideOverlap: true },
+        lineStyle: { color: "source", width: 1, curveness: 0.06 },
+        markLine: {
+          silent: true,
+          symbol: "none",
+          label: {
+            formatter: "Parent fitness",
+            position: "insideEndTop",
+            fontSize: 10,
+            color: "#a1a1aa",
+          },
+          lineStyle: { color: "#d4d4d8", type: "dashed" },
+          data: [{ yAxis: 0 }],
+        },
         emphasis: {
           focus: "adjacency",
-          label: { show: true, position: "right" },
+          label: { show: true, position: "top" },
           lineStyle: { opacity: 0.8, width: 2 },
         },
       },
@@ -340,97 +401,6 @@ export function posteriorProfileOptions(points: PosteriorProfilePoint[]): KumoCh
         lineStyle: { color: "#64748b", type: "dashed", width: 2 },
       },
     ],
-  }
-}
-
-export function benchmarkValidityOptions(result: BenchmarkValidity): KumoChartOption {
-  return {
-    animationDuration: 350,
-    aria: { enabled: true },
-    color: [SYNTHETIC, "#2563eb", "#10b981"],
-    grid: { left: 58, right: 24, top: 54, bottom: 58 },
-    legend: { data: ["Rank transfer", "Pairwise winners", "Reliability pass rate"] },
-    tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "shadow" },
-      valueFormatter: (value: unknown) =>
-        typeof value === "number" ? value.toFixed(3) : String(value),
-    },
-    xAxis: {
-      type: "category",
-      data: result.methods.map((method) => method.label),
-      axisLabel: { interval: 0 },
-    },
-    yAxis: { type: "value", name: "Score", min: 0, max: 1 },
-    series: [
-      {
-        name: "Rank transfer",
-        type: "bar",
-        data: result.methods.map((method) => method.kendallTau),
-        markLine: {
-          symbol: "none",
-          label: { formatter: "Measured reliability floor" },
-          lineStyle: { color: "#64748b", type: "dashed" },
-          data: [{ yAxis: result.measuredReliabilityFloor }],
-        },
-      },
-      {
-        name: "Pairwise winners",
-        type: "bar",
-        data: result.methods.map((method) => method.pairwiseAccuracy),
-      },
-      {
-        name: "Reliability pass rate",
-        type: "bar",
-        data: result.methods.map((method) => method.reliabilityPassRate),
-      },
-    ],
-  }
-}
-
-export function benchmarkBudgetOptions(result: BenchmarkValidity): KumoChartOption {
-  const curve = result.budgetCurve
-  if (!curve) return {}
-  const colours = [SYNTHETIC, "#2563eb", "#10b981"]
-  const series: SeriesOption[] = curve.series.flatMap((method, index) => [
-    {
-      name: `${method.label}, development`,
-      type: "line",
-      data: method.developmentWinners,
-      symbol: "circle",
-      symbolSize: 7,
-      lineStyle: { color: colours[index], width: method.id === "dms_pairwise_mean" ? 3 : 2 },
-      itemStyle: { color: colours[index] },
-    },
-    {
-      name: `${method.label}, external`,
-      type: "line",
-      data: method.externalWinners,
-      symbol: "diamond",
-      symbolSize: 6,
-      lineStyle: { color: colours[index], width: 2, type: "dashed" },
-      itemStyle: { color: colours[index] },
-    },
-  ])
-  return {
-    animationDuration: 350,
-    aria: { enabled: true },
-    grid: { left: 58, right: 24, top: 78, bottom: 58 },
-    legend: { type: "scroll", top: 0 },
-    tooltip: {
-      trigger: "axis",
-      valueFormatter: (value: unknown) =>
-        typeof value === "number" ? value.toFixed(3) : String(value),
-    },
-    xAxis: {
-      type: "category",
-      data: curve.budgets,
-      name: "Query budget",
-      nameLocation: "middle",
-      nameGap: 30,
-    },
-    yAxis: { type: "value", name: "Winner accuracy", min: 0.5, max: 1 },
-    series,
   }
 }
 
@@ -499,6 +469,48 @@ export function posteriorQueryOptions(results: PosteriorQueryResult[]): KumoChar
 const CROSS =
   "path://M2.6,0 L5,2.4 L7.4,0 L10,2.6 L7.6,5 L10,7.4 L7.4,10 L5,7.6 L2.6,10 L0,7.4 L2.4,5 L0,2.6 Z"
 
+const HTML_ESCAPES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(/[&<>"']/g, (character) => HTML_ESCAPES[character])
+}
+
+function mixHex(from: string, to: string, t: number): string {
+  const parse = (hex: string) =>
+    [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16))
+  const [a, b] = [parse(from), parse(to)]
+  const channel = (index: number) =>
+    Math.round(a[index] + (b[index] - a[index]) * t)
+      .toString(16)
+      .padStart(2, "0")
+  return `#${channel(0)}${channel(1)}${channel(2)}`
+}
+
+function rampColour(t: number): string {
+  const scaled = Math.min(Math.max(t, 0), 1) * (DIVERGING.length - 1)
+  const index = Math.min(Math.floor(scaled), DIVERGING.length - 2)
+  return mixHex(DIVERGING[index], DIVERGING[index + 1], scaled - index)
+}
+
+/**
+ * Colour stops spread evenly over [lower, upper] that still land the neutral colour on
+ * zero. ECharts spaces `inRange.color` evenly, so an asymmetric scan given the five raw
+ * stops would put white wherever the midpoint of the data fell. Sampling the ramp per
+ * arm keeps wild type neutral and gives the shorter arm its full range of colour.
+ */
+function divergingStops(lower: number, upper: number): string[] {
+  return Array.from({ length: RAMP_STOPS }, (_, index) => {
+    const value = lower + ((upper - lower) * index) / (RAMP_STOPS - 1)
+    return rampColour(0.5 + 0.5 * (value < 0 ? value / -lower : value / upper))
+  })
+}
+
 export function substitutionMapOptions(map: SubstitutionMap): KumoChartOption {
   const aminoAcids = map.aminoAcids.split("")
   const columns = map.positions.map(
@@ -519,10 +531,14 @@ export function substitutionMapOptions(map: SubstitutionMap): KumoChartOption {
     },
     tooltip: {
       trigger: "item",
-      valueFormatter: (value: unknown) => {
-        if (!Array.isArray(value)) return String(value)
+      // `valueFormatter` is handed one number at a time, which cannot name the cell, so
+      // the whole item is formatted here instead. The label carries residues read out of
+      // an uploaded FASTA, so it is escaped before it reaches the tooltip HTML.
+      dangerousHtmlFormatter: (params: unknown) => {
+        const value = (params as { value?: unknown }).value
+        if (!Array.isArray(value)) return escapeHtml(String(value))
         const [column, row, fitness, imputedFlag] = value as number[]
-        const substitution = `${columns[column ?? 0]}${aminoAcids[row ?? 0]}`
+        const substitution = escapeHtml(`${columns[column ?? 0]}${aminoAcids[row ?? 0]}`)
         if (fitness === undefined) return `${substitution}, parent residue`
         const provenance = imputedFlag === 1 ? "imputed by position mean" : "measured"
         return `${substitution}, ${fitness.toFixed(3)}, ${provenance}`
@@ -530,8 +546,11 @@ export function substitutionMapOptions(map: SubstitutionMap): KumoChartOption {
     },
     visualMap: {
       type: "continuous",
-      min: -map.bound,
-      max: map.bound,
+      min: map.lower,
+      max: map.upper,
+      // Cells carry a provenance flag past the fitness, and the default dimension is the
+      // last one, so the colour has to be pinned to fitness explicitly.
+      dimension: 2,
       seriesIndex: [0, 1],
       calculable: false,
       orient: "horizontal",
@@ -539,8 +558,8 @@ export function substitutionMapOptions(map: SubstitutionMap): KumoChartOption {
       bottom: 0,
       itemWidth: 12,
       itemHeight: 110,
-      text: [`+${map.bound.toFixed(2)}`, `-${map.bound.toFixed(2)}`],
-      inRange: { color: DIVERGING },
+      text: [`+${map.upper.toFixed(2)}`, map.lower.toFixed(2)],
+      inRange: { color: divergingStops(map.lower, map.upper) },
     },
     ...(zoomed
       ? {
@@ -607,7 +626,8 @@ export function substitutionMapOptions(map: SubstitutionMap): KumoChartOption {
           // white once the cell behind it is saturated enough to swallow a dark mark.
           color: (params: { value: unknown }) => {
             const fitness = Array.isArray(params.value) ? Number(params.value[2]) : 0
-            return Math.abs(fitness) > map.bound * 0.45 ? "#ffffff" : "#334155"
+            const saturation = fitness < 0 ? fitness / map.lower : fitness / map.upper
+            return saturation > 0.45 ? "#ffffff" : "#334155"
           },
           opacity: 0.75,
         },

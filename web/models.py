@@ -11,6 +11,7 @@ import tempfile
 import threading
 import uuid
 import warnings
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
@@ -44,7 +45,6 @@ REFERENCE_CONFIGS = {
 }
 POSTERIOR_REFERENCE_CONFIGS = {
     "gb1_posterior": "gb1_headline",
-    "trpb_posterior": "trpb_headline",
 }
 CREILOV_POSTERIOR_ID = "creilov_dms_pairwise"
 CREILOV_DMS_CSV = Path(__file__).resolve().parents[1] / "data/creilov/creilov.csv"
@@ -565,6 +565,8 @@ def substitution_map(
     source: dict[str, Any],
     max_positions: int = 1_000,
     scope: str = "assayed",
+    *,
+    impute_missing: bool = True,
 ) -> dict[str, Any]:
     """Return a position by amino-acid grid of single-site effects."""
     if scope not in {"assayed", "sequence"}:
@@ -582,14 +584,18 @@ def substitution_map(
     for row in source["dmsRows"]:
         position = int(row["position"])
         observed.setdefault(position, {row["wildtype"]: 0.0})[row["mutant"]] = float(row["fitness"])
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", UserWarning)
-        complete = _impute_missing_single_sites(observed)
+    if impute_missing:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            complete = _impute_missing_single_sites(observed)
+    else:
+        complete = observed
 
     measured: list[list[float]] = []
     imputed: list[list[float]] = []
     wild_type_cells: list[list[int]] = []
-    bound = 0.0
+    lower = 0.0
+    upper = 0.0
     for position in kept:
         column = index_of[position]
         parent = wild_type.get(position) or sequence[position - 1]
@@ -597,10 +603,11 @@ def substitution_map(
             if amino_acid == parent:
                 wild_type_cells.append([column, row])
                 continue
-            if position not in assayed_set:
+            if position not in assayed_set or amino_acid not in complete[position]:
                 continue
             value = float(complete[position][amino_acid])
-            bound = max(bound, abs(value))
+            lower = min(lower, value)
+            upper = max(upper, value)
             target = measured if amino_acid in observed[position] else imputed
             target.append([column, row, value])
 
@@ -617,8 +624,11 @@ def substitution_map(
         "measuredCount": len(measured),
         "imputedCount": len(imputed),
         # Fitness is relative to wild type at 0.0, so the neutral colour has to sit on
-        # zero. A raw min-to-max ramp would place it wherever the data happened to fall.
-        "bound": bound or 1.0,
+        # zero. The two arms are reported separately because a scan is rarely symmetric,
+        # and a shared bound would leave one end of the ramp unused.
+        "lower": min(lower, -1e-9),
+        "upper": max(upper, 1e-9),
+        "bound": max(abs(lower), abs(upper)) or 1.0,
         "scope": scope,
         "assayedCount": len(assayed),
         "sequenceLength": len(sequence),
@@ -1169,6 +1179,24 @@ def _canonical_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
 
+def _reference_source_summary(source: dict[str, Any]) -> dict[str, Any]:
+    observations = source.get("observationRows", source["dmsRows"])
+    return {
+        "wtLength": len(source["wtSequence"]),
+        "measuredRows": len(source["dmsRows"]),
+        "observationCount": len(observations),
+        "higherOrderRows": sum(row.get("depth", 1) > 1 for row in observations),
+        "dmsSchema": source.get("dmsSchema", "singles"),
+        "wildTypeFitness": source.get("wildTypeFitness", 0.0),
+        "supportedSubstitutions": source.get("supportedSubstitutions"),
+        "previewCapacity": source.get("previewCapacity"),
+        "hasStructure": False,
+        "structureMethod": "none",
+        "contactCount": 0,
+        "canFitNonlinearity": source["canFitNonlinearity"],
+    }
+
+
 def reference_catalogue_entries() -> list[dict[str, Any]]:
     entries = []
     descriptions = {
@@ -1211,12 +1239,14 @@ def reference_catalogue_entries() -> list[dict[str, Any]]:
                 "priorId": DEFAULT_PRIOR_ID,
                 "oracleSeed": 42,
             },
+            "sourceSummary": _reference_source_summary(creilov_source),
             "createdAt": None,
         }
     )
     for model_id, base_id in POSTERIOR_REFERENCE_CONFIGS.items():
         config = REFERENCE_CONFIGS[base_id]
         protein = "GB1" if model_id.startswith("gb1") else "TrpB"
+        source = reference_posterior_source(model_id)
         entries.append(
             {
                 "id": model_id,
@@ -1234,6 +1264,7 @@ def reference_catalogue_entries() -> list[dict[str, Any]]:
                     "priorId": DEFAULT_PRIOR_ID,
                     "oracleSeed": config.seed,
                 },
+                "sourceSummary": _reference_source_summary(source),
                 "createdAt": None,
             }
         )
@@ -1546,6 +1577,34 @@ def preview_custom(
     }
 
 
+def stratified_indices(depths: Sequence[int], limit: int) -> list[int]:
+    """Pick up to ``limit`` positions spread evenly over the mutation depths.
+
+    The samplers fill one depth completely before starting the next, so a plain
+    head of a large sample is entirely point mutants. Round-robin instead, which
+    keeps the deeper genotypes that carry every interaction the oracle models.
+
+    Returns in round-robin order rather than sorted, so the head of a table cycles
+    through the depths and the coverage is visible without scrolling.
+    """
+    if limit < 1:
+        return []
+    queues: dict[int, list[int]] = {}
+    for index, depth in enumerate(depths):
+        queues.setdefault(int(depth), []).append(index)
+    ordered = [queues[depth] for depth in sorted(queues)]
+    picked: list[int] = []
+    cursor = 0
+    while len(picked) < limit and any(cursor < len(queue) for queue in ordered):
+        for queue in ordered:
+            if cursor < len(queue):
+                picked.append(queue[cursor])
+                if len(picked) >= limit:
+                    break
+        cursor += 1
+    return picked
+
+
 def _sample_rows(
     landscape: Landscape,
     sample_size: int,
@@ -1565,8 +1624,9 @@ def _sample_rows(
     )
     frame = pd.concat(frames, ignore_index=True)
     graph = _sample_path_graph(landscape, frame)
+    depths = [int(value) for value in frame["n_mutations"]]
     rows = []
-    for row in frame.head(100).itertuples(index=False):
+    for row in frame.iloc[stratified_indices(depths, 100)].itertuples(index=False):
         rows.append(
             {
                 "sequence": row.sequence,
@@ -1595,7 +1655,9 @@ def _sample_path_graph(
     max_paths: int = 60,
 ) -> dict[str, Any]:
     node_mutations: dict[str, dict[int, str]] = {"wt": {}}
-    sampled_labels = list(dict.fromkeys(str(label) for label in frame.head(max_paths)["variant"]))
+    depths = [int(value) for value in frame["n_mutations"]]
+    chosen = frame.iloc[stratified_indices(depths, max_paths)]
+    sampled_labels = list(dict.fromkeys(str(label) for label in chosen["variant"]))
     sampled_label_set = set(sampled_labels)
     edges: set[tuple[str, str]] = set()
     for label in sampled_labels:

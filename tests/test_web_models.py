@@ -17,6 +17,7 @@ from web.models import (
     parse_custom_source,
     preview_custom,
     score_histogram,
+    stratified_indices,
     substitution_map,
     wilson_interval,
 )
@@ -156,6 +157,26 @@ def test_custom_preview_is_deterministic_and_synthetic_only(source):
     assert all(edge["target"] in node_ids for edge in graph["edges"])
 
 
+def test_stratified_indices_round_robins_over_depths():
+    depths = [1] * 6 + [2] * 3 + [3]
+
+    assert stratified_indices(depths, 4) == [0, 6, 9, 1]
+    assert sorted(stratified_indices(depths, 100)) == list(range(10))
+    assert stratified_indices(depths, 0) == []
+
+
+def test_sample_and_graph_reach_the_deepest_requested_variants():
+    # Six positions give 114 single mutants, so a plain head of the table is entirely depth 1.
+    rows = ["position,wildtype,mutant,fitness"]
+    rows += [f"{position},A,{mutant},0.{position}" for position in range(1, 7) for mutant in "GVD"]
+    parsed, _ = parse_custom_source("\n".join(rows) + "\n", ">WT\n" + "A" * 6 + "\n")
+
+    preview = preview_custom(parsed, BenchmarkParameters(seed=17), 2000, {1: 1, 2: 1, 3: 1, 4: 1})
+
+    assert {row["depth"] for row in preview["sample"]["rows"]} == {1, 2, 3, 4}
+    assert {node["depth"] for node in preview["sample"]["graph"]["nodes"]} >= {0, 1, 2, 3, 4}
+
+
 def test_content_id_ignores_display_name(source):
     parameters = BenchmarkParameters()
     assert custom_model_id(source, parameters) == custom_model_id(source, parameters)
@@ -264,6 +285,8 @@ def test_substitution_map_fills_the_grid_and_centres_the_scale(source):
     assert grid["imputedCount"] == 34
     assert grid["measuredCount"] + grid["imputedCount"] + len(grid["wildTypeCells"]) == 40
     assert grid["bound"] == pytest.approx(0.5)
+    assert grid["upper"] == pytest.approx(0.5)
+    assert grid["lower"] < 0.0
     assert grid["truncated"] is False
     assert grid["totalPositions"] == 2
 

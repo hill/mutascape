@@ -1078,6 +1078,7 @@ input {
 
 .source-kind {
   display: flex;
+  align-items: center;
   gap: 6px;
 }
 
@@ -1105,6 +1106,12 @@ input {
 .panel-hint:hover {
   color: #1f2937;
   background: #eef2f7;
+}
+
+.kumo-tooltip-popup {
+  max-width: 340px;
+  line-height: 1.45;
+  text-wrap: pretty;
 }
 
 .build-progress {
@@ -1170,6 +1177,25 @@ input {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.notice-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .landscape-map-card .panel-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .map-selection {
+    justify-content: flex-start;
+  }
 }
 
 .intake-report-body {

@@ -114,6 +114,7 @@ def test_custom_draft_preview_publish_and_evaluate(tmp_path):
     creilov_detail = client.get("/api/v1/models/creilov_dms_pairwise").json()
     assert creilov_detail["kind"] == "posterior"
     assert len(creilov_detail["positions"]) == 118
+    assert creilov_detail["sourceSummary"]["observationCount"] == 2_122
     assert "2,121 measured single mutants" in creilov_detail["description"]
 
     changed_parameters = {**PARAMETERS, "seed": 43}
@@ -342,6 +343,7 @@ def test_substitution_map_serves_every_source_kind(tmp_path):
     assert grid["positions"] == [1, 2]
     assert grid["wildTypeCompact"] == "AC"
     assert grid["measuredCount"] == 4
+    assert grid["imputedCount"] == 0
     assert grid["truncated"] is False
 
     reference = client.post(

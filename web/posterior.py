@@ -11,9 +11,8 @@ from mutascape.epistasis import AMINO_ACIDS
 from mutascape.landscape import _allocate_weighted_counts
 from mutascape.mutant import Mutant
 from mutascape.priors import DEFAULT_PRIOR_ID, load_prior_bundle
-from mutascape.validation.results import load_benchmark_validity_summary
 
-from .models import Progress, _noop_progress
+from .models import Progress, _noop_progress, stratified_indices
 
 DEFAULT_ORACLE_COUPLING = 0.1
 DEFAULT_ORACLE_KIND = "dms-pairwise-v1"
@@ -23,11 +22,6 @@ CANONICAL_AAS = set(AMINO_ACIDS)
 
 def _oracle(posterior: PosteriorLandscape, seed: int):
     return posterior.sample_dms_pairwise(seed, coupling=DEFAULT_ORACLE_COUPLING)
-
-
-def benchmark_validity_summary() -> dict[str, Any]:
-    """Return the frozen task-transfer result shown in the studio."""
-    return load_benchmark_validity_summary()
 
 
 def _camel(name: str) -> str:
@@ -190,8 +184,10 @@ def preview_posterior(
         ensemble_size=ensemble_size,
     )
     profile = _posterior_profile(query)
+    depths = [len(variant) for variant in variants]
     rows = []
-    for variant, result in zip(variants[:100], query[:100]):
+    for index in stratified_indices(depths, 100):
+        variant, result = variants[index], query[index]
         rows.append(
             {
                 "sequence": _mutant_sequence(posterior.wild_type_sequence, variant),
@@ -208,7 +204,7 @@ def preview_posterior(
     progress("Tracing mutation paths")
     graph = _posterior_graph(
         posterior,
-        variants[:60],
+        [variants[index] for index in stratified_indices(depths, 60)],
         seed=seed,
         ensemble_size=ensemble_size,
     )
@@ -222,7 +218,6 @@ def preview_posterior(
             "coupling": DEFAULT_ORACLE_COUPLING,
         },
         "profile": profile,
-        "benchmarkValidity": benchmark_validity_summary(),
         "shape": posterior_shape_summary(posterior, seed=seed),
         "sample": {
             "requested": sample_size,

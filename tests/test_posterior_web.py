@@ -113,11 +113,11 @@ def test_posterior_preview_reports_uncertainty_in_rows_profiles_and_graph(source
     assert all("posteriorStd" in row for row in preview["sample"]["rows"])
     assert any(node["posteriorStd"] > 0 for node in preview["sample"]["graph"]["nodes"])
     assert preview["settings"]["generatorKind"] == "dms-pairwise-v1"
-    assert preview["benchmarkValidity"]["nLandscapes"] == 16
-    assert preview["benchmarkValidity"]["external"]["nLandscapes"] == 7
-    assert preview["benchmarkValidity"]["budgetCurve"]["budgets"] == [48, 96, 192, 384]
-    assert len(preview["benchmarkValidity"]["budgetCurve"]["series"]) == 3
+    # The frozen task-transfer study describes the generator family, not this landscape,
+    # so the preview payload must not carry it.
+    assert "benchmarkValidity" not in preview
     assert "single mutants exact" in preview["notices"][1]
+    assert {node["depth"] for node in preview["sample"]["graph"]["nodes"]} == {0, 1, 2}
 
 
 def test_shape_summary_separates_posterior_from_an_additive_surrogate(source):

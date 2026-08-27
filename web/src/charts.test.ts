@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test"
 import {
-  benchmarkBudgetOptions,
   fitnessProfileOptions,
   landscapeGraphOptions,
   posteriorDistributionOptions,
@@ -12,7 +11,6 @@ import {
   walshOptions,
 } from "./charts"
 import type {
-  BenchmarkValidity,
   LandscapeGraph,
   PosteriorProfilePoint,
   PosteriorQueryResult,
@@ -65,55 +63,6 @@ test("walshOptions keeps interaction order", () => {
   expect(xAxis.data).toEqual(["Order 1", "Order 2", "Order 3", "Order 4"])
 })
 
-test("benchmarkBudgetOptions keeps matched development and external series", () => {
-  const result = {
-    id: "benchmark-validity-v1",
-    panel: "development",
-    nLandscapes: 16,
-    nMethods: 12,
-    budget: 96,
-    trials: 10,
-    measuredReliabilityFloor: 0.25,
-    external: {
-      panel: "external",
-      nLandscapes: 7,
-      nMethods: 12,
-      budget: 96,
-      trials: 10,
-      kendallTau: 0.64,
-      pairwiseAccuracy: 0.74,
-      reliabilityPassRate: 0.57,
-    },
-    methods: [],
-    budgetCurve: {
-      budgets: [48, 96, 192, 384],
-      series: [
-        {
-          id: "dms_pairwise_mean",
-          label: "Mutascape",
-          developmentKendall: [0.53, 0.45, 0.51, 0.46],
-          externalKendall: [0.44, 0.64, 0.66, 1],
-          developmentWinners: [0.89, 0.79, 0.74, 0.64],
-          externalWinners: [0.86, 0.74, 0.85, 0.64],
-        },
-      ],
-    },
-  } satisfies BenchmarkValidity
-
-  const options = benchmarkBudgetOptions(result)
-  const xAxis = options.xAxis as { data: number[] }
-  const series = options.series as Array<{
-    name: string
-    data: number[]
-    lineStyle: { type?: string }
-  }>
-
-  expect(xAxis.data).toEqual([48, 96, 192, 384])
-  expect(series.map((item) => item.name)).toEqual(["Mutascape, development", "Mutascape, external"])
-  expect(series[0].data).toEqual([0.89, 0.79, 0.74, 0.64])
-  expect(series[1].lineStyle.type).toBe("dashed")
-})
-
 const walk: LandscapeGraph = {
   nodes: [
     { id: "wt", variant: "wt", depth: 0, fitness: 0, sampled: false },
@@ -132,17 +81,56 @@ describe("landscapeGraphOptions", () => {
     const options = landscapeGraphOptions(walk)
     const series = options.series as Array<{
       type: string
-      roam: boolean
+      coordinateSystem: string
       data: Array<{ name: string; symbol: string }>
       links: Array<{ source: string; target: string }>
     }>
 
     expect(series[0].type).toBe("graph")
-    expect(series[0].roam).toBeTrue()
+    expect(series[0].coordinateSystem).toBe("cartesian2d")
     expect(series[0].data.map((node) => node.name)).toEqual(["wt", "V39A", "V39A+D40G", "G41L"])
     expect(series[0].data[0].symbol).toBe("rect")
     expect(series[0].data[1].symbol).toBe("circle")
     expect(series[0].links.map((link) => link.source)).toEqual(["wt", "V39A"])
+  })
+
+  test("places depth on the x axis and fitness on the y axis", () => {
+    const options = landscapeGraphOptions(walk)
+    const series = options.series as Array<{
+      data: Array<{ id: string; depth: number; fitness: number; value: [number, number] }>
+    }>
+    const xAxis = options.xAxis as { type: string; min: number; max: number }
+    const visualMap = options.visualMap as { dimension: number; min: number; max: number }
+
+    expect(xAxis.type).toBe("value")
+    expect(xAxis.min).toBeLessThan(0)
+    expect(xAxis.max).toBeGreaterThanOrEqual(2)
+    // The colour ramp has to read the fitness dimension, not the depth ECharts would default to.
+    expect(visualMap.dimension).toBe(1)
+    expect(visualMap.min).toBeLessThanOrEqual(-0.3)
+    expect(visualMap.max).toBeGreaterThanOrEqual(0.7)
+
+    for (const node of series[0].data) {
+      expect(node.value[1]).toBe(node.fitness)
+      if (node.id === "wt") {
+        expect(node.value[0]).toBe(0)
+      } else {
+        expect(Math.abs(node.value[0] - node.depth)).toBeLessThan(0.32)
+      }
+    }
+  })
+
+  test("keeps node positions stable across renders", () => {
+    const first = landscapeGraphOptions(walk).series as Array<{
+      data: Array<{ value: [number, number] }>
+    }>
+    const second = landscapeGraphOptions(walk, "V39A").series as Array<{
+      data: Array<{ value: [number, number] }>
+    }>
+
+    expect(second[0].data.map((node) => node.value)).toEqual(
+      first[0].data.map((node) => node.value),
+    )
   })
 
   test("dims everything the selected variant does not connect to", () => {
@@ -219,6 +207,8 @@ describe("substitutionMapOptions", () => {
     wildTypeCells: [[0, 0]],
     measuredCount: 1,
     imputedCount: 1,
+    lower: -0.25,
+    upper: 0.5,
     bound: 0.5,
     scope: "assayed",
     assayedCount: positionCount,
@@ -236,7 +226,7 @@ describe("substitutionMapOptions", () => {
 
     expect(xAxis.data).toEqual(["A1", "A2", "A3", "A4"])
     expect(yAxis.data.length).toBe(20)
-    expect(visualMap.min).toBe(-0.5)
+    expect(visualMap.min).toBe(-0.25)
     expect(visualMap.max).toBe(0.5)
     expect(series.map((item) => item.name)).toEqual([
       "Measured",
@@ -262,6 +252,47 @@ describe("substitutionMapOptions", () => {
     expect(imputed?.itemStyle?.opacity).toBeUndefined()
     expect(marker?.type).toBe("scatter")
     expect(marker?.symbol).toStartWith("path://")
+  })
+
+  test("puts the neutral colour on zero when the arms differ", () => {
+    const options = substitutionMapOptions(grid(4))
+    const visualMap = options.visualMap as { inRange: { color: string[] } }
+    const colours = visualMap.inRange.color
+    const greyness = (hex: string) =>
+      [1, 3, 5].reduce(
+        (total, start) => total + Number.parseInt(hex.slice(start, start + 2), 16),
+        0,
+      )
+    const lightest = colours.reduce(
+      (best, hex, index) => (greyness(hex) > greyness(colours[best]) ? index : best),
+      0,
+    )
+
+    expect(colours[0]).toBe("#2166ac")
+    expect(colours[colours.length - 1]).toBe("#b2182b")
+    // Zero sits a third of the way along a ramp running -0.25 to 0.5, not at its middle.
+    expect(lightest / (colours.length - 1)).toBeCloseTo(1 / 3, 1)
+  })
+
+  test("colours cells by fitness rather than the trailing provenance flag", () => {
+    const options = substitutionMapOptions(grid(4))
+    const visualMap = options.visualMap as { dimension: number }
+    const series = options.series as Array<{ data: number[][] }>
+
+    expect(series[0]?.data[0]?.length).toBe(4)
+    expect(visualMap.dimension).toBe(2)
+  })
+
+  test("names the cell in the tooltip", () => {
+    const tooltip = substitutionMapOptions(grid(4)).tooltip as {
+      dangerousHtmlFormatter: (params: unknown) => string
+    }
+
+    expect(tooltip.dangerousHtmlFormatter({ value: [0, 5, 0.5, 0] })).toBe("A1G, 0.500, measured")
+    expect(tooltip.dangerousHtmlFormatter({ value: [0, 6, -0.25, 1] })).toBe(
+      "A1H, -0.250, imputed by position mean",
+    )
+    expect(tooltip.dangerousHtmlFormatter({ value: [0, 0] })).toBe("A1A, parent residue")
   })
 
   test("adds a zoom slider only for wide scans", () => {

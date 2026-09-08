@@ -49,7 +49,33 @@ def posterior_from_source(
     posterior = PosteriorLandscape.condition(
         source["wtSequence"], observations, prior, prior_id=prior_id
     )
+    if source.get("completion"):
+        from mutascape.imputation import restore_completion
+
+        posterior = restore_completion(posterior, source["completion"])
     return posterior, metadata
+
+
+def complete_source(source: dict, summary: dict) -> None:
+    """Freeze ESM completion in an uploaded source for later queries."""
+    from mutascape.imputation import complete_singles
+
+    posterior, _ = posterior_from_source(source)
+    posterior = complete_singles(posterior)
+    source["completion"] = posterior.completion_metadata
+    source["positions"] = list(posterior.domain.positions)
+    source["wildType"] = {str(p): source["wtSequence"][p - 1] for p in source["positions"]}
+    source["wtCompact"] = source["wtSequence"]
+    source["supportedSubstitutions"] = len(posterior.single_effects)
+    source["previewCapacity"] = min(5000, posterior.domain.count(depth=2))
+    summary.update(
+        {
+            key: source[key]
+            for key in ("positions", "wtCompact", "supportedSubstitutions", "previewCapacity")
+        }
+    )
+    summary["positionCount"] = len(source["positions"])
+    summary["imputedEffects"] = len(posterior.imputed_effects)
 
 
 def _legacy_observation_rows(source: dict[str, Any]) -> list[dict[str, Any]]:
@@ -102,6 +128,7 @@ def query_posterior(
                 "mutationLabel": label,
                 "depth": len(variant),
                 "observed": oracles[0].is_observed(variant),
+                "provenance": oracles[0].provenance(variant),
                 "additiveFitness": float(additive[index]),
                 "fixedOracleFitness": float(ensemble[0, index]),
                 "posteriorMean": float(np.mean(ensemble[:, index])),

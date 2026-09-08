@@ -1376,7 +1376,11 @@ function ExactQueryPanel({
         <div className="posterior-query-results" aria-live="polite">
           <div className="panel-heading">
             <Badge variant={latestPosterior.observed ? "green" : "purple"}>
-              {latestPosterior.observed ? "Measured observation" : "Synthetic oracle value"}
+              {latestPosterior.observed
+                ? "Measured observation"
+                : latestPosterior.provenance === "imputed"
+                  ? "Imputed single effect"
+                  : "Synthetic oracle value"}
             </Badge>
             <Badge variant="neutral">{posteriorResults.length} unique session queries</Badge>
           </div>
@@ -2427,6 +2431,7 @@ function CustomUploadPanel({
   const [mappingEdited, setMappingEdited] = useState(false)
   const [mapperOpen, setMapperOpen] = useState(false)
   const [wildTypeScore, setWildTypeScore] = useState("")
+  const [esmCompletion, setEsmCompletion] = useState(false)
   const [reference, setReference] = useState("")
   const [record, setRecord] = useState<MaveDbImport | null>(null)
   const [fetching, setFetching] = useState(false)
@@ -2493,6 +2498,7 @@ function CustomUploadPanel({
         columnMap:
           mapping && (mappingEdited || inspection?.detected === null) ? mapping : undefined,
         wildTypeScore: needsBaseline && Number.isFinite(baseline) ? baseline : undefined,
+        complete: esmCompletion ? "esm2" : undefined,
       })
       onCreated(next, landscapeName.trim())
     } catch (cause) {
@@ -2633,6 +2639,15 @@ function CustomUploadPanel({
       )}
 
       <div className="source-upload-action">
+        <label>
+          <input
+            type="checkbox"
+            checked={esmCompletion}
+            onChange={(event) => setEsmCompletion(event.currentTarget.checked)}
+          />
+          Fill missing singles across the protein with calibrated ESM-2. The first run loads model
+          weights and can take several minutes.
+        </label>
         <Text variant="secondary" size="xs">
           Uploaded data remains a temporary draft until you save the landscape.
         </Text>

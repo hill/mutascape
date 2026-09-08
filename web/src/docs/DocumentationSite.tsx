@@ -385,8 +385,27 @@ function InputsPage({ onNavigate }: { onNavigate: (page: DocsPage) => void }) {
           each measured single substitution and the combinations that those substitutions define.
         </p>
         <p>
-          Mutascape rejects a query that contains an unmeasured substitution. It does not treat a
-          missing measurement as a neutral effect.
+          By default, Mutascape rejects queries with unmeasured substitutions. Optional ESM-2
+          completion fills missing singles across the protein. It calibrates masked model scores on
+          measured singles and bounds estimates by their observed range. The readout still uses
+          measured singles only. Imputed effects are estimates, not experimental observations.
+        </p>
+        <CodeBlock
+          label="Optional whole-protein completion"
+          code={`generator = from_dms(
+    "creilov.csv", fasta="creilov_wt.fasta", complete="esm2",
+)
+oracle = generator.draw(seed=42)
+oracle["A2N"]                 # calibrated single estimate
+oracle.provenance("A2N")      # "imputed"
+oracle["A2N+A29H"]            # synthetic combination
+oracle.save_manifest("oracle.json")`}
+        />
+        <p>
+          The first run loads ESM-2 weights. The studio upload form offers the same completion
+          option. Saved manifests include the imputed values, so restoration needs no model weights.
+          CreiLOV validation with hidden positions reduced RMSE from 0.304 to 0.256. Position means
+          had lower error when other substitutions at the same position remained measured.
         </p>
       </section>
 

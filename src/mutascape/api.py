@@ -3,6 +3,7 @@
 import json
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -22,6 +23,8 @@ def from_dms(
     wild_type_fitness: float = 0.0,
     maximum_depth: int | None = None,
     prior_id: str = DEFAULT_PRIOR_ID,
+    complete: Literal["esm2"] | None = None,
+    esm_model: str = "esm2_t33_650M_UR50D",
 ) -> PosteriorLandscape:
     """Build a generator from DMS observations and a wild-type sequence.
 
@@ -30,7 +33,12 @@ def from_dms(
     - ``position, wildtype, mutant, fitness`` for single mutants.
     - ``variant, fitness`` for WT, singles, and optional combinations.
     - ``mutations, fitness`` where mutations contains mapping objects.
+
+    ``complete="esm2"`` calibrates masked ESM scores on measured singles.
+    It fills missing substitutions across the protein and keeps observations exact.
     """
+    if complete not in (None, "esm2"):
+        raise ValueError("complete must be None or esm2")
     sequence = _load_sequence(fasta=fasta, wt_sequence=wt_sequence)
     frame = _load_dms_frame(dms)
     observations = _normalise_observations(
@@ -39,13 +47,18 @@ def from_dms(
         wild_type_fitness=float(wild_type_fitness),
     )
     _, prior = load_prior_bundle(prior_id)
-    return PosteriorLandscape.condition(
+    generator = PosteriorLandscape.condition(
         sequence,
         observations,
         prior,
         maximum_depth=maximum_depth,
         prior_id=prior_id,
     )
+    if complete == "esm2":
+        from mutascape.imputation import complete_singles
+
+        generator = complete_singles(generator, model_name=esm_model)
+    return generator
 
 
 def load_oracle(
@@ -79,6 +92,10 @@ def load_oracle(
         prior_id=prior_id,
     )
     expected_digest = str(settings.get("source_digest", ""))
+    if "completion" in settings:
+        from mutascape.imputation import restore_completion
+
+        generator = restore_completion(generator, settings["completion"])
     if generator.source_digest != expected_digest:
         raise ValueError("DMS data and wild-type sequence do not match the oracle manifest")
     return generator.sample_dms_pairwise(

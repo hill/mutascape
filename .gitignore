@@ -14,6 +14,7 @@ htmlcov/
 
 # Ruff
 .ruff_cache/
+tmp/
 
 # Jupyter
 .ipynb_checkpoints/

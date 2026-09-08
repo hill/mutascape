@@ -708,6 +708,8 @@ class PosteriorLandscape:
     donors: tuple = ()
     maximum_depth: int | None = None
     prior_id: str | None = None
+    imputed_effects: dict[tuple[int, str], float] = field(default_factory=dict)
+    completion_metadata: dict = field(default_factory=dict)
 
     @cached_property
     def domain(self) -> MutationDomain:
@@ -728,6 +730,8 @@ class PosteriorLandscape:
                 for genotype, fitness in sorted(self.observations.items())
             ],
         }
+        if self.completion_metadata:
+            payload["completion"] = self.completion_metadata
         return hashlib.blake2b(
             json.dumps(payload, sort_keys=True, separators=(",", ":")).encode(),
             digest_size=16,
@@ -1144,6 +1148,8 @@ class DMSPairwiseLandscape:
         genotype = _key(mutant, generator.wild_type_sequence)
         if genotype in generator.observations:
             return generator.observations[genotype]
+        if len(genotype) == 1 and genotype[0] in generator.imputed_effects:
+            return generator.observations[()] + generator.imputed_effects[genotype[0]]
         missing = [mutation for mutation in genotype if mutation not in generator.single_effects]
         if missing:
             labels = ", ".join(f"{position}{amino_acid}" for position, amino_acid in missing)
@@ -1209,7 +1215,21 @@ class DMSPairwiseLandscape:
             "positions": list(self.domain.positions),
             "substitutions": len(self.domain.substitutions),
             "maximum_depth": self.domain.maximum_depth,
+            **(
+                {"completion": self.generator.completion_metadata}
+                if self.generator.completion_metadata
+                else {}
+            ),
         }
+
+    def provenance(self, variant: VariantLike) -> str:
+        """Return measured, imputed, or synthetic for a supported query."""
+        genotype = _key(self.domain.parse(variant), self.generator.wild_type_sequence)
+        if genotype in self.generator.observations:
+            return "measured"
+        if len(genotype) == 1 and genotype[0] in self.generator.imputed_effects:
+            return "imputed"
+        return "synthetic"
 
     def save_manifest(self, path: str | PathLike[str]) -> None:
         """Write the oracle manifest as formatted JSON."""

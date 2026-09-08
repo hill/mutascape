@@ -584,7 +584,11 @@ def substitution_map(
     for row in source["dmsRows"]:
         position = int(row["position"])
         observed.setdefault(position, {row["wildtype"]: 0.0})[row["mutant"]] = float(row["fitness"])
-    if impute_missing:
+    if source.get("completion"):
+        complete = {p: dict(effects) for p, effects in observed.items()}
+        for position, aa, value in source["completion"]["effects"]:
+            complete.setdefault(int(position), {})[aa] = value
+    elif impute_missing:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             complete = _impute_missing_single_sites(observed)
@@ -603,12 +607,12 @@ def substitution_map(
             if amino_acid == parent:
                 wild_type_cells.append([column, row])
                 continue
-            if position not in assayed_set or amino_acid not in complete[position]:
+            if amino_acid not in complete.get(position, {}):
                 continue
             value = float(complete[position][amino_acid])
             lower = min(lower, value)
             upper = max(upper, value)
-            target = measured if amino_acid in observed[position] else imputed
+            target = measured if amino_acid in observed.get(position, {}) else imputed
             target.append([column, row, value])
 
     return {

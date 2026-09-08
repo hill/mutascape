@@ -271,6 +271,7 @@ export interface PublishedModel extends ModelSummary {
 }
 
 export interface DraftUpload {
+  complete?: "esm2"
   dmsCsv: string
   wtFasta: string
   structureText?: string
@@ -329,6 +330,7 @@ export interface PosteriorInterval {
 }
 
 export interface PosteriorQueryResult {
+  provenance?: "measured" | "imputed" | "synthetic"
   index: number
   mutationLabel: string
   depth: number

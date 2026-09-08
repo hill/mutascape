@@ -98,6 +98,7 @@ class DraftCreate(ApiModel):
     structure_inference: Literal["none", "esmfold"] = "none"
     column_map: ColumnMap | None = None
     wild_type_score: float | None = None
+    complete: Literal["esm2"] | None = None
 
 
 class CsvInspectRequest(ApiModel):
@@ -324,6 +325,10 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
                 column_map=payload.column_map.domain() if payload.column_map else None,
                 wild_type_score=payload.wild_type_score,
             )
+            if payload.complete == "esm2":
+                from .posterior import complete_source
+
+                complete_source(source, summary)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
         uploads = {
@@ -335,6 +340,7 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
             "structureInference": payload.structure_inference,
             "columnMap": payload.column_map.domain() if payload.column_map else None,
             "wildTypeScore": payload.wild_type_score,
+            "complete": payload.complete,
         }
         draft = _store(request).create_draft(source, uploads)
         return {
@@ -914,6 +920,7 @@ def _examples(
         model is not None and model["modelKind"] == "posterior"
     )
     if is_posterior:
+        completion_arg = ', complete="esm2"' if model and model["source"].get("completion") else ""
         seed = (
             int(bundled["posteriorSettings"]["oracleSeed"])
             if model is None
@@ -921,7 +928,7 @@ def _examples(
         )
         local = (
             "from mutascape import from_dms\n\n"
-            'generator = from_dms("dms.csv", fasta="wt.fasta")\n'
+            f'generator = from_dms("dms.csv", fasta="wt.fasta"{completion_arg})\n'
             f"oracle = generator.draw(seed={seed})\n"
             f"fitness = oracle[{mutation!r}]"
         )

@@ -16,6 +16,10 @@
                 "`mutations, fitness` where mutations contains mapping objects."
               ],
               "kind": "list"
+            },
+            {
+              "kind": "text",
+              "text": "`complete=\"esm2\"` calibrates masked ESM scores on measured singles. It fills missing substitutions across the protein and keeps observations exact."
             }
           ],
           "parameters": [
@@ -54,10 +58,22 @@
               "default": "'combinatorial-v2'",
               "keywordOnly": true,
               "name": "prior_id"
+            },
+            {
+              "annotation": "Literal['esm2'] | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "complete"
+            },
+            {
+              "annotation": "str",
+              "default": "'esm2_t33_650M_UR50D'",
+              "keywordOnly": true,
+              "name": "esm_model"
             }
           ],
           "returns": "PosteriorLandscape",
-          "signature": "from_dms(dms: DMSInput, *, fasta: str | Path | None = None, wt_sequence: str | None = None, wild_type_fitness: float = 0.0, maximum_depth: int | None = None, prior_id: str = 'combinatorial-v2') -> PosteriorLandscape",
+          "signature": "from_dms(dms: DMSInput, *, fasta: str | Path | None = None, wt_sequence: str | None = None, wild_type_fitness: float = 0.0, maximum_depth: int | None = None, prior_id: str = 'combinatorial-v2', complete: Literal['esm2'] | None = None, esm_model: str = 'esm2_t33_650M_UR50D') -> PosteriorLandscape",
           "summary": "Build a generator from DMS observations and a wild-type sequence."
         },
         {

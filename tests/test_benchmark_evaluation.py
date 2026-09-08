@@ -127,3 +127,52 @@ def test_c2st_finds_large_distribution_shift():
 
     assert result.auc > 0.99
     assert result.permutation_pvalue <= 2 / 11
+
+
+def test_paired_c2st_identical_values_are_chance():
+    values = np.random.default_rng(5).normal(size=(60, 2))
+    groups = np.arange(len(values))
+    for classifier in ("logistic", "histogram"):
+        result = classifier_two_sample_test(
+            values,
+            values.copy(),
+            real_groups=groups,
+            synthetic_groups=groups,
+            classifier=classifier,
+            n_splits=3,
+            n_permutations=0,
+        )
+        assert result.auc == pytest.approx(0.5)
+        assert result.accuracy == pytest.approx(0.5)
+        assert np.isnan(result.permutation_pvalue)
+
+
+def test_paired_permutations_preserve_one_label_per_genotype(monkeypatch):
+    from mutascape.benchmarks import evaluation
+
+    original = evaluation._c2st_scores
+    calls = []
+
+    def checked(features, labels, groups, **kwargs):
+        for group in np.unique(groups):
+            assert sorted(labels[groups == group]) == [0, 1]
+        calls.append(labels.copy())
+        return original(features, labels, groups, **kwargs)
+
+    monkeypatch.setattr(evaluation, "_c2st_scores", checked)
+    values = np.random.default_rng(0).normal(size=(50, 1))
+    groups = np.arange(50)
+    result = classifier_two_sample_test(
+        values, values + 5, real_groups=groups, synthetic_groups=groups, n_permutations=9
+    )
+    assert len(calls) == 10
+    assert result.auc > 0.99
+    assert result.permutation_pvalue == 0.1
+
+
+def test_c2st_rejects_misaligned_pairs():
+    values = np.arange(20).reshape(10, 2)
+    with pytest.raises(ValueError, match="matched pairs"):
+        classifier_two_sample_test(
+            values, values, real_groups=np.arange(10), synthetic_groups=np.arange(10)[::-1]
+        )

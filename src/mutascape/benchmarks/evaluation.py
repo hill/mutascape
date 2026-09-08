@@ -8,8 +8,9 @@ from numpy.typing import NDArray
 from scipy import stats as sp_stats
 from scipy.spatial.distance import cdist, pdist
 from sklearn.base import clone
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import ndcg_score, roc_auc_score
+from sklearn.metrics import balanced_accuracy_score, ndcg_score, roc_auc_score
 from sklearn.model_selection import GroupKFold, StratifiedKFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -36,6 +37,8 @@ class C2STResult:
     auc_std: float
     fold_aucs: tuple[float, ...]
     permutation_pvalue: float
+    accuracy: float = float("nan")
+    fold_accuracies: tuple[float, ...] = ()
 
 
 def top_fraction_recall(
@@ -312,8 +315,20 @@ def _c2st_scores(
     *,
     n_splits: int,
     seed: int,
-) -> tuple[float, ...]:
-    estimator = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000))
+    classifier: str = "logistic",
+) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    if classifier == "logistic":
+        estimator = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000))
+    elif classifier == "histogram":
+        estimator = HistGradientBoostingClassifier(
+            max_iter=100,
+            max_leaf_nodes=7,
+            l2_regularization=1.0,
+            early_stopping=False,
+            random_state=seed,
+        )
+    else:
+        raise ValueError("classifier must be logistic or histogram")
     if groups is None:
         splitter = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
         splits = splitter.split(features, labels)
@@ -322,15 +337,17 @@ def _c2st_scores(
         splits = splitter.split(features, labels, groups)
 
     scores = []
+    accuracies = []
     for train_index, test_index in splits:
-        if len(np.unique(labels[test_index])) < 2:
-            continue
+        if len(np.unique(labels[test_index])) < 2 or len(np.unique(labels[train_index])) < 2:
+            raise ValueError("each C2ST train and test fold needs both classes")
         model = clone(estimator).fit(features[train_index], labels[train_index])
         probability = model.predict_proba(features[test_index])[:, 1]
         scores.append(float(roc_auc_score(labels[test_index], probability)))
+        accuracies.append(float(balanced_accuracy_score(labels[test_index], probability >= 0.5)))
     if not scores:
         raise ValueError("C2ST folds must contain both real and synthetic samples")
-    return tuple(scores)
+    return tuple(scores), tuple(accuracies)
 
 
 def classifier_two_sample_test(
@@ -342,20 +359,38 @@ def classifier_two_sample_test(
     n_splits: int = 5,
     n_permutations: int = 100,
     seed: int = 0,
+    classifier: str = "logistic",
 ) -> C2STResult:
-    """Measure whether held-out logistic regression separates two samples."""
+    """Measure held-out discrimination with AUC and balanced accuracy.
+
+    Matching unique group arrays define paired samples. Permutations then swap
+    labels within each pair. The grouped folds keep each pair out of training.
+    With zero permutations the p-value is unavailable, rather than one.
+    """
     real = np.asarray(real_features, dtype=np.float64)
     synthetic = np.asarray(synthetic_features, dtype=np.float64)
     if real.ndim != 2 or synthetic.ndim != 2 or real.shape[1] != synthetic.shape[1]:
         raise ValueError("feature matrices must be two-dimensional with matching columns")
+    if not np.isfinite(real).all() or not np.isfinite(synthetic).all():
+        raise ValueError("C2ST features must be finite")
+    if n_permutations < 0:
+        raise ValueError("n_permutations must be non-negative")
     features = np.vstack([real, synthetic])
     labels = np.concatenate(
         [np.zeros(len(real), dtype=np.int64), np.ones(len(synthetic), dtype=np.int64)]
     )
     groups = None
+    paired = False
     if real_groups is not None or synthetic_groups is not None:
         if real_groups is None or synthetic_groups is None:
             raise ValueError("both real_groups and synthetic_groups are required")
+        if np.shape(real_groups) != (len(real),) or np.shape(synthetic_groups) != (len(synthetic),):
+            raise ValueError("group arrays must match their sample rows")
+        paired = np.array_equal(real_groups, synthetic_groups) and len(
+            np.unique(real_groups)
+        ) == len(real)
+        if not paired and len(np.intersect1d(real_groups, synthetic_groups)):
+            raise ValueError("shared groups must be unique matched pairs in the same row order")
         groups = np.concatenate([real_groups, synthetic_groups])
         n_splits = min(n_splits, len(np.unique(groups)))
     else:
@@ -363,22 +398,42 @@ def classifier_two_sample_test(
     if n_splits < 2:
         raise ValueError("C2ST requires at least two cross-validation folds")
 
-    fold_aucs = _c2st_scores(features, labels, groups, n_splits=n_splits, seed=seed)
+    fold_aucs, accuracies = _c2st_scores(
+        features, labels, groups, n_splits=n_splits, seed=seed, classifier=classifier
+    )
     auc = float(np.mean(fold_aucs))
     rng = np.random.default_rng(seed)
     null_aucs = []
     for permutation in range(n_permutations):
-        permuted = rng.permutation(labels)
-        scores = _c2st_scores(
+        if paired:
+            swaps = rng.integers(0, 2, len(real))
+            permuted = np.concatenate([swaps, 1 - swaps])
+        elif groups is not None:
+            raise ValueError("permutation tests with groups require matched pairs")
+        else:
+            permuted = rng.permutation(labels)
+        scores, _ = _c2st_scores(
             features,
             permuted,
             groups,
             n_splits=n_splits,
-            seed=seed + permutation + 1,
+            seed=seed,
+            classifier=classifier,
         )
         null_aucs.append(float(np.mean(scores)))
-    pvalue = (1.0 + sum(value >= auc for value in null_aucs)) / (n_permutations + 1.0)
-    return C2STResult(auc, float(np.std(fold_aucs, ddof=1)), fold_aucs, pvalue)
+    pvalue = (
+        (1.0 + sum(value >= auc for value in null_aucs)) / (n_permutations + 1.0)
+        if n_permutations
+        else float("nan")
+    )
+    return C2STResult(
+        auc,
+        float(np.std(fold_aucs, ddof=1)),
+        fold_aucs,
+        pvalue,
+        float(np.mean(accuracies)),
+        accuracies,
+    )
 
 
 def maximum_mean_discrepancy(

@@ -264,6 +264,7 @@ def main() -> None:
                         "posterior",
                         {
                             "c2st_auc": c2st.auc,
+                            "c2st_balanced_accuracy": c2st.accuracy,
                             "c2st_pvalue": c2st.permutation_pvalue,
                             "mmd_squared": mmd["mmd_squared"],
                         },

@@ -324,5 +324,7 @@ The rebuild script regenerates the GB1 / TrpB sweep CSVs and the headline figure
 
 - [Project status](docs/project_status.md)
 - [Benchmark protocol](docs/benchmark_protocol.md)
+- [CreiLOV adversarial assessment and replicate audit](docs/c2st_audit.md)
+- [Optional whole-protein ESM completion](docs/esm_completion.md)
 - [Global-epistasis design](docs/nonlinearity_design.md)
 - [Historical design document](docs/design.md)

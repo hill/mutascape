@@ -593,6 +593,40 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
       />
 
       <section className="docs-section" id="minimal-campaign">
+        <h2>Adversarial assessment</h2>
+        <p>
+          A classifier tries to distinguish measured and synthetic fitness on held-out genotypes.
+          AUC and balanced accuracy near 0.5 mean weak discrimination for that classifier. They do
+          not prove equivalence. Each real and synthetic genotype pair stays in one fold.
+          Permutation tests swap source labels within pairs and refit the classifier.
+        </p>
+        <p>
+          The CreiLOV assay-scale test gives AUC above 0.999 for three synthetic draws. This exposes
+          the raw fitness mismatch despite the close standardised histogram. Replicates 1 and 2 give
+          AUC near 0.51. Comparisons with replicate 3 give about 0.66. Replicate disagreement is a
+          reference, not a universal noise floor.
+        </p>
+        <CodeBlock
+          label="Paired classifier test"
+          code={`import numpy as np
+from mutascape.benchmarks import classifier_two_sample_test
+
+# Each row describes the same genotype in both arrays.
+groups = np.arange(len(real_features))
+result = classifier_two_sample_test(
+    real_features, synthetic_features,
+    real_groups=groups, synthetic_groups=groups,
+    classifier="histogram", n_permutations=99, seed=42,
+)
+print(result.auc, result.accuracy)`}
+        />
+        <FigureSection
+          id="creilov-c2st"
+          title="CreiLOV classifier check"
+          description="Points show median AUC across three genotype samples. Bars show the sample range, not confidence intervals."
+          src="/assets/docs/creilov-c2st.svg"
+          alt="Replicate discrimination near 0.51 to 0.67 and synthetic discrimination near one"
+        />
         <div className="docs-section-heading">
           <h2>Minimal campaign</h2>
           <p>

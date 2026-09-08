@@ -1,13 +1,10 @@
-"""Measure what a classifier scores on two real assays of the same library.
+"""Compare assay proxies, which do not establish a classifier noise floor.
 
-C2ST chance is 0.5, but two independent measurements of one protein never reach
-it. Assay noise, normalisation and phenotype choice all leave a signal. Without
-that floor a synthetic landscape scoring 0.81 cannot be read, because nobody
-knows whether 0.55 or 0.78 is the best any generator could do.
-
-Several proteins appear more than once in the loaded data. GB1 is the same
-four-site library measured by SSMuLA and by CombinGym. eqFP611 and RhlA each
-give one library under three phenotypes. Those pairs are the control.
+GB1 appears in two collections that reuse the same measurements. eqFP611 and
+RhlA contribute different phenotypes. Neither comparison is a replicate test.
+Use audit_creilov_c2st.py for the raw CreiLOV replicate comparison.
+Independent replicates can score near chance. Their disagreement depends on
+the classifier, features, sample size, and assay normalisation.
 
 Example:
 
@@ -184,6 +181,7 @@ def main() -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     frame.to_csv(args.output / "real_vs_real.csv", index=False)
     summary = {
+        "control_kind": "assay proxies, not independent replicate measurements",
         "seed": args.seed,
         "n_pairs": int(len(frame)),
         "median_c2st_auc": float(frame["c2st_auc"].median()) if not frame.empty else None,

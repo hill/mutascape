@@ -336,6 +336,56 @@
       "title": "Run a campaign"
     }
   ],
+  "c2st": [
+    {
+      "classifier": "logistic",
+      "left": "rep1",
+      "median_auc": 0.51081,
+      "right": "rep2"
+    },
+    {
+      "classifier": "logistic",
+      "left": "rep1",
+      "median_auc": 0.661235,
+      "right": "rep3"
+    },
+    {
+      "classifier": "logistic",
+      "left": "rep2",
+      "median_auc": 0.6537087500000001,
+      "right": "rep3"
+    },
+    {
+      "classifier": "logistic",
+      "left": "measured",
+      "median_auc": 1.0,
+      "right": "synthetic_0"
+    },
+    {
+      "classifier": "histogram",
+      "left": "rep1",
+      "median_auc": 0.5170625,
+      "right": "rep2"
+    },
+    {
+      "classifier": "histogram",
+      "left": "rep1",
+      "median_auc": 0.6668281250000001,
+      "right": "rep3"
+    },
+    {
+      "classifier": "histogram",
+      "left": "rep2",
+      "median_auc": 0.6657550000000001,
+      "right": "rep3"
+    },
+    {
+      "classifier": "histogram",
+      "left": "measured",
+      "median_auc": 1.0,
+      "right": "synthetic_0"
+    }
+  ],
   "campaign": {
     "batchSize": 48,
     "bestFound": 0.5373671548870553,

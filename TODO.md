@@ -1,100 +1,62 @@
-# Mutascape Research Direction
+# Mutascape priorities
 
-## Research aim
+Updated 2026-09-09.
 
-Build an uncertainty-aware generator of whole-protein combinatorial fitness oracles from sparse DMS.
+## Purpose
 
-The main research question is:
+Build a useful synthetic landscape generator for comparing MLDE and ALDE algorithms.
+Measured singles anchor the assay. Seeded interactions create repeatable combinatorial difficulty.
+Optional single completion supports queries across the protein.
+Synthetic values do not predict the true fitness of unmeasured combinations.
 
-> Can sparse single-mutant or double-mutant DMS support a realistic, complete whole-protein oracle with calibrated uncertainty?
+Keep the tool small. Its core needs are a queryable oracle, a campaign interface, repeatable results, and evidence about benchmark behaviour.
 
-Mutascape should define fitness for every sequence in its chosen mutation domain. It should materialise small libraries and query larger domains lazily.
+## Completed
 
-## Why ground landscapes in DMS
+- [x] Preserve measured wild type, singles, and supplied combinations exactly.
+- [x] Provide fixed seeded oracles and lazy genotype queries with `+` mutation labels.
+- [x] Provide mutation domains, batch queries, campaign budgets, and saved oracle manifests.
+- [x] Compare 12 search methods at 48, 96, 192, and 384 queries.
+- [x] Assess method comparisons on SSMuLA, CombinGym, and GraphFLA.
+- [x] Hold out target proteins when fitting the empirical prior.
+- [x] Retain additive, Potts, and Rough Mount Fuji controls.
+- [x] Measure CreiLOV histogram distances and projected Walsh spectra across 30 draws.
+- [x] Add optional calibrated ESM-2 completion across all protein positions.
+- [x] Validate ESM completion with hidden substitutions and hidden positions against simple baselines.
+- [x] Label measured, imputed, and synthetic queries in the API and studio.
+- [x] Freeze imputed values in manifests for restoration without model weights.
+- [x] Add paired C2ST with logistic and boosted classifiers, AUC, and balanced accuracy.
+- [x] Repair C2ST permutations and save reproducible CreiLOV replicate controls.
+- [x] Keep generated documentation figures and API signatures checked against the code.
 
-Real single-mutant measurements preserve the protein context, mutation vocabulary, assay scale, inactive fraction, and censoring. They also support direct tests against hidden combinations.
+ESM implementation and validation are in [single completion](docs/esm_completion.md).
+The classifier results and provenance repair are in [the C2ST audit](docs/c2st_audit.md).
 
-Singles cannot identify higher-order interactions. DMS also contains bias and assay noise. Evaluation must therefore hold out mutation orders and whole proteins.
+## Next work, in priority order
 
-## Immediate benchmark
+1. [ ] Separate assay calibration from search-relevant structure in adversarial assessment.
+   Keep raw C2ST visible. Add one test of disjoint genotype neighbourhoods under a declared fitness transformation.
+   Freeze features and classifier settings before changing the generator.
+2. [ ] Add one command that rebuilds the current publication reference results and figures.
+   Record source hashes, prior settings, seeds, and software versions.
+   Replace the obsolete reference command that rebuilds older structural experiments.
+3. [ ] Validate a small whole-protein MLDE/ALDE example through the public API.
+   Compare random search with one learning method under equal budgets and several oracle draws.
+   Include imputed positions, query provenance, runtime, and a saved result that another user can replay.
+4. [ ] Test ESM completion on a second protein with hidden positions and substitutions.
+   Retain mean and position-mean controls. Report failure cases before recommending completion as a default.
+5. [ ] Reserve a new measured protein collection for confirmation of benchmark usefulness.
+   Freeze generator settings first. Report method agreement alongside adversarial discrimination and known failures.
 
-- [x] Import and deduplicate the SSMuLA and CombinGym landscapes.
-- [ ] Record source, assay, wild type, mutable positions, structure, replicates, and measurement floors.
-- [x] Fit from wild type and singles, then test on all higher mutation orders.
-- [x] Add fixed observation budgets of 96 and 384 variants.
-- [x] Hold out whole proteins when learning interaction priors.
-- [ ] Compare additive, global-epistasis, RMF, NK, current Mutascape, ridge, and pairwise baselines.
+## Scope limits
 
-## Probabilistic completion
+CreiLOV raw C2ST gives near-perfect discrimination, despite close standardised histograms and Walsh spectra.
+This is an open limitation, not a completed realism claim.
+Replicate disagreement is an assay-specific reference and does not define a universal acceptance threshold.
 
-- [x] Learn empirical priors over pairwise and higher-order interaction scales.
-- [x] Condition each target oracle on observed singles and optional doubles.
-- [x] Sample stable whole-protein oracle realisations.
-- [x] Report uncertainty by mutation depth.
-- [ ] Separate latent biological variation from repeated-measurement noise.
-- [ ] Rename genotype-stable `noise_sigma` as latent micro-ruggedness.
-- [ ] Treat structural benefit as an open hypothesis.
+Oracle variation across draws measures benchmark sensitivity. It does not give calibrated biological uncertainty.
+The existing campaign noise option is sufficient for simple noisy-search experiments.
 
-Replace the single latent phenotype with simple folding and activity constraints. Add condition-specific fitness maps after the first completion model passes held-out tests.
-
-- [ ] Add structure-based contact triangles or communities as higher-order terms.
-- [ ] Compare real contact graphs with degree-matched shuffled graphs.
-
-## Whole-protein single-site completion
-
-- [x] Add `from_dms(..., complete="esm2")` as an optional public mode.
-- [x] Score every missing single substitution with ESM-2, including positions absent from the DMS.
-- [x] Calibrate model scores to the assay scale with measured single mutants.
-- [x] Keep measured wild type and single-mutant fitness values exact.
-- [x] Label each query value as measured, imputed, or synthetic.
-- [x] Keep strict measured-library mode as the default and preserve frozen publication results.
-- [x] Test imputation by hiding measured singles and reporting held-out calibration and error.
-- [x] Update the Python API, tests, documentation, and studio together.
-- [x] Load model weights only when the user selects completion mode.
-- [x] Support lazy queries across the whole protein without enumerating its sequence space.
-
-## Evaluation
-
-- [x] Measure held-out correlation, error, NDCG, and top-variant recall.
-- [x] Measure interval coverage, width, CRPS, and posterior ranks.
-- [ ] Compare Walsh spectra, graph ruggedness, optima, basins, and accessible paths.
-- [x] Add C2ST and MMD with grouped genotype splits.
-- [ ] Add real-versus-real controls for each assay.
-- [ ] Compare optimiser rankings on real and synthetic landscapes.
-- [x] Export tidy tables, static figures, and stable JSON for the web app.
-
-Chance C2ST performance supports distributional similarity within the classifier's power. It does not prove biological realism. Pair C2ST with topology, calibration, and search-transfer tests.
-
-## Experimental observation model
-
-- [ ] Model repeated observations with genotype-independent and genotype-dependent variance.
-- [ ] Support count-based enrichment, detection floors, and batch effects.
-- [ ] Preserve raw counts and replicates when source datasets provide them.
-- [ ] Compare with the Bayesian observation model in [FLIGHTED](https://pmc.ncbi.nlm.nih.gov/articles/PMC10996587/).
-
-## Web studio
-
-- [x] Ship a versioned empirical prior with source provenance.
-- [x] Accept both single-site and variant-level DMS CSV files.
-- [x] Show posterior intervals and a stable sampled oracle for exact queries.
-- [x] Show uncertainty by mutation depth and across genotype neighbourhoods.
-- [x] Keep benchmark evidence outside the first query-focused release.
-
-## Integrations
-
-- [ ] Add GraphFLA as an optional evaluation adapter.
-- [ ] Add a thin FLEXS adapter after the native search protocol validates search transfer.
-- [ ] Revisit a Proto constraint adapter after native tests validate the landscape.
-
-## Longer-term tests
-
-- [ ] Vary stability margin, constraint balance, contact locality, active fraction, and assay noise.
-- [ ] Map where random search, directed evolution, ALDE, AdaLead, and EVOLVEpro change rank.
-- [ ] Train a landscape-to-strategy recommender from measured landscape features.
-- [ ] Validate its recommendation on held-out real proteins.
-
-## Publication target
-
-The central claim to test is:
-
-> Empirical interaction priors can turn sparse DMS into complete synthetic oracles that preserve hidden fitness, topology, and search behaviour.
+The active plan excludes folding/activity models, structural higher-order terms, mechanistic assay models, and a landscape-to-strategy recommender.
+It also excludes biological prediction metrics as primary success criteria and new integration frameworks without a user need.
+Those additions would expand the project without establishing the current tool's usefulness.

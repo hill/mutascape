@@ -10,6 +10,7 @@ from pathlib import Path
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from matplotlib.figure import Figure
 
 from mutascape import (
@@ -324,10 +325,12 @@ def build(asset_dir: Path, data_path: Path) -> None:
     campaign = _campaign_data(generator)
     _plot_profile(profile, asset_dir / "oracle-profile.svg")
     _plot_campaign(campaign, asset_dir / "campaign-trace.svg")
+    c2st = _plot_c2st(asset_dir / "creilov-c2st.svg")
     payload = {
         "api": _api_reference(),
         "oracle": {key: value for key, value in profile.items() if key != "depths"},
         "campaign": {key: value for key, value in campaign.items() if key != "fitness"},
+        "c2st": c2st,
     }
     data_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
@@ -341,6 +344,7 @@ def check() -> None:
         expected = {
             ASSET_DIR / "oracle-profile.svg": generated_assets / "oracle-profile.svg",
             ASSET_DIR / "campaign-trace.svg": generated_assets / "campaign-trace.svg",
+            ASSET_DIR / "creilov-c2st.svg": generated_assets / "creilov-c2st.svg",
             DATA_PATH: generated_data,
         }
         stale = [
@@ -351,6 +355,52 @@ def check() -> None:
         if stale:
             joined = ", ".join(stale)
             raise SystemExit(f"documentation assets are stale: {joined}; run `just docs-assets`")
+
+
+def _plot_c2st(path: Path) -> list[dict]:
+    frame = pd.read_csv(ROOT / "results/creilov_c2st/metrics.csv")
+    pairs = [("rep1", "rep2"), ("rep1", "rep3"), ("rep2", "rep3"), ("measured", "synthetic_0")]
+    fig, axis = plt.subplots(figsize=(8.4, 3.8))
+    summaries = []
+    for offset, classifier, colour in (
+        (-0.1, "logistic", "#555555"),
+        (0.1, "histogram", "#6095b0"),
+    ):
+        for index, (left, right) in enumerate(pairs):
+            values = frame.loc[
+                (frame.left == left) & (frame.right == right) & (frame.classifier == classifier),
+                "auc",
+            ]
+            middle = float(values.median())
+            axis.errorbar(
+                middle,
+                index + offset,
+                xerr=[[middle - values.min()], [values.max() - middle]],
+                fmt="o",
+                color=colour,
+                capsize=3,
+                label=classifier if index == 0 else None,
+            )
+            summaries.append(
+                {"left": left, "right": right, "classifier": classifier, "median_auc": middle}
+            )
+    axis.axvline(0.5, color="#aaaaaa", linestyle="--", linewidth=1)
+    axis.set(
+        xlabel="Held-out classifier AUC",
+        xlim=(0.47, 1.02),
+        yticks=range(4),
+        yticklabels=[
+            "Replicate 1 / 2",
+            "Replicate 1 / 3",
+            "Replicate 2 / 3",
+            "Measured / synthetic",
+        ],
+    )
+    axis.invert_yaxis()
+    axis.legend(frameon=False, loc="lower left")
+    _finish_figure(fig, path)
+    path.write_text("\n".join(line.rstrip() for line in path.read_text().splitlines()) + "\n")
+    return summaries
 
 
 def main() -> None:

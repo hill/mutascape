@@ -1,0 +1,15 @@
+{
+  "protein": "GB1",
+  "model": "sigmoid",
+  "seed": 2026092311,
+  "w1": 0.5673992937742646,
+  "shape_w1": 0.3350378799467055,
+  "local_walsh_l1": 0.3576267447939787,
+  "measured_local_additive": 0.6790896598451966,
+  "generated_local_additive": 0.8579030322421861,
+  "measured_sign_switch": 0.6236979166666666,
+  "generated_sign_switch": 0.19401041666666666,
+  "spearman": 0.24175758867150654,
+  "auc_base": 0.9908575,
+  "auc_sequence": 0.9920375
+}

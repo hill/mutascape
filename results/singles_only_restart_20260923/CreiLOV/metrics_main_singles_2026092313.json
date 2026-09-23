@@ -1,0 +1,15 @@
+{
+  "protein": "CreiLOV",
+  "model": "main_singles",
+  "seed": 2026092313,
+  "w1": 2.0761533701577592,
+  "shape_w1": 0.06726860894188572,
+  "local_walsh_l1": 0.12377658153533358,
+  "measured_local_additive": 0.916807460785375,
+  "generated_local_additive": 0.9786957515530418,
+  "measured_sign_switch": 0.47916666666666663,
+  "generated_sign_switch": 0.11718749999999999,
+  "spearman": 0.08986636186636188,
+  "auc_base": 0.9998650000000001,
+  "auc_sequence": 0.9999499999999999
+}

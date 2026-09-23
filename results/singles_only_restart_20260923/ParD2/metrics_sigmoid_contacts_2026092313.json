@@ -1,0 +1,15 @@
+{
+  "protein": "ParD2",
+  "model": "sigmoid_contacts",
+  "seed": 2026092313,
+  "w1": 0.44167974862864073,
+  "shape_w1": 0.24009069688231066,
+  "local_walsh_l1": 0.09485386569171468,
+  "measured_local_additive": 0.9151083835114783,
+  "generated_local_additive": 0.9625353163573356,
+  "measured_sign_switch": 0.48828125,
+  "generated_sign_switch": 0.09375,
+  "spearman": 0.8463095823095823,
+  "auc_base": 0.8751575,
+  "auc_sequence": 0.89911
+}

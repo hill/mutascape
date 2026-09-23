@@ -1,0 +1,33 @@
+{
+  "sequence": "VDGV",
+  "source": ".mutascape/benchmark-data/ssmula/data/GB1/scale2max/GB1.csv",
+  "source_sha256": "0555c9300cd73bf63b654b486d2cfba63fa4a8f55a4c3bc29563ee6ee031db5a",
+  "structure": {
+    "available": true,
+    "source": ".mutascape/benchmark-data/ssmula/data/GB1/GB1.pdb",
+    "sha256": "80bf0f0970b483184ced11140a7c5669b39cb63a3d3aec5e56ce0d03d8dbca2b",
+    "chain": "A",
+    "pairs": [
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        3,
+        4
+      ]
+    ]
+  }
+}

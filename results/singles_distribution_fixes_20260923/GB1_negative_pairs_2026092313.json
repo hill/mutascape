@@ -1,0 +1,10 @@
+{
+  "protein": "GB1",
+  "model": "negative_pairs",
+  "seed": 2026092313,
+  "auc_sequence": 0.9991025,
+  "w1": 7.634153883943579,
+  "local_walsh_l1": 0.6106603719780294,
+  "measured_median": 0.0003574310403574,
+  "generated_median": -0.31996661612945065
+}

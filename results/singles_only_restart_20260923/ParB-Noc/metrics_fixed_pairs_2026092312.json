@@ -1,0 +1,15 @@
+{
+  "protein": "ParB-Noc",
+  "model": "fixed_pairs",
+  "seed": 2026092312,
+  "w1": 1.468701808905093,
+  "shape_w1": 0.33867623770556776,
+  "local_walsh_l1": 0.6221073873596042,
+  "measured_local_additive": 0.6740971699019651,
+  "generated_local_additive": 0.9851508635817673,
+  "measured_sign_switch": 0.5625,
+  "generated_sign_switch": 0.17578125,
+  "spearman": 0.35905930183846485,
+  "auc_base": 0.9472675,
+  "auc_sequence": 0.9531374999999999
+}

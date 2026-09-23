@@ -1,0 +1,10 @@
+{
+  "protein": "CreiLOV",
+  "model": "negative_pairs",
+  "seed": 2026092312,
+  "auc_sequence": 0.7755375000000001,
+  "w1": 0.18281490525505895,
+  "local_walsh_l1": 0.13967034606405954,
+  "measured_median": -0.20312439364612445,
+  "generated_median": -0.18865763425459617
+}

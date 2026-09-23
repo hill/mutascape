@@ -1,0 +1,17 @@
+{
+  "sequence": "ILK",
+  "source": ".mutascape/benchmark-data/ssmula/data/ParD2/scale2max/ParD2.csv",
+  "source_sha256": "6f39941a83b70577471bb67f185b67df3f92965f5f690845a8e10ffe4076df87",
+  "structure": {
+    "available": true,
+    "source": ".mutascape/benchmark-data/ssmula/data/ParD2/ParD2.pdb",
+    "sha256": "80901e42f6df36554ee99a4cf000ff048ac495bf4a247b0f6f0170acdb136071",
+    "chain": "A",
+    "pairs": [
+      [
+        1,
+        2
+      ]
+    ]
+  }
+}

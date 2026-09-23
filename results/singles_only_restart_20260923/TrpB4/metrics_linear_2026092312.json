@@ -1,0 +1,15 @@
+{
+  "protein": "TrpB4",
+  "model": "linear",
+  "seed": 2026092312,
+  "w1": 8.087831498614698,
+  "shape_w1": 0.6058401300533943,
+  "local_walsh_l1": 0.4766040303367227,
+  "measured_local_additive": 0.7018457345872753,
+  "generated_local_additive": 0.9401477497556366,
+  "measured_sign_switch": 0.8177083333333333,
+  "generated_sign_switch": 0.29427083333333337,
+  "spearman": 0.13795236595236596,
+  "auc_base": 0.9875400000000001,
+  "auc_sequence": 0.9912825
+}

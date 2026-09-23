@@ -1,0 +1,14 @@
+{
+  "classifier_outcomes": 270,
+  "spectra": 72,
+  "search_groups": 140,
+  "protocol_sha256": "54089e5ebbec8befe609a3ec6d7763ebab85ee191c23a0e89ce18860a783e724",
+  "outputs": {
+    "search_transfer.csv": "1ad35d97927c239c4a2f2db4c890206fd8750a062d70fdd07a40e8463339c65f",
+    "search_scores.csv": "e6efe43adfad7af65dde387b861e111a57cdd94467144ed5876b90632f236b12",
+    "structure.csv": "41ea75ebe0771611b675ecddb2ba47f32078231097344284a7aa5707811eb707",
+    "metrics.csv": "79ac83a80e2d74a197bcec950fe26a30d4115888241086a9c29cd421d2636758",
+    "comparison.csv": "d94298db9d49b8610fc70885ec2c67d830f4caa71ae45c84b08fb149cc8b2a42",
+    "search_comparison.csv": "2f48907f3e9ed0df9687ab2c08f7e6a2b701e5915d7a37817eda5c7a32589ffb"
+  }
+}

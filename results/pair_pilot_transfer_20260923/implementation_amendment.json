@@ -1,0 +1,9 @@
+{
+  "reason": "Pandas supplied a read-only Boolean mask. Copy the search mask before excluding calibration rows. No search scores existed at failure. No experiment settings changed. Both runners now check this amendment.",
+  "code_sha256": {
+    "scripts/run_pair_pilot_search.py": "a8f6c7b10913b642f7dbfd5df11889254bffc9f67ca5dcea54ebb85703cdb50e",
+    "scripts/test_pair_pilot_transfer.py": "d8d01f3f97410a0096dd70f01beb1b46c2fde50068206163f021988f4258ad06",
+    "/Users/tomhill/Uni/research-project/mutascape/scripts/test_pair_pilot_transfer.py": "d8d01f3f97410a0096dd70f01beb1b46c2fde50068206163f021988f4258ad06"
+  },
+  "secondary_search_reason": "Extend the same searches to 192 calibration combinations after observing the classifier results. Run all three proteins and both query budgets. This is a secondary analysis."
+}

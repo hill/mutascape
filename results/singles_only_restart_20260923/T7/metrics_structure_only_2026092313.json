@@ -1,0 +1,13 @@
+{
+  "protein": "T7",
+  "model": "structure_only",
+  "seed": 2026092313,
+  "w1": 17.121207118572325,
+  "shape_w1": 0.8089390581548874,
+  "local_walsh_l1": 0.7504076684060862,
+  "measured_local_additive": 0.6140552863766052,
+  "generated_local_additive": 0.9892591205796484,
+  "measured_sign_switch": 0.0234375,
+  "generated_sign_switch": 0.12369791666666667,
+  "spearman": -0.0724426845967176
+}

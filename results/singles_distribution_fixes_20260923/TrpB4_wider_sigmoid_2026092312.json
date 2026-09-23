@@ -1,0 +1,10 @@
+{
+  "protein": "TrpB4",
+  "model": "wider_sigmoid",
+  "seed": 2026092312,
+  "auc_sequence": 0.9968475,
+  "w1": 3.682290442693809,
+  "local_walsh_l1": 0.4563363306342552,
+  "measured_median": 0.012040788095720449,
+  "generated_median": -0.27126055585855186
+}

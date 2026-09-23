@@ -1,0 +1,15 @@
+{
+  "protein": "TrpB4",
+  "model": "sigmoid_contacts",
+  "seed": 2026092313,
+  "w1": 0.8144274084927394,
+  "shape_w1": 0.1721065933200152,
+  "local_walsh_l1": 0.22452091398789523,
+  "measured_local_additive": 0.7018457345872753,
+  "generated_local_additive": 0.814106191581223,
+  "measured_sign_switch": 0.8177083333333333,
+  "generated_sign_switch": 0.06380208333333333,
+  "spearman": 0.16453277653277654,
+  "auc_base": 0.9952475,
+  "auc_sequence": 0.995895
+}

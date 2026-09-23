@@ -1,0 +1,10 @@
+model,feature_set,classifier,median_delta,improved,comparisons
+loo_noise,audit,histogram,-0.002650000000000041,5,9
+raw_quadratic,audit,histogram,0.034698125000000024,0,9
+learned_pairs,audit,histogram,-0.033536250000000045,7,9
+loo_noise,audit,logistic,0.0034237500000000587,2,9
+raw_quadratic,audit,logistic,0.007512500000000033,3,9
+learned_pairs,audit,logistic,-0.006607499999999988,7,9
+loo_noise,with_genotype,histogram,0.0011737499999998624,2,9
+raw_quadratic,with_genotype,histogram,0.022303749999999956,0,9
+learned_pairs,with_genotype,histogram,-0.09988312499999996,9,9

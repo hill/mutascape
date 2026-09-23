@@ -1,0 +1,179 @@
+"""Compare the final model with standard generators on the same search domains."""
+
+import hashlib
+import json
+import time
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from joblib import Parallel, delayed
+from scipy.stats import kendalltau
+
+from mutascape.benchmarks.generators import (
+    _additive,
+    _site_fields,
+    nk_tensor,
+    potts_tensor,
+    rough_mount_fuji_tensor,
+)
+from mutascape.benchmarks.library import SearchSpace
+from mutascape.benchmarks.methods import METHODS, make_features, run_method
+from mutascape.benchmarks.topology import CubeSpec
+from mutascape.benchmarks.validity import pairwise_winner_transfer
+from scripts.confirm_quantile_pilot import OUT as CONFIRMATION
+from scripts.confirm_quantile_pilot import PROTEINS, SEEDS, load
+
+OUT = Path("results/quantile_generator_comparison_20260923")
+MODELS = ("additive", "potts", "rmf", "nk_k1", "nk_k2")
+
+
+def prepare():
+    OUT.mkdir(parents=True, exist_ok=True)
+    protocol = {
+        "pilot_size": 192,
+        "budgets": [48, 96],
+        "proteins": list(PROTEINS),
+        "draws": list(SEEDS),
+        "search_seeds": [2026100100 + trial * 137 for trial in range(10)],
+        "settings": {"potts_coupling": 0.25, "rmf_roughness": 1.0, "nk_k": [1, 2]},
+        "inputs": "Additive, Potts and RMF use measured singles. NK uses sequence alphabets only.",
+        "domain": "The final-model search domain excludes wild type, singles and 192 pilot combinations.",
+        "selection": "Fixed standard-generator settings before scoring. No tuning against these outcomes.",
+        "source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+    }
+    protocol_file = OUT / "protocol.json"
+    if protocol_file.exists():
+        old = json.loads(protocol_file.read_text())
+        assert old == protocol
+    else:
+        protocol_file.write_text(json.dumps(protocol, indent=2) + "\n")
+    for name in PROTEINS:
+        folder = OUT / name
+        if (folder / "ready.json").exists():
+            continue
+        folder.mkdir(exist_ok=True)
+        frame, singles, sequence, codes, shape, _ = load(name)
+        positions = sorted({p for m in singles.mutations for p in m})
+        alphabets = {}
+        for j, p in enumerate(positions):
+            states = {}
+            for code, mutation in zip(codes[:, j], frame.mutations):
+                states[int(code)] = mutation.get(p, sequence[p - 1])
+                if len(states) == shape[j]:
+                    break
+            alphabets[p] = [states[i] for i in range(shape[j])]
+        cube = CubeSpec(tuple(positions), alphabets, {p: sequence[p - 1] for p in positions})
+        flat = np.ravel_multi_index(codes.T, shape)
+        np.save(folder / "codes.npy", codes)
+        np.save(folder / "shape.npy", shape)
+        pilot = pd.read_csv(CONFIRMATION / name / "pilot.csv").row.to_numpy()
+        selected = np.flatnonzero((frame.depth > 1).to_numpy())
+        selected = selected[~np.isin(selected, pilot)]
+        selected = selected[np.argsort(flat[selected])]
+        np.save(folder / "selected.npy", selected)
+        for model in MODELS:
+            for seed in [0] if model == "additive" else SEEDS:
+                if model == "additive":
+                    tensor = _additive(cube, _site_fields(cube, singles))
+                elif model == "potts":
+                    tensor = potts_tensor(cube, singles, coupling=0.25, seed=seed)
+                elif model == "rmf":
+                    tensor = rough_mount_fuji_tensor(cube, singles, roughness=1.0, seed=seed)
+                else:
+                    tensor = nk_tensor(cube, k=int(model[-1]), seed=seed)
+                values = tensor.ravel()[flat]
+                assert np.isfinite(values).all()
+                np.save(folder / f"{model}_{seed}.npy", values)
+        (folder / "ready.json").write_text(
+            json.dumps({"rows": len(frame), "search": len(selected)})
+        )
+
+
+def run(name, model, seed):
+    folder = OUT / name
+    path = folder / f"search_{model}_{seed}.csv"
+    if path.exists():
+        return
+    selected = np.load(folder / "selected.npy")
+    codes = np.load(folder / "codes.npy")[selected]
+    shape = tuple(np.load(folder / "shape.npy"))
+    values = np.load(folder / f"{model}_{seed}.npy")[selected]
+    space = SearchSpace(
+        codes,
+        shape,
+        selected,
+        None,
+        {tuple(int(v) for v in code): i for i, code in enumerate(codes)},
+    )
+    features = make_features(space)
+    rows = []
+    for budget in (48, 96):
+        for method in METHODS:
+            for trial in range(10):
+                start = time.perf_counter()
+                best = run_method(
+                    method, space, values, features, budget=budget, seed=2026100100 + trial * 137
+                )
+                rows.append(
+                    dict(
+                        protein=name,
+                        pilot_size=192,
+                        budget=budget,
+                        model=model,
+                        draw=seed,
+                        method=method,
+                        trial=trial,
+                        best=best,
+                        regret=(values.max() - best) / np.ptp(values),
+                        space_size=space.size,
+                        seconds=time.perf_counter() - start,
+                    )
+                )
+    pd.DataFrame(rows).to_csv(path, index=False)
+    print(f"Completed {name} {model} draw {seed}", flush=True)
+
+
+def summarise():
+    base = pd.read_csv(CONFIRMATION / "search_scores.csv")
+    base = base.loc[(base.pilot_size == 192) & base.model.isin(["quantile", "measured"])]
+    extra = pd.concat([pd.read_csv(p) for p in OUT.glob("*/search_*.csv")], ignore_index=True)
+    scores = pd.concat([base, extra], ignore_index=True)
+    scores.to_csv(OUT / "search_scores.csv", index=False)
+    records = []
+    for (name, budget), group in scores.groupby(["protein", "budget"]):
+        averaged = group.groupby(["model", "method", "trial"]).regret.mean().reset_index()
+        averaged = averaged.rename(columns={"model": "arm"}).assign(dataset=name)
+        pairs = pairwise_winner_transfer(averaged, seed=2026100100, n_bootstrap=2000)
+        means = averaged.pivot_table(index="method", columns="arm", values="regret")
+        for pair in pairs.to_dict("records"):
+            model = pair.pop("arm")
+            pair.pop("dataset")
+            records.append(
+                dict(
+                    protein=name,
+                    budget=budget,
+                    model=model,
+                    **pair,
+                    kendall_tau=kendalltau(means.measured, means[model]).statistic,
+                )
+            )
+    data = pd.DataFrame(records)
+    expected = pd.read_csv(CONFIRMATION / "search_comparison.csv")
+    expected = expected.loc[(expected.model == "quantile") & (expected.pilot_size == 192)]
+    merged = data.query('model == "quantile"').merge(expected, on=["protein", "budget", "model"])
+    for column in ["correct_pairs", "scored_pairs", "winner_accuracy", "kendall_tau"]:
+        np.testing.assert_allclose(merged[column + "_x"], merged[column + "_y"])
+    data.to_csv(OUT / "comparison.csv", index=False)
+    print(data.groupby("model")[["winner_accuracy", "kendall_tau"]].mean().to_string(), flush=True)
+
+
+if __name__ == "__main__":
+    prepare()
+    Parallel(n_jobs=4)(
+        delayed(run)(name, model, seed)
+        for name in PROTEINS
+        for model in MODELS
+        for seed in ([0] if model == "additive" else SEEDS)
+    )
+    summarise()

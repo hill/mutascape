@@ -1,0 +1,15 @@
+{
+  "protein": "GB1",
+  "model": "linear",
+  "seed": 2026092313,
+  "w1": 8.632030486998024,
+  "shape_w1": 0.7809952162984615,
+  "local_walsh_l1": 0.4996238266669667,
+  "measured_local_additive": 0.6790896598451966,
+  "generated_local_additive": 0.92890157317868,
+  "measured_sign_switch": 0.6236979166666666,
+  "generated_sign_switch": 0.34244791666666663,
+  "spearman": 0.1762411343557715,
+  "auc_base": 0.9944075,
+  "auc_sequence": 0.9960625000000001
+}

@@ -1,0 +1,36 @@
+{
+  "summary_timing_scope": "Summary recalculation only. Trial times remain in scores.csv.",
+  "recomputed_datasets": [
+    "GraphFLA_Poelwijk2019"
+  ],
+  "retained_datasets": [
+    "GraphFLA_Bank2016a",
+    "GraphFLA_Lunzer2005_fitness",
+    "GraphFLA_Michael2024_LamB",
+    "GraphFLA_Moulana2023_S309",
+    "GraphFLA_Schulz2025",
+    "GraphFLA_Wu2020_Bk79"
+  ],
+  "controls_verified": [
+    "measured",
+    "additive",
+    "potts_low_0",
+    "potts_low_1",
+    "potts_low_2",
+    "rmf_high_0",
+    "rmf_high_1",
+    "rmf_high_2"
+  ],
+  "seed": 20260823,
+  "target_seed_index": 5,
+  "sources": [
+    {
+      "path": ".mutascape/worktrees/posterior-landscapes-v1/notebooks/iclr/output_validity_external_b96_primary/scores.csv",
+      "sha256": "883f5ebba7fa90583f036d3c97e753ff51f7c0802d623058bc8e794756546c79"
+    },
+    {
+      "path": "results/preprint_audit_20260923/graphfla_eqfp611_b96/scores.csv",
+      "sha256": "bc76d857f180c0db8b62eefb3c2f383c1e995f75a03c086baa6689d3183a728e"
+    }
+  ]
+}

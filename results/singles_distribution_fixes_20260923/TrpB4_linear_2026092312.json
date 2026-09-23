@@ -1,0 +1,10 @@
+{
+  "protein": "TrpB4",
+  "model": "linear",
+  "seed": 2026092312,
+  "auc_sequence": 0.9978524999999999,
+  "w1": 8.538254833153912,
+  "local_walsh_l1": 0.5738316719659625,
+  "measured_median": 0.012040788095720449,
+  "generated_median": -0.5814500988321922
+}

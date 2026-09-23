@@ -1,0 +1,15 @@
+{
+  "protein": "T7",
+  "model": "fixed_pairs",
+  "seed": 2026092312,
+  "w1": 4.389365800183375,
+  "shape_w1": 0.8478917043838048,
+  "local_walsh_l1": 0.7373276469134705,
+  "measured_local_additive": 0.6140552863766052,
+  "generated_local_additive": 0.9827191098333405,
+  "measured_sign_switch": 0.0234375,
+  "generated_sign_switch": 0.23177083333333331,
+  "spearman": 0.048185444819948874,
+  "auc_base": 0.99617,
+  "auc_sequence": 0.9952099999999999
+}

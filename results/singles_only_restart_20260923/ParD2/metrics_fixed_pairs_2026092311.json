@@ -1,0 +1,15 @@
+{
+  "protein": "ParD2",
+  "model": "fixed_pairs",
+  "seed": 2026092311,
+  "w1": 0.7850518908106292,
+  "shape_w1": 0.36387947795354547,
+  "local_walsh_l1": 0.14334128388475953,
+  "measured_local_additive": 0.9151083835114783,
+  "generated_local_additive": 0.9867790254538581,
+  "measured_sign_switch": 0.48828125,
+  "generated_sign_switch": 0.27213541666666663,
+  "spearman": 0.8079590679590679,
+  "auc_base": 0.9056825,
+  "auc_sequence": 0.9260299999999999
+}

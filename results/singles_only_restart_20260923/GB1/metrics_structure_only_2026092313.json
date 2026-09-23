@@ -1,0 +1,13 @@
+{
+  "protein": "GB1",
+  "model": "structure_only",
+  "seed": 2026092313,
+  "w1": 37.480111618347806,
+  "shape_w1": 0.7608636817902965,
+  "local_walsh_l1": 0.6244073085835359,
+  "measured_local_additive": 0.6790896598451966,
+  "generated_local_additive": 0.9912933141369646,
+  "measured_sign_switch": 0.6236979166666666,
+  "generated_sign_switch": 0.10937499999999999,
+  "spearman": -0.01148136042720069
+}

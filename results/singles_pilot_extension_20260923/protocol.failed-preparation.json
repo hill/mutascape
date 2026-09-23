@@ -1,0 +1,29 @@
+{
+  "model": "Existing QuantileCalibratedLandscape without parameter changes",
+  "pilot_size": 192,
+  "proteins": [
+    "DHFR",
+    "eqFP611",
+    "ParB-Noc",
+    "ParD2",
+    "CreiLOV",
+    "GB1",
+    "TrpB4",
+    "T7",
+    "TEV"
+  ],
+  "seeds": [
+    2026092311,
+    2026092312,
+    2026092313
+  ],
+  "selection_seed": 2026092327,
+  "evaluation": "The same 1000 genotypes and complete subcubes as the singles-only study",
+  "pilot_selection": "Uniform without replacement from eligible measured combinations",
+  "exclusions": "WT, singles, evaluation genotypes and every spectral subcube corner",
+  "source_sha256": {
+    "/Users/tomhill/Uni/research-project/mutascape/scripts/assess_singles_pilot_extension.py": "76898f04c371ed83f7ecf31e5e366215860ecabae36b83b4bf7f33a98628d229",
+    "src/mutascape/experimental/quantile.py": "da62915ed71205b21a7c458fbfe11a92d0a6ceca840c1033fdc1fd27e9dfe251",
+    "src/mutascape/experimental/pilot.py": "44d4ece0cf294e610fe3f6a965366e8be9bf93706abb30edd4a23a7a6fd8204b"
+  }
+}

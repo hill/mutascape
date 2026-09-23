@@ -1,0 +1,10 @@
+{
+  "protein": "T7",
+  "model": "wider_sigmoid",
+  "seed": 2026092313,
+  "auc_sequence": 0.9943649999999998,
+  "w1": 3.085314033240558,
+  "local_walsh_l1": 0.69472413238607,
+  "measured_median": 0.0,
+  "generated_median": 0.09412678362804311
+}

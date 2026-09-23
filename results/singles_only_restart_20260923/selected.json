@@ -1,0 +1,5 @@
+{
+  "linear": "linear_m0.05_a1",
+  "sigmoid": "sigmoid_m0.05_a0.3",
+  "pool": "pool_m0.05_a0.3"
+}

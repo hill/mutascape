@@ -1,0 +1,13 @@
+{
+  "protein": "TEV",
+  "model": "structure_only",
+  "seed": 2026092311,
+  "w1": 18.275739575854864,
+  "shape_w1": 0.4187491657379687,
+  "local_walsh_l1": 1.0464887987453835,
+  "measured_local_additive": 0.47304637704591124,
+  "generated_local_additive": 0.996290776418603,
+  "measured_sign_switch": 0.8294270833333333,
+  "generated_sign_switch": 0.037760416666666664,
+  "spearman": -0.0009777610070938378
+}

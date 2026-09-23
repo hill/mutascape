@@ -1,0 +1,2154 @@
+{
+  "protocol": "review-response-2026-09-23",
+  "development_assay_entries": 31,
+  "development_protein_groups": 17,
+  "prospective_families": 1,
+  "budgets": [
+    48,
+    96,
+    192,
+    384
+  ],
+  "code_sha256": {
+    "src/mutascape/experimental/pilot.py": "89073ca304492e12e5ada00949733253bcb8d16e150b376e054e270a70348e68",
+    "src/mutascape/benchmarks/validity.py": "e9ad122e2efb326540d9f17d8f51dd80d823a52696a34a7af48569664101d4b6",
+    "scripts/run_search_transfer.py": "5307b7c6dae2aa597fe3b0b1c4dd69fc353404e441b2accb584dd45c1f5db2eb",
+    "scripts/assess_review_nulls.py": "0533b3c1d102b8b5edd11a45d29ebf5bb2378b1c680035e5bc14025002cc6bd0",
+    "scripts/build_review_tables.py": "d09ea4d6fc1def5574a7e65f1caeb5ba904f8fda6ddbff178db74b3e10e3a07c",
+    "scripts/freeze_review_response.py": "395484dbd3f079d6f7990aca75f5884aaadbe4fc2d9f96acb259926857901b79",
+    "scripts/run_review_confirmation.py": "7fb328daeeee188b488472bc284b601585d59c8c3980b100204dd9bceb152fe5",
+    "scripts/summarise_review_experiments.py": "36047654755c42e9eda0478afdd2c304962fca0467e3968f72dfc4aa850a31cc",
+    "scripts/check_walsh_filling.py": "892ed7d4fa72febe84d2fc538149df6f38fa7610b62e02b0e725d74ab6032a8b",
+    "scripts/validate_pilot_generator.py": "64a06ec71011709df5997a789987942475115930f240fbfaeb545d5afd206c64",
+    "scripts/assess_confirmation_shape.py": "5eb63f972db7b3c69670e1bfc6b0e85e746e5ff9fa66de3936b26dc285e2639a",
+    "scripts/run_readout_ablation.py": "010206bd863dc31f34030b6541e01c338b10d18cbd3588dcad3f50c0e20773cc",
+    "scripts/check_confirmation_selection.py": "19f21e58eaf822a045ee6e64156f15a2f98340e28a986348185fbeb7beca48e0"
+  },
+  "output_sha256": {
+    "results/review_response_20260923/confirmation_b192/additive.csv": "d04eb7a2bd643da1a75ae1a61298afbd5fbeeea05ae31fb07ee5c6d3010557db",
+    "results/review_response_20260923/confirmation_b192/dms_no_readout_0.csv": "c1d787c182fcb1f34aaea287121cc17664e78b84739c6c14e02c9c94439428b7",
+    "results/review_response_20260923/confirmation_b192/dms_no_readout_1.csv": "8885106d1a22b9600d706fd193576e6d1af3c21d51bbe880474252eb490246b3",
+    "results/review_response_20260923/confirmation_b192/dms_no_readout_2.csv": "8451c6521b5e3f39ce8a32f83af20450aa26196ec8a94e180548898126014a22",
+    "results/review_response_20260923/confirmation_b192/dms_pairwise_0.csv": "69bdc73c7ee073b81eae70ffb2db843d9bfa7e289ef98470c07bc22a68aa26ed",
+    "results/review_response_20260923/confirmation_b192/dms_pairwise_1.csv": "97f4aeada2c41617f5b12c60a0e77e754f22c9ec4fb1008bdf41e3046c0a53b2",
+    "results/review_response_20260923/confirmation_b192/dms_pairwise_2.csv": "6cef7f4d73f26c1604124c3ec8ea0d8f13c5c0742516e3ebaf1da69726ebbab8",
+    "results/review_response_20260923/confirmation_b192/measured.csv": "74f543a864778799dc45828dc7c0f9b3db7f73d4e503d81f997fda2522985fad",
+    "results/review_response_20260923/confirmation_b192/measured_reliability.csv": "762d6c70da8e5a95485ee18cfa33c0a8d6e4ea193ed95d384401633edfec8d59",
+    "results/review_response_20260923/confirmation_b192/pairwise_transfer.csv": "59855e761ef7fa64b00e78ae1374180553dd2c2ed0c49e37e5928c03db5477fc",
+    "results/review_response_20260923/confirmation_b192/potts_low_0.csv": "a879d2e0167bcdbd204e4a53a3bed7caf7800a4e3612e9e81c3e23c11b31b420",
+    "results/review_response_20260923/confirmation_b192/potts_low_1.csv": "b2f6d46dd51a96d7e520c4d71766bfe5342cde43e03d9646b3ab4f7b35ce8110",
+    "results/review_response_20260923/confirmation_b192/potts_low_2.csv": "7de26b7ed6bac5a80e1c668f8fd3becd59f7d3b1caaf0cae178c473750ff2644",
+    "results/review_response_20260923/confirmation_b192/reliability_adjusted_transfer.csv": "583c4572898c9f1a872e570a06106a3a1ee7e052afe9989e681a3e8db851f73a",
+    "results/review_response_20260923/confirmation_b192/rmf_high_0.csv": "7a0f9e8461b59b885c3e24d6b11616ba18ef549ea143e5414a8e65e644d24380",
+    "results/review_response_20260923/confirmation_b192/rmf_high_1.csv": "8bac9cae82709369128b6ae12cd958f57aae15ad696ce85534cbe947ac9bb3b8",
+    "results/review_response_20260923/confirmation_b192/rmf_high_2.csv": "98a38fee84f80fcc60e0fd936203d8e8484cf758f99e45f34a2d2c778110bdde",
+    "results/review_response_20260923/confirmation_b192/scores.csv": "237b73bc6dc72bebbba96f0bd3ecd5b31cecddd0de801684851675a94c5767c8",
+    "results/review_response_20260923/confirmation_b192/summary.json": "0adaf6110d0bc4c9c01265d9e9a0cb92b8b304d00d4a52aadd2e207c7bef7e14",
+    "results/review_response_20260923/confirmation_b192/transfer.csv": "849626090b3a03a918d0aac788acc6100e230de7b0a9c005b5b039128c4c84b0",
+    "results/review_response_20260923/confirmation_b384/additive.csv": "391122eff67605067c85ec536930d67618e93910561ebd4e3c8eb4277d52da3e",
+    "results/review_response_20260923/confirmation_b384/dms_no_readout_0.csv": "6b71cad2dcecf6174de586566cedb4b0beb86f37a84fb954ed6158557d89cc0a",
+    "results/review_response_20260923/confirmation_b384/dms_no_readout_1.csv": "f20d0034828f8c759dc5d9a7c7922ea016606dcb189ed352c5073c012e52c10c",
+    "results/review_response_20260923/confirmation_b384/dms_no_readout_2.csv": "e3f95e96125956655ef2a903514f0e4dccaaa6cf87473139df443f579640433c",
+    "results/review_response_20260923/confirmation_b384/dms_pairwise_0.csv": "19964b3438e8fdb0c25553a018d9a0cf1e2d6cb82a66c97076b77d6f33e40de0",
+    "results/review_response_20260923/confirmation_b384/dms_pairwise_1.csv": "fd3a3e2f5c1af652470416beae45feeb50c2072b0a922e9c450b9fbce0990a3c",
+    "results/review_response_20260923/confirmation_b384/dms_pairwise_2.csv": "2ccefae10ae5511cc317363290ed6ea248a2d3220b1ecaa691b24690b766342b",
+    "results/review_response_20260923/confirmation_b384/measured.csv": "3445835f87680768a253675b4abc8c04776fc55e9b7632fa21ec549621b9f7c4",
+    "results/review_response_20260923/confirmation_b384/measured_reliability.csv": "8f9065f1abeaa68eccb41564166d640c28875866912a575c6a788cd438fbc7dd",
+    "results/review_response_20260923/confirmation_b384/pairwise_transfer.csv": "edf7b299dd84c40f2202d4fc89383fa6da7baf0f60065403482035bd396d37e1",
+    "results/review_response_20260923/confirmation_b384/potts_low_0.csv": "bd9b099ea53c6a01250139e42d29192c5210f8345a20622867e0c6586ee4e26b",
+    "results/review_response_20260923/confirmation_b384/potts_low_1.csv": "43e20cd4dcc5527058fd4ab04d4f46eac5c1f5a2878d23b00705ee3f6a7384ac",
+    "results/review_response_20260923/confirmation_b384/potts_low_2.csv": "763b3e32709bdd3f2b81d65e523f2efd88996c845a1d56fd7b35a826a36a9457",
+    "results/review_response_20260923/confirmation_b384/reliability_adjusted_transfer.csv": "dfc69f5be1e78cae28da34b5125842296fe21ecc14d7572bea63a228aae23a02",
+    "results/review_response_20260923/confirmation_b384/rmf_high_0.csv": "0130057c0e9d92fbc47b1e2c514ffefcfa072f550efb721ec65e4394362f72ad",
+    "results/review_response_20260923/confirmation_b384/rmf_high_1.csv": "bcdb6da5cdb272457e97ff54223efe9de915af33089281dbfcd7595f9684c37b",
+    "results/review_response_20260923/confirmation_b384/rmf_high_2.csv": "e0d05c36f59306e6db4463711412e2e746ef3ebbdde1c8da1baee2b6a38f8c46",
+    "results/review_response_20260923/confirmation_b384/scores.csv": "80b68bd49e441d52dbc2a3dff737e57be1f918234f4f1dfbfd0a2ed3e6d04188",
+    "results/review_response_20260923/confirmation_b384/summary.json": "a82d300aded327e15cbfc3bd496a0a1684e1a631013d43758ac7d347d3096928",
+    "results/review_response_20260923/confirmation_b384/transfer.csv": "ed74ec93d456759111c7489e0cde7b2ac69a49bf5f0cfdd79e46ce683ab15077",
+    "results/review_response_20260923/confirmation_b48/additive.csv": "bd4ccfcc9dfd9a93c5cbd13182faa07400d64b5ae486b98b6723050f1d3096cd",
+    "results/review_response_20260923/confirmation_b48/dms_no_readout_0.csv": "9397617576f3fcb458539c86366bf7f99bf2d7b1812612c117fcb72686a36d71",
+    "results/review_response_20260923/confirmation_b48/dms_no_readout_1.csv": "28d08d59aeb7995c811b4398b8fae967c684a62105e57a2778f7af07e5cef42a",
+    "results/review_response_20260923/confirmation_b48/dms_no_readout_2.csv": "81369dad53afde634592ad38b6cf3286b03073a9ab947cd1eb5da12aaab038a4",
+    "results/review_response_20260923/confirmation_b48/dms_pairwise_0.csv": "12ca4d12455b365567238464e2b6faf4431d9860eacd6afa1754a3c6f54b8be2",
+    "results/review_response_20260923/confirmation_b48/dms_pairwise_1.csv": "9dbc088f2b70ef76c402fd76dd3b49126606f9b0befbbc84ca8a63c3fcfa40e2",
+    "results/review_response_20260923/confirmation_b48/dms_pairwise_2.csv": "5ddf1a934349a9863768db0f6487253c0fb3c89eb2293ea665507e86b82e105a",
+    "results/review_response_20260923/confirmation_b48/measured.csv": "02c23015f5689f705bf74b5448c607d3a19a3676ef01612cf5fc26f9d9eaa875",
+    "results/review_response_20260923/confirmation_b48/measured_reliability.csv": "06087ac1ee7293da923c9c680be597f82ef6df88dde72053866feb6efea0467d",
+    "results/review_response_20260923/confirmation_b48/pairwise_transfer.csv": "7828a60bcc03d05686a39a39b2a536da08655e6ed8624daaaf8d51a73561a047",
+    "results/review_response_20260923/confirmation_b48/potts_low_0.csv": "b5b37ba68d38087fd06d0e006cb718079e490d30b1fb476e2ca58a4333c6b914",
+    "results/review_response_20260923/confirmation_b48/potts_low_1.csv": "b9f98223a7beed15221ef564874c8fbf3a4ac331ec2a5dc48bae2e0055e01de4",
+    "results/review_response_20260923/confirmation_b48/potts_low_2.csv": "9b47388ea30c904726182d7637560430d02334bca48a5f6fcd4419a72f118fc4",
+    "results/review_response_20260923/confirmation_b48/reliability_adjusted_transfer.csv": "5aff7b4f14eb4af28d6d3ba28c00ae88c45ccdc1787fd2bd55b10fd7ca0f6a4d",
+    "results/review_response_20260923/confirmation_b48/rmf_high_0.csv": "cc6fbdebc4b2146e043e4b876297b3141827f022d140f03b59469119d5b100ad",
+    "results/review_response_20260923/confirmation_b48/rmf_high_1.csv": "0b0ba83c5f04f109315046b0c61fbdb4b7776372e48a6c79dc8de2e9b3c4ff4b",
+    "results/review_response_20260923/confirmation_b48/rmf_high_2.csv": "0c87ff0e9681892f91add86d8ee5ad4bfb69be56b95c58ad9f5804d1d7dda574",
+    "results/review_response_20260923/confirmation_b48/scores.csv": "da0e803415daad203b58f566490b30ce6645c5831fb73ce60600ceda2e387ab4",
+    "results/review_response_20260923/confirmation_b48/summary.json": "a3b40ba7892bc8f0885ff14c899c1d3f3ea841c86386af9980156db72bb9fddf",
+    "results/review_response_20260923/confirmation_b48/transfer.csv": "47241a16a7c5c4685728dcf8d9d900551327293637dc29e2819d3907c9e46293",
+    "results/review_response_20260923/confirmation_b96/additive.csv": "6c042fee6f831a8a005cd25f846e1cf6591cfc7bced2b99560942ee67b583c16",
+    "results/review_response_20260923/confirmation_b96/dms_no_readout_0.csv": "1b836ba74e5507e84c7c74234a4dacb972a6c5e7d414237543ca677dd24dd142",
+    "results/review_response_20260923/confirmation_b96/dms_no_readout_1.csv": "6c99bc0c80ced00f44ac80fc95bdc59ec6273a52d4dbf748a440cddf91fcb9ff",
+    "results/review_response_20260923/confirmation_b96/dms_no_readout_2.csv": "40ccdf3a91efd055ed8e33de367dc1dd41bbf92097c325eb59cf698b4f25c80f",
+    "results/review_response_20260923/confirmation_b96/dms_pairwise_0.csv": "1de7317b82edc157e612fea2da995fe79f104c69b89ba9f290622e0170446f1d",
+    "results/review_response_20260923/confirmation_b96/dms_pairwise_1.csv": "78caf69b637474dc787b95899c13a43a2f7085c54004a24416aa9dc7a55e0702",
+    "results/review_response_20260923/confirmation_b96/dms_pairwise_2.csv": "527fc4bd44497590c672d85c96e032c0fe6545913e8afde1ee95fd6a646debed",
+    "results/review_response_20260923/confirmation_b96/measured.csv": "f8e50e029c0f612c8113e8c8cd8bd35075d58593cbb798959294f2f072c15bf8",
+    "results/review_response_20260923/confirmation_b96/measured_reliability.csv": "62db7f3fb62d5af39960c117a2300907d8fbbd3417064422d1c0c03efcd05325",
+    "results/review_response_20260923/confirmation_b96/pairwise_transfer.csv": "a6793fb8b8ca748bc2b5fd54c30286bce588fab8efd842d3f772ff49b902d48c",
+    "results/review_response_20260923/confirmation_b96/potts_low_0.csv": "3c03a8e9a0c80f81c354aeddb4b1edfa1f9ec05a5620b9dbe1facd97f7e19977",
+    "results/review_response_20260923/confirmation_b96/potts_low_1.csv": "098bb0bc6a849b629efa72611d996f1e3a0eb51f2322a7463cb1d4e47b82ce03",
+    "results/review_response_20260923/confirmation_b96/potts_low_2.csv": "02cc1a167e5dac9f3882576266b835a0531390631a63ea40eeae835912c91718",
+    "results/review_response_20260923/confirmation_b96/reliability_adjusted_transfer.csv": "72ff593b407624c57ee2dc3cfd81f7098817133ed41104d037cbaa1d321e1baf",
+    "results/review_response_20260923/confirmation_b96/rmf_high_0.csv": "985432221dfb996e75dd5c8700a304a92821bc63f0894152ceec8b504309ac59",
+    "results/review_response_20260923/confirmation_b96/rmf_high_1.csv": "928601136dd2300384634d4c817b8e673b6568d733150b98c94451e4fd4bd20b",
+    "results/review_response_20260923/confirmation_b96/rmf_high_2.csv": "9af9e60bfe02a8d9da1200eb29a01172ab3c8594d944f60c236dba8d28845da2",
+    "results/review_response_20260923/confirmation_b96/scores.csv": "184a4e9c474ba1202bfc27b0313728b13afde36b4b8218dfa74d3f1307d5ca39",
+    "results/review_response_20260923/confirmation_b96/summary.json": "f8cf746137d9702c0ea90d0281f2f26510ac7c42b6ab55acbc54d1ec8210c7ea",
+    "results/review_response_20260923/confirmation_b96/transfer.csv": "46d4ae76d4a11732642edc16a7878b27dac722133ab37366b3f423c19f9ce23e",
+    "results/review_response_20260923/confirmation_classifier_genotypes.csv": "2db90c5d5bd0845b15a008dfc5cb4f2c6b4ee8c6423dd3194ad2bb566f27b8a3",
+    "results/review_response_20260923/confirmation_features.npz": "7a876d4dab2c3ebdabcb7b09d3c0ec3483dc219496d8ff6fc1cb421fbda1c8f4",
+    "results/review_response_20260923/confirmation_manifest.json": "25c5ab740e68ac84a9b6398af44b0781397c5046f419ec1481d055304788d89f",
+    "results/review_response_20260923/confirmation_prior.json": "b91cb940beadbbc8c7f6fada9a07e4559ae6a3b528cf0779b10f21ac39f8bb52",
+    "results/review_response_20260923/confirmation_selection.csv": "ac9986b08409f4c5aaa6652e2150661fe339f4693c7a619f4950765bd1b804f4",
+    "results/review_response_20260923/confirmation_shape.csv": "a0fcf25ae9984444cc1c508466c363989b2ac4c75f9c6eedf1af845d6337f144",
+    "results/review_response_20260923/confirmation_spectra.csv": "e0b876849b5bb697dee516dc2bdb4c212fb78cf7d951d0aa7027dbc209731539",
+    "results/review_response_20260923/confirmation_summary.csv": "de26be66127f7f2865f18e333aa7b26cbaa6ae8abd68446f128cc226d46ad90b",
+    "results/review_response_20260923/graphfla_structural_inventory.csv": "8fe4a5dead37a3f7c96441971e7e454f5c013e5a97c0574867b9ae0653b9008a",
+    "results/review_response_20260923/null_donors.csv": "3130f1e9da1ae0042928288e8b505a93b3612139fb6eca60232d52a45804ea82",
+    "results/review_response_20260923/null_pair_details.csv": "98784b80e6168b9248d6a299e3e5a207d8c8adab7eee78ae5b48f03a5ff1f8f1",
+    "results/review_response_20260923/null_summary.csv": "8e610df863b770f1e8d7ee596f037b6dd418090f667d16c2a1e2ef40ca806a65",
+    "results/review_response_20260923/pilot/matched_metrics.csv": "4d1443df011c8f6a4634377824f9fa8afb6015b7b9a7ffec4d85afd53bba2545",
+    "results/review_response_20260923/pilot/model_20260920.json": "ba2e167a8d9b2d6a940923cb2fd1130241f9d9390aed5976239d6fe57e9513df",
+    "results/review_response_20260923/pilot/model_20260921.json": "72692deab4f7b30a099af1b05c63db54de05d5fcd10929d1650b368482adc7d8",
+    "results/review_response_20260923/pilot/model_20260922.json": "11e0a9bb148c264ec41ccf19f0df78e794aa62dce0246f8cb56b9b196805983f",
+    "results/review_response_20260923/pilot/replayed_method_pairs.csv": "bffbd44cf662cd4b3a143d9476ca06dc6c50d532bc446e32ffc077c53b3db6ba",
+    "results/review_response_20260923/readout_ablation/b192_CR6261_H1_binding.csv": "e869838ae4984d887f9c19c83712210bb15b1300ca8a779b68336594e776b007",
+    "results/review_response_20260923/readout_ablation/b192_CR9114_H1_binding.csv": "10655e104a7cce5a98390fc0d6ddaca618801c168a79d46eb95f69a42161a56e",
+    "results/review_response_20260923/readout_ablation/b192_CreiLOV_fluorescence.csv": "08af73d9162484fc96fa37164a7c1b4dd372cf84857d3d77b10cd8faa3a6f002",
+    "results/review_response_20260923/readout_ablation/b192_DHFR.csv": "9a0b4afff38f11b2ce95741d92ce254b6a27088b97add8e1a0462451ea4198bd",
+    "results/review_response_20260923/readout_ablation/b192_GB1.csv": "83f12cb0921a10b913dbaa933b93ff144f86c0fe697af732dce4bdcffe776a63",
+    "results/review_response_20260923/readout_ablation/b192_GB1_binding.csv": "4d3beb83b59b80fb51aded45170773ec5e3da1dce20aa6b0d2d9899f89c83a2d",
+    "results/review_response_20260923/readout_ablation/b192_GraphFLA_Bank2016a.csv": "2ed9eee38281d52ea94031cd8cbf4292af089eec56a5a003d1b62a61d3527b7f",
+    "results/review_response_20260923/readout_ablation/b192_GraphFLA_Lunzer2005_fitness.csv": "82ea7097cb629d895a8e78ad3c7b74a4b6622bf9a3cb57848adeed7b3c1af5e7",
+    "results/review_response_20260923/readout_ablation/b192_GraphFLA_Michael2024_LamB.csv": "e1d4e664b5378298504d7fc2f332a9651e4b3bbf307ab4c418ba2f261f732ec0",
+    "results/review_response_20260923/readout_ablation/b192_GraphFLA_Moulana2023_S309.csv": "6c7e7ce6ba584759c830e258ac41d5a3dfe52cda676811e0177d8f833afd7769",
+    "results/review_response_20260923/readout_ablation/b192_GraphFLA_Poelwijk2019.csv": "8f9407d5816d0dc36aa7f71a9374cac596bc8d43a3b48e229e9a15609808b52a",
+    "results/review_response_20260923/readout_ablation/b192_GraphFLA_Schulz2025.csv": "d5a796983c656e9e6f0225bd1b9bff3985c48dc3276299c305062282928bec58",
+    "results/review_response_20260923/readout_ablation/b192_GraphFLA_Wu2020_Bk79.csv": "8acbfbf27b77558cd7a5d2a0046e48ae29b5466f5ad802a1a06db6caec3953d7",
+    "results/review_response_20260923/readout_ablation/b192_ParD2.csv": "fff639ff803fab2373165b71d11079470eb3fad74487e3f4cead0981aa513a96",
+    "results/review_response_20260923/readout_ablation/b192_ParD3.csv": "ae458332ca2146d3d8efbc0a651ab99aa1aa4dabace51a6d4e80aa89436dacfc",
+    "results/review_response_20260923/readout_ablation/b192_SaCas9_activity.csv": "54691ae9f9b10fd87f46f64b8576341eb7e9a21b9db689442a9533c3f8cb1cca",
+    "results/review_response_20260923/readout_ablation/b192_T7.csv": "9d7f27be3394b347c054b796a57e3c8f2368ae2f7e84b5e0ec963668e5040e67",
+    "results/review_response_20260923/readout_ablation/b192_TEV.csv": "50b7cb21b273b75015960255e12e03ccdd9c30ff84615d021095451002ab3698",
+    "results/review_response_20260923/readout_ablation/b192_TrpB3A.csv": "b8937b0d3eb77c059fa7232593784fbfd707fb8e0a055178e13dfa36b4b7233c",
+    "results/review_response_20260923/readout_ablation/b192_TrpB3B.csv": "346d6ff52d50fc7c8f13849a5b076ba5717abc477058db6e09eeb148cf38d5d6",
+    "results/review_response_20260923/readout_ablation/b192_TrpB3C.csv": "a24a6b991c32eb1f4ca5a1b8fe1bf57394aa12fb90e22282e22526e15322c7e9",
+    "results/review_response_20260923/readout_ablation/b192_TrpB3D.csv": "1fee76a076e0a8cc401e07abc451b9e8be965db769f2c2d3b2b408c66bf858b0",
+    "results/review_response_20260923/readout_ablation/b192_TrpB3E.csv": "b4a4b67a630fe735f0d8dd5d2b8fa0b3a95ac49a78b5be650ba3e3ef3919c631",
+    "results/review_response_20260923/readout_ablation/b192_TrpB3F.csv": "57ed1a7a8c94983d6f54eb668a7852000afdf8f4b3b5e885f3410ff5be2fb162",
+    "results/review_response_20260923/readout_ablation/b192_TrpB3G.csv": "b4611384939b4441c9e3ee2301021f04bf2e038abda2a7b24addc572cf961cf0",
+    "results/review_response_20260923/readout_ablation/b192_TrpB3H.csv": "e7f8a7c7f80c99c572ae11901d0c828123212917b8d6f0cf1dfed339ccd4b600",
+    "results/review_response_20260923/readout_ablation/b192_TrpB3I.csv": "eb8e1ee27a8206c7d820637c652b8886341db55b19743118f2b0897ace5f15d4",
+    "results/review_response_20260923/readout_ablation/b192_TrpB4.csv": "983c02e5d63298e682e4b5b9920c2442b4c562896f9f38bb90259625ea1a03f9",
+    "results/review_response_20260923/readout_ablation/b192_eqFP611_blue.csv": "fa6f5249585ae55593e4a6fa35931cc6ec187c7cac6b3408cb57e789019f746a",
+    "results/review_response_20260923/readout_ablation/b192_eqFP611_combined.csv": "daff5d3a5a503bb75dbafd0f67014d75fc343b016a70f0e76f32b4ca89d4a471",
+    "results/review_response_20260923/readout_ablation/b192_eqFP611_red.csv": "2bcf704fc5b27a717f8c1ae234d5721e165394488e72617616a4e8bd9f1d7d64",
+    "results/review_response_20260923/readout_ablation/b384_CR6261_H1_binding.csv": "6252283fc78c7f26594b47a26947846947e0f50fcae5c36e61bf7077352ab889",
+    "results/review_response_20260923/readout_ablation/b384_CR9114_H1_binding.csv": "eb763af6abf8ec94edeb39526f9a6cc79bc0d6666ef3325d7d3a5690c7e8f77d",
+    "results/review_response_20260923/readout_ablation/b384_CreiLOV_fluorescence.csv": "d48b2d766b6db8df16cc0554d8ee741dcf6c91beccf8c827d62690764a8a9f82",
+    "results/review_response_20260923/readout_ablation/b384_DHFR.csv": "a0687b71632d99c7df7b9c00e74a9c34c73648164c21f44d098c0391693bc042",
+    "results/review_response_20260923/readout_ablation/b384_GB1.csv": "b40db313abafab9048e50c52b4656aca66753a536c9229700e6fd13507c480b6",
+    "results/review_response_20260923/readout_ablation/b384_GB1_binding.csv": "da889c738317673fd3900ad67d2293b44dfd03f969108826c5fa6221383b321a",
+    "results/review_response_20260923/readout_ablation/b384_GraphFLA_Bank2016a.csv": "327d61de3ba6d7b9cc8c62cdac9e6ab50433228542bcecaf6513dd6b41acb9ed",
+    "results/review_response_20260923/readout_ablation/b384_GraphFLA_Lunzer2005_fitness.csv": "369481fb67435db8e3c4b8a1700d960f0edb5969db35b7de64d954392ed1409b",
+    "results/review_response_20260923/readout_ablation/b384_GraphFLA_Michael2024_LamB.csv": "713074a5f43a5b81d4f001cbbdf162d8cc48732a5c69c834fee6e14e60f7915e",
+    "results/review_response_20260923/readout_ablation/b384_GraphFLA_Moulana2023_S309.csv": "09993efb18e4d64a5a8e14f7e79f42dc03d121dce0f3dcb90bdb6abcd7128f91",
+    "results/review_response_20260923/readout_ablation/b384_GraphFLA_Poelwijk2019.csv": "17505e2ffb7c0a7fae3fc6dd37ad0676f2b45d0176875b3db4e7aa614af24cda",
+    "results/review_response_20260923/readout_ablation/b384_GraphFLA_Schulz2025.csv": "ed5bb4d85b3dfbeda29ee8c1ba01c5db81ae2bda538772cb57b7d0367748a751",
+    "results/review_response_20260923/readout_ablation/b384_GraphFLA_Wu2020_Bk79.csv": "73aa952348d8bc4a6d5b09dbcbda2b8e8a8cbbf58b36c6e2e42c8e86d2aef593",
+    "results/review_response_20260923/readout_ablation/b384_ParD2.csv": "5611be8999aa8f6d163d39ebac8228fc3d39b5c670e999b30e2eee90d04d6736",
+    "results/review_response_20260923/readout_ablation/b384_ParD3.csv": "9f43a2197876e75b924e8d7fd35f2d0fa5fc37f5490606090482b46b7640dc6c",
+    "results/review_response_20260923/readout_ablation/b384_SaCas9_activity.csv": "c1d1deda11a028aaf46b097e7a5fd129542553117551e4d8b2c0dcd91a22de52",
+    "results/review_response_20260923/readout_ablation/b384_T7.csv": "4df00a14af5c5da3cbcbe2513b4022b72e7ddd463778bf5055f2deaa05f0ecda",
+    "results/review_response_20260923/readout_ablation/b384_TEV.csv": "58e1b713f6e47a2aaa0f62baad4f60dd70fdcd4e1c4739e311deced1851ab234",
+    "results/review_response_20260923/readout_ablation/b384_TrpB3A.csv": "b6dfc28c1a3f11cace4739eb08ee1085039530d99d34e0cc7c740a9305c2f12a",
+    "results/review_response_20260923/readout_ablation/b384_TrpB3B.csv": "365a3d9bb8e4faa56bdd2843d24e9d28fb1f4367f2aaa37482f4233b689b7743",
+    "results/review_response_20260923/readout_ablation/b384_TrpB3C.csv": "268900c4b023176574aaec439af2fa678642a8638cb7f679c16691b92a49692d",
+    "results/review_response_20260923/readout_ablation/b384_TrpB3D.csv": "aa5d05ca7952c22b8955ffc8125969e7e064042e6306f848c8f65c2befc3d967",
+    "results/review_response_20260923/readout_ablation/b384_TrpB3E.csv": "1e36722cae7fd788822d7cf9c12bafc54c4ef8d94134c199bce63a518026b051",
+    "results/review_response_20260923/readout_ablation/b384_TrpB3F.csv": "40d45cf374ccaa876b695d0b17e63a54be19b4136ea108ff746e949f1e3a0b00",
+    "results/review_response_20260923/readout_ablation/b384_TrpB3G.csv": "d2cc3cb3ccd3b36271daba6eb8685b41d882decf4e340752714e878cee777e22",
+    "results/review_response_20260923/readout_ablation/b384_TrpB3H.csv": "900a2c292619cdf65e405edeca32abb9b8f4e7324be28b264d97cf1f93fa6ef6",
+    "results/review_response_20260923/readout_ablation/b384_TrpB3I.csv": "52c88b72697134b3c2576f0344efd06243a0d394a3d07f8fc8efb0b65ff483fa",
+    "results/review_response_20260923/readout_ablation/b384_TrpB4.csv": "aa87c5d7503606cf34840ca05b11ec12bf5ccb49ce3b5d752cad7957648d9598",
+    "results/review_response_20260923/readout_ablation/b384_eqFP611_blue.csv": "97dccff0040a8eeca50301c3d728435dc6113853eb648dd0abe31610bea4e416",
+    "results/review_response_20260923/readout_ablation/b384_eqFP611_combined.csv": "b0e68823c74eee5a89942c25f61cd9a0b1b188a70690a2be00a6e3f7604827eb",
+    "results/review_response_20260923/readout_ablation/b384_eqFP611_red.csv": "6c469b2da2746d395166e1acd7979a2f68652c7a3bdf353560a00dc45dcbb67b",
+    "results/review_response_20260923/readout_ablation/b48_CR6261_H1_binding.csv": "b8464eb64786bc9e8ddb185985fb11f71a256412b78c36d021bf5e7e5a04e27f",
+    "results/review_response_20260923/readout_ablation/b48_CR9114_H1_binding.csv": "f5d5c8d6d92cf8729534c7e0171b86f09d4751070345ab84bf77e2a46217450f",
+    "results/review_response_20260923/readout_ablation/b48_CreiLOV_fluorescence.csv": "31a80ffaa1a86f2ddb81111023d2efdfed3f1b5e677a6dbb447b40941e313378",
+    "results/review_response_20260923/readout_ablation/b48_DHFR.csv": "16d8b8e46b1f0e78ef42bc71e6fb6cca831b5f4260ee8b4b6b72d62f9a79e6cd",
+    "results/review_response_20260923/readout_ablation/b48_GB1.csv": "dd768071dd438935232bc7434f521fa9745ebfc1c5f480ff481598f82dbcf3c4",
+    "results/review_response_20260923/readout_ablation/b48_GB1_binding.csv": "013197f2832df466f77ba9d689f8a650718430fc00864a89f7ac8bb0ea078473",
+    "results/review_response_20260923/readout_ablation/b48_GraphFLA_Bank2016a.csv": "cee4431992393f2b811afa5fab59367da13addaa40030e8e218af53a8e010663",
+    "results/review_response_20260923/readout_ablation/b48_GraphFLA_Lunzer2005_fitness.csv": "1ca6af60f04a22357d73040d560e002f6dd81d10ca097c6eade978d24632957a",
+    "results/review_response_20260923/readout_ablation/b48_GraphFLA_Michael2024_LamB.csv": "60191e995c31914a83c8c45e2832e2cf08abcbb97a03ae77da586b2e76ed1496",
+    "results/review_response_20260923/readout_ablation/b48_GraphFLA_Moulana2023_S309.csv": "a0c28eba28813d2706c5070a2d8ea66cb99101e3dd84a75648e4e08ded24b9db",
+    "results/review_response_20260923/readout_ablation/b48_GraphFLA_Poelwijk2019.csv": "ed9d6ae5d3abc695947959f267e5eaaaf9822494c48404146b40dec93e47822b",
+    "results/review_response_20260923/readout_ablation/b48_GraphFLA_Schulz2025.csv": "be62e9f3a23410035aaba5c47077df9e5ecdd5b64983b5b58e53d77fdca152b8",
+    "results/review_response_20260923/readout_ablation/b48_GraphFLA_Wu2020_Bk79.csv": "24e9b7b371c01488113c65af2a82ae3ac83049daee54732a3306422c6f9bd6f1",
+    "results/review_response_20260923/readout_ablation/b48_ParD2.csv": "d4bf0c146fe7d1d5ec4d0b32cfe7ba899fdbcc09fc979039fb03ad64db584259",
+    "results/review_response_20260923/readout_ablation/b48_ParD3.csv": "56c2d3a2fb23c325cb31fa04c581e7270450aff8a3602ceb1b39c6f8fa6f0591",
+    "results/review_response_20260923/readout_ablation/b48_SaCas9_activity.csv": "891cfa240bb55c0360c788da9913909c09bf6d5806e2459cae8472878f99e2db",
+    "results/review_response_20260923/readout_ablation/b48_T7.csv": "963e6c7e1b4ea72a6449d9f2d7419457f02183b0fa05a9af0146af0362672d66",
+    "results/review_response_20260923/readout_ablation/b48_TEV.csv": "eca4701f3affc418856ec12e948dc29a2d2aac37801258d9c6cda8b0ff401f6e",
+    "results/review_response_20260923/readout_ablation/b48_TrpB3A.csv": "13a838393cd9937d161fa98af53ad451e22edfeb99fd079c5a7d746b8c394467",
+    "results/review_response_20260923/readout_ablation/b48_TrpB3B.csv": "c70635ee5b4e6b41d56c0aba6a7519a95a7a749fc75799215b3afb818dbdc150",
+    "results/review_response_20260923/readout_ablation/b48_TrpB3C.csv": "d0643364fa1a2a908b1e8f9244095c516c4fd4cc34853986bed68ad55d20bf0c",
+    "results/review_response_20260923/readout_ablation/b48_TrpB3D.csv": "246d204972cff96701f985b5c39dd4c44546ad5fe48862fb0dbc44e99849e90d",
+    "results/review_response_20260923/readout_ablation/b48_TrpB3E.csv": "2cf296355973d5dbf71e2d4e942d00920571e9bcf2c8cf922ea4eb8ab2b940ff",
+    "results/review_response_20260923/readout_ablation/b48_TrpB3F.csv": "7fe8fd0d37fadad095520179b6fc36016a72afbad58b715339f17a69fd63fd9b",
+    "results/review_response_20260923/readout_ablation/b48_TrpB3G.csv": "3fdb7a5a265043cbce5d23c4e35461f1e03f1694a63fd4f9cc2a5914c5893a21",
+    "results/review_response_20260923/readout_ablation/b48_TrpB3H.csv": "3aeb1a4539d4dd07e0c7cac930213ec28b708cd48bad3d4bfeacc12062d8825e",
+    "results/review_response_20260923/readout_ablation/b48_TrpB3I.csv": "3c7f6dad154135d338de573c8cc35255375eac643495a2586a70acf136228f41",
+    "results/review_response_20260923/readout_ablation/b48_TrpB4.csv": "4b5d289594d24eba8a58beaf065ea76a24f035dcccee19b83fa0a9287c48ef7f",
+    "results/review_response_20260923/readout_ablation/b48_eqFP611_blue.csv": "44df58e954267b16820d568791ec1914ba52bae5a5b53d6ac226881118b64788",
+    "results/review_response_20260923/readout_ablation/b48_eqFP611_combined.csv": "937c2f42be6a3c20862fc8350eea209783565dafcb7cb349ebc5d7f03f0d8486",
+    "results/review_response_20260923/readout_ablation/b48_eqFP611_red.csv": "823c740f375a9ce05d7e3d769c2bb54771528579f9f767b54fe079bb354be4de",
+    "results/review_response_20260923/readout_ablation/b96_CR6261_H1_binding.csv": "97d4dce985d91ba76ac11aaad792ca459eb809b31320ed3c430f0c4b8b81207a",
+    "results/review_response_20260923/readout_ablation/b96_CR9114_H1_binding.csv": "558fdb5f9d8d9f141a72965a4c080d52e531eb07c6045f26f0c228aaf5d1dbaf",
+    "results/review_response_20260923/readout_ablation/b96_CreiLOV_fluorescence.csv": "143fbd57be2936309819970591471fb10e3cc81a9326fc8438506001150554b3",
+    "results/review_response_20260923/readout_ablation/b96_DHFR.csv": "690e6d7c07711232dbf9b6f4617cb5ee67110f95c428dc07ed7c70d7042f2108",
+    "results/review_response_20260923/readout_ablation/b96_GB1.csv": "823d036e92fae5f6b3463645c0bb8342edb33ada91129c6a66f271bca7b7475c",
+    "results/review_response_20260923/readout_ablation/b96_GB1_binding.csv": "17295213432ba3affec05be66a4c4cc9710d42422f6ee7bd32f3cb2304e45319",
+    "results/review_response_20260923/readout_ablation/b96_GraphFLA_Bank2016a.csv": "5d8425e6b7df32d63d3f14c3872043fa7972a54a0cce79117e52392937e2b829",
+    "results/review_response_20260923/readout_ablation/b96_GraphFLA_Lunzer2005_fitness.csv": "d1a8766d6dcc29c40af4568adb3d9b4f10886d17595e576464ed33bf6d02df3c",
+    "results/review_response_20260923/readout_ablation/b96_GraphFLA_Michael2024_LamB.csv": "cabfddd8c590ccd6eb88e962b9df2c884ad58d62c23ba5d001e14e233e084e95",
+    "results/review_response_20260923/readout_ablation/b96_GraphFLA_Moulana2023_S309.csv": "249444c81ec35bc58ad2758617a552b1ed4196f2453767e61ff395ece3750982",
+    "results/review_response_20260923/readout_ablation/b96_GraphFLA_Poelwijk2019.csv": "26539bc1be30ba5d8b9cf7ca581b7a65e3e2d3178d9f199710c12f35ddfaba80",
+    "results/review_response_20260923/readout_ablation/b96_GraphFLA_Schulz2025.csv": "48a99558cb70236abe61afecd8934a0a9e61527d0c8a0045090740eb309b4095",
+    "results/review_response_20260923/readout_ablation/b96_GraphFLA_Wu2020_Bk79.csv": "099e3896c175f433758eff702876b4997b726ac980fe8ac4eafc5c358a4bef9a",
+    "results/review_response_20260923/readout_ablation/b96_ParD2.csv": "4552647f6483e03f1565c5b4dd6913c9821ea48f514ed3d3630c6702a0384769",
+    "results/review_response_20260923/readout_ablation/b96_ParD3.csv": "c0f306eadbed62a9fdfc3e8e33819f8aaf453239fd1770a98ababe09bd747c64",
+    "results/review_response_20260923/readout_ablation/b96_SaCas9_activity.csv": "4c0699193e0c9fed232d44f879a261469d0724da05e9414797a182945b6aab8b",
+    "results/review_response_20260923/readout_ablation/b96_T7.csv": "f97a7f6a720250d9faa23df63c1f945becb0cdecb02426b4f0fcb9faab2c37ac",
+    "results/review_response_20260923/readout_ablation/b96_TEV.csv": "34a8684350436c9d28b80b59c4f7ba4537ac8b9ef5e2460843fc104428292fda",
+    "results/review_response_20260923/readout_ablation/b96_TrpB3A.csv": "2d9d6a59a5088c1596996e3ff40c7b1e5b51635bb2115887b9c673fbf81ff115",
+    "results/review_response_20260923/readout_ablation/b96_TrpB3B.csv": "5be346691dd19c69cad0415ff61b929550e1ffbb806b2a7ea9d64477af65cfad",
+    "results/review_response_20260923/readout_ablation/b96_TrpB3C.csv": "0d731bb856af828b226aa45fe537df6d4da7f176e5cb777ed85dc45eca4bb221",
+    "results/review_response_20260923/readout_ablation/b96_TrpB3D.csv": "b9328395cfa2fd1c0ea68af48f3f26ef2901dc37f1fa733edc654dbff2803334",
+    "results/review_response_20260923/readout_ablation/b96_TrpB3E.csv": "765b0b1ba9c43cd200cfabd443f1a4224b5163b78fba98102f7a3d9930fb94e1",
+    "results/review_response_20260923/readout_ablation/b96_TrpB3F.csv": "91e70fb43af1f6d35f4c2b00abae114da16ededdb72d9ec1c5ef169230a608fd",
+    "results/review_response_20260923/readout_ablation/b96_TrpB3G.csv": "60292a7bf21bb4c64e0c50a660842f5579ea60b981a36d7f198f38519268fd88",
+    "results/review_response_20260923/readout_ablation/b96_TrpB3H.csv": "a8979605cdd6bcb166f1e1c19cd75cf50a4032c8a08214317b58c433d4bb6775",
+    "results/review_response_20260923/readout_ablation/b96_TrpB3I.csv": "b7d0cecd4af0703464bc97d6983476f8b738391d792cfbe81ace94ccbd974ab0",
+    "results/review_response_20260923/readout_ablation/b96_TrpB4.csv": "77c16898a1856f77433e60e6da9b29921fdc3f31adfab5194c37adc5882ff9ee",
+    "results/review_response_20260923/readout_ablation/b96_eqFP611_blue.csv": "27d65ba58a445b7653b42963d3f928dc047c39bb033b001154014703488e91b1",
+    "results/review_response_20260923/readout_ablation/b96_eqFP611_combined.csv": "e9e714cfd76a26118a23aed584fd4f81b570c1a7b96dcb8a57d28d68d6430a18",
+    "results/review_response_20260923/readout_ablation/b96_eqFP611_red.csv": "77b87cf208d0533b4ce30b69d11ef759a6a793755296f7d5dccfd91f52dd7428",
+    "results/review_response_20260923/readout_ablation/protocol.json": "66d914a3d5e00ccd3f15534a2d582140819d046170165e129abfd33ea383c29d",
+    "results/review_response_20260923/readout_summary.csv": "c6f34c305bba8a67cb8f119231c2f35659c76630636271d29bef0e304fa22d9a",
+    "results/review_response_20260923/saturation.csv": "44f93589b682d6c993959fa0b1ff24fd38689f473a510b7d6079dec9f88314c3",
+    "results/review_response_20260923/walsh_filling.csv": "34e677aa79f7e2c443dbb2c8313ea2b1b718ce8e2afa70f768f9f9a7ec4c737d"
+  },
+  "null_summary": [
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Additive",
+      "subset": "all",
+      "accuracy": 0.5778306878306879,
+      "eligible": 222,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Additive",
+      "subset": "without_random",
+      "accuracy": 0.5584195357408879,
+      "eligible": 171,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Additive",
+      "subset": "random_pairs",
+      "accuracy": 0.7421296296296296,
+      "eligible": 51,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Fixed ranking",
+      "subset": "all",
+      "accuracy": 0.8395767195767195,
+      "eligible": 222,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Fixed ranking",
+      "subset": "without_random",
+      "accuracy": 0.8466932914943185,
+      "eligible": 171,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Fixed ranking",
+      "subset": "random_pairs",
+      "accuracy": 0.8148148148148149,
+      "eligible": 51,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Mutascape",
+      "subset": "all",
+      "accuracy": 0.6911111111111111,
+      "eligible": 222,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Mutascape",
+      "subset": "without_random",
+      "accuracy": 0.6468265288333752,
+      "eligible": 171,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Mutascape",
+      "subset": "random_pairs",
+      "accuracy": 0.8541666666666666,
+      "eligible": 51,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Potts",
+      "subset": "all",
+      "accuracy": 0.7105820105820105,
+      "eligible": 222,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Potts",
+      "subset": "without_random",
+      "accuracy": 0.6753429418170539,
+      "eligible": 171,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Potts",
+      "subset": "random_pairs",
+      "accuracy": 0.8449074074074074,
+      "eligible": 51,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "RMF",
+      "subset": "all",
+      "accuracy": 0.7294179894179894,
+      "eligible": 222,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "RMF",
+      "subset": "without_random",
+      "accuracy": 0.7491249578327027,
+      "eligible": 171,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "RMF",
+      "subset": "random_pairs",
+      "accuracy": 0.7152777777777778,
+      "eligible": 51,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Additive",
+      "subset": "all",
+      "accuracy": 0.6318774131274132,
+      "eligible": 191,
+      "proteins": 7
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Additive",
+      "subset": "without_random",
+      "accuracy": 0.6078553835327234,
+      "eligible": 151,
+      "proteins": 7
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Additive",
+      "subset": "random_pairs",
+      "accuracy": 0.9444444444444444,
+      "eligible": 40,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Fixed ranking",
+      "subset": "all",
+      "accuracy": 0.7375283446712019,
+      "eligible": 191,
+      "proteins": 7
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Fixed ranking",
+      "subset": "without_random",
+      "accuracy": 0.7111020256210818,
+      "eligible": 151,
+      "proteins": 7
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Fixed ranking",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 40,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Mutascape",
+      "subset": "all",
+      "accuracy": 0.7353902371759514,
+      "eligible": 191,
+      "proteins": 7
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Mutascape",
+      "subset": "without_random",
+      "accuracy": 0.7189663660382484,
+      "eligible": 151,
+      "proteins": 7
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Mutascape",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 40,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Potts",
+      "subset": "all",
+      "accuracy": 0.6845559845559845,
+      "eligible": 191,
+      "proteins": 7
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Potts",
+      "subset": "without_random",
+      "accuracy": 0.655505219329111,
+      "eligible": 151,
+      "proteins": 7
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Potts",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 40,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "RMF",
+      "subset": "all",
+      "accuracy": 0.670668627811485,
+      "eligible": 191,
+      "proteins": 7
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "RMF",
+      "subset": "without_random",
+      "accuracy": 0.629222728809519,
+      "eligible": 151,
+      "proteins": 7
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "RMF",
+      "subset": "random_pairs",
+      "accuracy": 0.9833333333333334,
+      "eligible": 40,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Additive",
+      "subset": "all",
+      "accuracy": 0.6727781151129717,
+      "eligible": 489,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Additive",
+      "subset": "without_random",
+      "accuracy": 0.6523205915362779,
+      "eligible": 413,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Additive",
+      "subset": "random_pairs",
+      "accuracy": 0.8648516163222046,
+      "eligible": 76,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Fixed ranking",
+      "subset": "all",
+      "accuracy": 0.9192278421730476,
+      "eligible": 489,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Fixed ranking",
+      "subset": "without_random",
+      "accuracy": 0.9096553773024362,
+      "eligible": 413,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Fixed ranking",
+      "subset": "random_pairs",
+      "accuracy": 0.9722222222222224,
+      "eligible": 76,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Mutascape",
+      "subset": "all",
+      "accuracy": 0.8952075516192162,
+      "eligible": 489,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Mutascape",
+      "subset": "without_random",
+      "accuracy": 0.8797484650425828,
+      "eligible": 413,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Mutascape",
+      "subset": "random_pairs",
+      "accuracy": 0.985691573926868,
+      "eligible": 76,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Potts",
+      "subset": "all",
+      "accuracy": 0.7938619234760341,
+      "eligible": 489,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Potts",
+      "subset": "without_random",
+      "accuracy": 0.7687495873770384,
+      "eligible": 413,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Potts",
+      "subset": "random_pairs",
+      "accuracy": 0.934220985691574,
+      "eligible": 76,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "RMF",
+      "subset": "all",
+      "accuracy": 0.8424509600481794,
+      "eligible": 489,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "RMF",
+      "subset": "without_random",
+      "accuracy": 0.8332640126757774,
+      "eligible": 413,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "RMF",
+      "subset": "random_pairs",
+      "accuracy": 0.9366719660837308,
+      "eligible": 76,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Additive",
+      "subset": "all",
+      "accuracy": 0.64500407000407,
+      "eligible": 209,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Additive",
+      "subset": "without_random",
+      "accuracy": 0.5775644655025131,
+      "eligible": 160,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Additive",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 49,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Fixed ranking",
+      "subset": "all",
+      "accuracy": 0.6808976902726903,
+      "eligible": 209,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Fixed ranking",
+      "subset": "without_random",
+      "accuracy": 0.5995646840296401,
+      "eligible": 160,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Fixed ranking",
+      "subset": "random_pairs",
+      "accuracy": 0.9848484848484848,
+      "eligible": 49,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Mutascape",
+      "subset": "all",
+      "accuracy": 0.6781472578347577,
+      "eligible": 209,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Mutascape",
+      "subset": "without_random",
+      "accuracy": 0.6255351431352683,
+      "eligible": 160,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Mutascape",
+      "subset": "random_pairs",
+      "accuracy": 0.9833333333333334,
+      "eligible": 49,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Potts",
+      "subset": "all",
+      "accuracy": 0.6661235754985755,
+      "eligible": 209,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Potts",
+      "subset": "without_random",
+      "accuracy": 0.6071977372509287,
+      "eligible": 160,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Potts",
+      "subset": "random_pairs",
+      "accuracy": 0.9833333333333334,
+      "eligible": 49,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "RMF",
+      "subset": "all",
+      "accuracy": 0.6375324328449329,
+      "eligible": 209,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "RMF",
+      "subset": "without_random",
+      "accuracy": 0.5681707789498779,
+      "eligible": 160,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "RMF",
+      "subset": "random_pairs",
+      "accuracy": 0.9833333333333334,
+      "eligible": 49,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Additive",
+      "subset": "all",
+      "accuracy": 0.6920913394597604,
+      "eligible": 155,
+      "proteins": 7
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Additive",
+      "subset": "without_random",
+      "accuracy": 0.5937602627257801,
+      "eligible": 104,
+      "proteins": 7
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Additive",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 51,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Fixed ranking",
+      "subset": "all",
+      "accuracy": 0.8317460317460317,
+      "eligible": 155,
+      "proteins": 7
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Fixed ranking",
+      "subset": "without_random",
+      "accuracy": 0.812329931972789,
+      "eligible": 104,
+      "proteins": 7
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Fixed ranking",
+      "subset": "random_pairs",
+      "accuracy": 0.9696969696969696,
+      "eligible": 51,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Mutascape",
+      "subset": "all",
+      "accuracy": 0.7192425508214981,
+      "eligible": 155,
+      "proteins": 7
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Mutascape",
+      "subset": "without_random",
+      "accuracy": 0.6289467511142389,
+      "eligible": 104,
+      "proteins": 7
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Mutascape",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 51,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Potts",
+      "subset": "all",
+      "accuracy": 0.7599415204678363,
+      "eligible": 155,
+      "proteins": 7
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Potts",
+      "subset": "without_random",
+      "accuracy": 0.7233960825709593,
+      "eligible": 104,
+      "proteins": 7
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Potts",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 51,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "RMF",
+      "subset": "all",
+      "accuracy": 0.7785018100807575,
+      "eligible": 155,
+      "proteins": 7
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "RMF",
+      "subset": "without_random",
+      "accuracy": 0.7168719211822661,
+      "eligible": 104,
+      "proteins": 7
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "RMF",
+      "subset": "random_pairs",
+      "accuracy": 0.9833333333333334,
+      "eligible": 51,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Additive",
+      "subset": "all",
+      "accuracy": 0.737229165405798,
+      "eligible": 521,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Additive",
+      "subset": "without_random",
+      "accuracy": 0.6972541658487644,
+      "eligible": 428,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Additive",
+      "subset": "random_pairs",
+      "accuracy": 0.96,
+      "eligible": 93,
+      "proteins": 5
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Fixed ranking",
+      "subset": "all",
+      "accuracy": 0.88102342189675,
+      "eligible": 521,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Fixed ranking",
+      "subset": "without_random",
+      "accuracy": 0.8520757287066258,
+      "eligible": 428,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Fixed ranking",
+      "subset": "random_pairs",
+      "accuracy": 0.996078431372549,
+      "eligible": 93,
+      "proteins": 5
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Mutascape",
+      "subset": "all",
+      "accuracy": 0.8185239262442252,
+      "eligible": 521,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Mutascape",
+      "subset": "without_random",
+      "accuracy": 0.7778405080836704,
+      "eligible": 428,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Mutascape",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 93,
+      "proteins": 5
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Potts",
+      "subset": "all",
+      "accuracy": 0.7865573325398266,
+      "eligible": 521,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Potts",
+      "subset": "without_random",
+      "accuracy": 0.7507956767411718,
+      "eligible": 428,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Potts",
+      "subset": "random_pairs",
+      "accuracy": 0.97,
+      "eligible": 93,
+      "proteins": 5
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "RMF",
+      "subset": "all",
+      "accuracy": 0.8195079922263243,
+      "eligible": 521,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "RMF",
+      "subset": "without_random",
+      "accuracy": 0.7920797434182404,
+      "eligible": 428,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "RMF",
+      "subset": "random_pairs",
+      "accuracy": 0.96,
+      "eligible": 93,
+      "proteins": 5
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Additive",
+      "subset": "all",
+      "accuracy": 0.6623310150270935,
+      "eligible": 197,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Additive",
+      "subset": "without_random",
+      "accuracy": 0.4732188469257434,
+      "eligible": 131,
+      "proteins": 5
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Additive",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 66,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Fixed ranking",
+      "subset": "all",
+      "accuracy": 0.8008204848891124,
+      "eligible": 197,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Fixed ranking",
+      "subset": "without_random",
+      "accuracy": 0.6617932402846196,
+      "eligible": 131,
+      "proteins": 5
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Fixed ranking",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 66,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Mutascape",
+      "subset": "all",
+      "accuracy": 0.7988534160102788,
+      "eligible": 197,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Mutascape",
+      "subset": "without_random",
+      "accuracy": 0.6993185550082102,
+      "eligible": 131,
+      "proteins": 5
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Mutascape",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 66,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Potts",
+      "subset": "all",
+      "accuracy": 0.7798719345287973,
+      "eligible": 197,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Potts",
+      "subset": "without_random",
+      "accuracy": 0.6731132548804963,
+      "eligible": 131,
+      "proteins": 5
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Potts",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 66,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "RMF",
+      "subset": "all",
+      "accuracy": 0.7107375286296854,
+      "eligible": 197,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "RMF",
+      "subset": "without_random",
+      "accuracy": 0.5617013318737457,
+      "eligible": 131,
+      "proteins": 5
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "RMF",
+      "subset": "random_pairs",
+      "accuracy": 0.973905723905724,
+      "eligible": 66,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Additive",
+      "subset": "all",
+      "accuracy": 0.8042016806722688,
+      "eligible": 99,
+      "proteins": 7
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Additive",
+      "subset": "without_random",
+      "accuracy": 0.4285714285714286,
+      "eligible": 33,
+      "proteins": 4
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Additive",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 66,
+      "proteins": 7
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Fixed ranking",
+      "subset": "all",
+      "accuracy": 0.7945760122230711,
+      "eligible": 99,
+      "proteins": 7
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Fixed ranking",
+      "subset": "without_random",
+      "accuracy": 0.3374819624819625,
+      "eligible": 33,
+      "proteins": 4
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Fixed ranking",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 66,
+      "proteins": 7
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Mutascape",
+      "subset": "all",
+      "accuracy": 0.8042016806722688,
+      "eligible": 99,
+      "proteins": 7
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Mutascape",
+      "subset": "without_random",
+      "accuracy": 0.4285714285714286,
+      "eligible": 33,
+      "proteins": 4
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Mutascape",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 66,
+      "proteins": 7
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Potts",
+      "subset": "all",
+      "accuracy": 0.8126050420168067,
+      "eligible": 99,
+      "proteins": 7
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Potts",
+      "subset": "without_random",
+      "accuracy": 0.4702380952380952,
+      "eligible": 33,
+      "proteins": 4
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Potts",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 66,
+      "proteins": 7
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "RMF",
+      "subset": "all",
+      "accuracy": 0.9506493506493506,
+      "eligible": 99,
+      "proteins": 7
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "RMF",
+      "subset": "without_random",
+      "accuracy": 0.8939393939393939,
+      "eligible": 33,
+      "proteins": 4
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "RMF",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 66,
+      "proteins": 7
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Additive",
+      "subset": "all",
+      "accuracy": 0.7765891323849802,
+      "eligible": 449,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Additive",
+      "subset": "without_random",
+      "accuracy": 0.7009576253228641,
+      "eligible": 335,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Additive",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 114,
+      "proteins": 5
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Fixed ranking",
+      "subset": "all",
+      "accuracy": 0.8053344867358708,
+      "eligible": 449,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Fixed ranking",
+      "subset": "without_random",
+      "accuracy": 0.7468364137873764,
+      "eligible": 335,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Fixed ranking",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 114,
+      "proteins": 5
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Mutascape",
+      "subset": "all",
+      "accuracy": 0.8223007176726899,
+      "eligible": 449,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Mutascape",
+      "subset": "without_random",
+      "accuracy": 0.7701530025657326,
+      "eligible": 335,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Mutascape",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 114,
+      "proteins": 5
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Potts",
+      "subset": "all",
+      "accuracy": 0.7893977743602888,
+      "eligible": 449,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Potts",
+      "subset": "without_random",
+      "accuracy": 0.7123489088477685,
+      "eligible": 335,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Potts",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 114,
+      "proteins": 5
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "RMF",
+      "subset": "all",
+      "accuracy": 0.7438856315946859,
+      "eligible": 449,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "RMF",
+      "subset": "without_random",
+      "accuracy": 0.6605730446311474,
+      "eligible": 335,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "RMF",
+      "subset": "random_pairs",
+      "accuracy": 0.990909090909091,
+      "eligible": 114,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Additive",
+      "subset": "all",
+      "accuracy": 0.6072958672958673,
+      "eligible": 164,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Additive",
+      "subset": "without_random",
+      "accuracy": 0.1898148148148148,
+      "eligible": 94,
+      "proteins": 4
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Additive",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 70,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Fixed ranking",
+      "subset": "all",
+      "accuracy": 0.6989360789360789,
+      "eligible": 164,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Fixed ranking",
+      "subset": "without_random",
+      "accuracy": 0.4476563884458621,
+      "eligible": 94,
+      "proteins": 4
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Fixed ranking",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 70,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Mutascape",
+      "subset": "all",
+      "accuracy": 0.7457257257257257,
+      "eligible": 164,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Mutascape",
+      "subset": "without_random",
+      "accuracy": 0.4346791123106912,
+      "eligible": 94,
+      "proteins": 4
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Mutascape",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 70,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Potts",
+      "subset": "all",
+      "accuracy": 0.7817388817388817,
+      "eligible": 164,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Potts",
+      "subset": "without_random",
+      "accuracy": 0.5582017884649464,
+      "eligible": 94,
+      "proteins": 4
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Potts",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 70,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "RMF",
+      "subset": "all",
+      "accuracy": 0.7894008294008293,
+      "eligible": 164,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "RMF",
+      "subset": "without_random",
+      "accuracy": 0.5721434997750787,
+      "eligible": 94,
+      "proteins": 4
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "RMF",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 70,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Additive",
+      "subset": "all",
+      "accuracy": 0.6610292715484364,
+      "eligible": 89,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Additive",
+      "subset": "without_random",
+      "accuracy": 0.0,
+      "eligible": 51,
+      "proteins": 3
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Additive",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 38,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Fixed ranking",
+      "subset": "all",
+      "accuracy": 0.7947296910755149,
+      "eligible": 89,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Fixed ranking",
+      "subset": "without_random",
+      "accuracy": 0.4693362193362193,
+      "eligible": 51,
+      "proteins": 3
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Fixed ranking",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 38,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Mutascape",
+      "subset": "all",
+      "accuracy": 0.7599876048817696,
+      "eligible": 89,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Mutascape",
+      "subset": "without_random",
+      "accuracy": 0.3015873015873015,
+      "eligible": 51,
+      "proteins": 3
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Mutascape",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 38,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Potts",
+      "subset": "all",
+      "accuracy": 0.7775314645308925,
+      "eligible": 89,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Potts",
+      "subset": "without_random",
+      "accuracy": 0.3849206349206349,
+      "eligible": 51,
+      "proteins": 3
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Potts",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 38,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "RMF",
+      "subset": "all",
+      "accuracy": 0.9400028604118992,
+      "eligible": 89,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "RMF",
+      "subset": "without_random",
+      "accuracy": 0.7712842712842712,
+      "eligible": 51,
+      "proteins": 3
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "RMF",
+      "subset": "random_pairs",
+      "accuracy": 1.0,
+      "eligible": 38,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Additive",
+      "subset": "all",
+      "accuracy": 0.7954288139962181,
+      "eligible": 391,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Additive",
+      "subset": "without_random",
+      "accuracy": 0.622924766393874,
+      "eligible": 257,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Additive",
+      "subset": "random_pairs",
+      "accuracy": 0.9959349593495936,
+      "eligible": 134,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Fixed ranking",
+      "subset": "all",
+      "accuracy": 0.7798061356611928,
+      "eligible": 391,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Fixed ranking",
+      "subset": "without_random",
+      "accuracy": 0.5716504937557569,
+      "eligible": 257,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Fixed ranking",
+      "subset": "random_pairs",
+      "accuracy": 0.9959349593495936,
+      "eligible": 134,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Mutascape",
+      "subset": "all",
+      "accuracy": 0.8141842811652954,
+      "eligible": 391,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Mutascape",
+      "subset": "without_random",
+      "accuracy": 0.6585295047354544,
+      "eligible": 257,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Mutascape",
+      "subset": "random_pairs",
+      "accuracy": 0.9959349593495936,
+      "eligible": 134,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Potts",
+      "subset": "all",
+      "accuracy": 0.821608606946489,
+      "eligible": 391,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Potts",
+      "subset": "without_random",
+      "accuracy": 0.6366058736585052,
+      "eligible": 257,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Potts",
+      "subset": "random_pairs",
+      "accuracy": 0.9959349593495936,
+      "eligible": 134,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "RMF",
+      "subset": "all",
+      "accuracy": 0.8040781139610829,
+      "eligible": 391,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "RMF",
+      "subset": "without_random",
+      "accuracy": 0.6084469665430764,
+      "eligible": 257,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "RMF",
+      "subset": "random_pairs",
+      "accuracy": 0.988359201773836,
+      "eligible": 134,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "combingym",
+      "prediction": "Other-protein synthetic",
+      "subset": "all",
+      "accuracy": 0.7131812169312169,
+      "eligible": 222,
+      "proteins": 6
+    },
+    {
+      "budget": 48,
+      "collection": "graphfla",
+      "prediction": "Other-protein synthetic",
+      "subset": "all",
+      "accuracy": 0.6756610484847092,
+      "eligible": 191,
+      "proteins": 7
+    },
+    {
+      "budget": 48,
+      "collection": "ssmula",
+      "prediction": "Other-protein synthetic",
+      "subset": "all",
+      "accuracy": 0.7389741706065812,
+      "eligible": 489,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "combingym",
+      "prediction": "Other-protein synthetic",
+      "subset": "all",
+      "accuracy": 0.629076959643366,
+      "eligible": 209,
+      "proteins": 6
+    },
+    {
+      "budget": 96,
+      "collection": "graphfla",
+      "prediction": "Other-protein synthetic",
+      "subset": "all",
+      "accuracy": 0.7184045182400445,
+      "eligible": 155,
+      "proteins": 7
+    },
+    {
+      "budget": 96,
+      "collection": "ssmula",
+      "prediction": "Other-protein synthetic",
+      "subset": "all",
+      "accuracy": 0.6867475188205666,
+      "eligible": 521,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "combingym",
+      "prediction": "Other-protein synthetic",
+      "subset": "all",
+      "accuracy": 0.6296343866962739,
+      "eligible": 197,
+      "proteins": 6
+    },
+    {
+      "budget": 192,
+      "collection": "graphfla",
+      "prediction": "Other-protein synthetic",
+      "subset": "all",
+      "accuracy": 0.8167542016806723,
+      "eligible": 99,
+      "proteins": 7
+    },
+    {
+      "budget": 192,
+      "collection": "ssmula",
+      "prediction": "Other-protein synthetic",
+      "subset": "all",
+      "accuracy": 0.5636493893240847,
+      "eligible": 449,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "combingym",
+      "prediction": "Other-protein synthetic",
+      "subset": "all",
+      "accuracy": 0.6087678750178751,
+      "eligible": 164,
+      "proteins": 5
+    },
+    {
+      "budget": 384,
+      "collection": "graphfla",
+      "prediction": "Other-protein synthetic",
+      "subset": "all",
+      "accuracy": 0.7262541118421053,
+      "eligible": 89,
+      "proteins": 6
+    },
+    {
+      "budget": 384,
+      "collection": "ssmula",
+      "prediction": "Other-protein synthetic",
+      "subset": "all",
+      "accuracy": 0.620097797479786,
+      "eligible": 391,
+      "proteins": 6
+    }
+  ],
+  "confirmation_summary": [
+    {
+      "budget": 48,
+      "model": "dms_pairwise_mean",
+      "kendall": 0.78125,
+      "accuracy": 1.0,
+      "eligible": 36
+    },
+    {
+      "budget": 48,
+      "model": "dms_no_readout_mean",
+      "kendall": 0.78125,
+      "accuracy": 1.0,
+      "eligible": 36
+    },
+    {
+      "budget": 48,
+      "model": "potts_low_mean",
+      "kendall": 0.7131997238879487,
+      "accuracy": 1.0,
+      "eligible": 36
+    },
+    {
+      "budget": 48,
+      "model": "rmf_high_mean",
+      "kendall": 0.7077760731311632,
+      "accuracy": 1.0,
+      "eligible": 36
+    },
+    {
+      "budget": 48,
+      "model": "additive",
+      "kendall": 0.7131997238879487,
+      "accuracy": 0.9722222222222222,
+      "eligible": 36
+    },
+    {
+      "budget": 48,
+      "model": "fixed_ranking",
+      "kendall": 0.338501600193165,
+      "accuracy": 0.6666666666666666,
+      "eligible": 36
+    },
+    {
+      "budget": 96,
+      "model": "dms_pairwise_mean",
+      "kendall": 0.8397191227596315,
+      "accuracy": 0.9565217391304348,
+      "eligible": 46
+    },
+    {
+      "budget": 96,
+      "model": "dms_no_readout_mean",
+      "kendall": 0.8787878787878787,
+      "accuracy": 0.9565217391304348,
+      "eligible": 46
+    },
+    {
+      "budget": 96,
+      "model": "potts_low_mean",
+      "kendall": 0.6969696969696969,
+      "accuracy": 0.9130434782608696,
+      "eligible": 46
+    },
+    {
+      "budget": 96,
+      "model": "rmf_high_mean",
+      "kendall": 0.8484848484848484,
+      "accuracy": 0.9347826086956522,
+      "eligible": 46
+    },
+    {
+      "budget": 96,
+      "model": "additive",
+      "kendall": 0.8091838819320086,
+      "accuracy": 0.9565217391304348,
+      "eligible": 46
+    },
+    {
+      "budget": 96,
+      "model": "fixed_ranking",
+      "kendall": 0.303030303030303,
+      "accuracy": 0.6739130434782609,
+      "eligible": 46
+    },
+    {
+      "budget": 192,
+      "model": "dms_pairwise_mean",
+      "kendall": 0.5343667144834019,
+      "accuracy": 0.926829268292683,
+      "eligible": 41
+    },
+    {
+      "budget": 192,
+      "model": "dms_no_readout_mean",
+      "kendall": 0.5608801506561831,
+      "accuracy": 0.8780487804878049,
+      "eligible": 41
+    },
+    {
+      "budget": 192,
+      "model": "potts_low_mean",
+      "kendall": 0.5757575757575757,
+      "accuracy": 0.902439024390244,
+      "eligible": 41
+    },
+    {
+      "budget": 192,
+      "model": "rmf_high_mean",
+      "kendall": 0.5454545454545454,
+      "accuracy": 0.8780487804878049,
+      "eligible": 41
+    },
+    {
+      "budget": 192,
+      "model": "additive",
+      "kendall": 0.5687964589945209,
+      "accuracy": 0.8780487804878049,
+      "eligible": 41
+    },
+    {
+      "budget": 192,
+      "model": "fixed_ranking",
+      "kendall": 0.5757575757575757,
+      "accuracy": 0.8292682926829268,
+      "eligible": 41
+    },
+    {
+      "budget": 384,
+      "model": "dms_pairwise_mean",
+      "kendall": 0.7589535099383351,
+      "accuracy": 0.9642857142857144,
+      "eligible": 28
+    },
+    {
+      "budget": 384,
+      "model": "dms_no_readout_mean",
+      "kendall": 0.7021867670200859,
+      "accuracy": 0.9642857142857144,
+      "eligible": 28
+    },
+    {
+      "budget": 384,
+      "model": "potts_low_mean",
+      "kendall": 0.6943617218584769,
+      "accuracy": 0.9642857142857144,
+      "eligible": 28
+    },
+    {
+      "budget": 384,
+      "model": "rmf_high_mean",
+      "kendall": 0.2724275017472889,
+      "accuracy": 0.8214285714285714,
+      "eligible": 28
+    },
+    {
+      "budget": 384,
+      "model": "additive",
+      "kendall": 0.6016299267309013,
+      "accuracy": 0.9285714285714286,
+      "eligible": 28
+    },
+    {
+      "budget": 384,
+      "model": "fixed_ranking",
+      "kendall": 0.624980739302604,
+      "accuracy": 0.8571428571428571,
+      "eligible": 28
+    }
+  ]
+}

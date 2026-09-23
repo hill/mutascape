@@ -1,0 +1,15 @@
+{
+  "protein": "eqFP611",
+  "model": "fixed_pairs",
+  "seed": 2026092313,
+  "w1": 0.611746435968426,
+  "shape_w1": 0.6319278667814174,
+  "local_walsh_l1": 0.3247534738876505,
+  "measured_local_additive": 0.8252452413821112,
+  "generated_local_additive": 0.9876219783259365,
+  "measured_sign_switch": 0.7669270833333333,
+  "generated_sign_switch": 0.2421875,
+  "spearman": 0.4536550023769324,
+  "auc_base": 0.9625575000000002,
+  "auc_sequence": 0.97248
+}

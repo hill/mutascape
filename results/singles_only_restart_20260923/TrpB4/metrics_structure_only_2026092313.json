@@ -1,0 +1,13 @@
+{
+  "protein": "TrpB4",
+  "model": "structure_only",
+  "seed": 2026092313,
+  "w1": 22.284799517850868,
+  "shape_w1": 0.6045598271789776,
+  "local_walsh_l1": 0.5889545943277014,
+  "measured_local_additive": 0.7018457345872753,
+  "generated_local_additive": 0.996323031751126,
+  "measured_sign_switch": 0.8177083333333333,
+  "generated_sign_switch": 0.046875,
+  "spearman": 0.01723902523902524
+}

@@ -1,0 +1,128 @@
+{
+  "proteins": [
+    "DHFR",
+    "eqFP611",
+    "ParB-Noc"
+  ],
+  "pilot_sizes": [
+    48,
+    192
+  ],
+  "splits": 3,
+  "test_size": 2000,
+  "selection_seed": 2026092500,
+  "draw_seeds": [
+    2026092501,
+    2026092502,
+    2026092503
+  ],
+  "models": [
+    "pilot_reference",
+    "learned_pairs",
+    "learned_mean",
+    "additive"
+  ],
+  "primary": "48 calibration combinations. Existing pilot versus learned pair draws.",
+  "secondary": "192 calibration combinations. The first 48 form the smaller pilot.",
+  "features": "Same-assay singles define shared features. Paired genotype folds, five folds.",
+  "classifiers": [
+    "logistic",
+    "histogram",
+    "histogram_with_sequence"
+  ],
+  "tuning": "No model or classifier settings selected using these test outcomes.",
+  "search": {
+    "pilot_size": 48,
+    "budgets": [
+      48,
+      96
+    ],
+    "methods": "All 12 existing methods",
+    "seeds": 10,
+    "models": [
+      "measured",
+      "pilot_reference",
+      "learned_pairs"
+    ],
+    "domain": "All measured combinations except the calibration genotypes for that split",
+    "draws": 3,
+    "splits": 3,
+    "cost": "48 calibration combinations plus search queries, beyond WT and singles",
+    "limits": "Calibration fits the generator. Search methods do not receive these data."
+  },
+  "spectra": "Full complete libraries, including calibration data. Descriptive only.",
+  "limits": "These proteins have appeared in earlier project audits. This model was developed on CreiLOV.",
+  "software": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "scipy": "1.17.1",
+    "scikit-learn": "1.8.0"
+  },
+  "code_sha256": {
+    "/Users/tomhill/Uni/research-project/mutascape/scripts/test_pair_pilot_transfer.py": "8e72787b9d7b6ead0747e7423660611d93ca724c6dd005b5caf0acceb7c6ff39",
+    "scripts/compare_c2st_alternatives.py": "c0d4ecc197f403f046de3512e5103b13ab68c5d6d39d90781fc70c80d4bb33b6",
+    "scripts/run_pair_pilot_search.py": "14422fee4af325d0e99a1b3f6af7a8cba6532d159e96b4863465c7767b8f0ed3",
+    "src/mutascape/experimental/pilot.py": "44d4ece0cf294e610fe3f6a965366e8be9bf93706abb30edd4a23a7a6fd8204b",
+    "src/mutascape/benchmarks/methods.py": "958f59302eaaddee11fe04f0cff6e5b1f858de3b28561681ec7f24b86366bb18",
+    "src/mutascape/benchmarks/evaluation.py": "3e562a7c884e0da74c7a878797f054dffab5fab72eac881a88a5be5191003fb5",
+    "src/mutascape/validation/fourier.py": "1ecf77cfc090a1da12694d0b710a9d962cea3f2cc1689169a599fed5a39e4d25"
+  },
+  "datasets": [
+    {
+      "protein": "DHFR",
+      "source": ".mutascape/benchmark-data/ssmula/data/DHFR/scale2max/DHFR.csv",
+      "source_sha256": "3316e31c735798dabe4413ce8d74fb6926c2a98cc343170aeb0ee147c09c4518",
+      "rows": 8000,
+      "singles_with_wt": 58,
+      "cube_shape": [
+        20,
+        20,
+        20
+      ],
+      "source_url": "https://zenodo.org/records/15203754",
+      "source_revision": "4926b8e614d426ca567159988834482c23da13a3",
+      "genotypes_sha256": "202ceb3a188b23cf779477cf3e795a7a86805cf36bab92e4db576b09ca941cfa"
+    },
+    {
+      "protein": "eqFP611",
+      "source": ".mutascape/benchmark-data/combingym/Data/DMS/Clean/eqFP611_clean.xlsx",
+      "source_sha256": "27e26e9d198e04f81740349399a8e5fb4687f4f2af7b27b0f9d374e04b0a8d63",
+      "rows": 8192,
+      "singles_with_wt": 14,
+      "cube_shape": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "source_url": "https://github.com/sitonglab/CombinGym",
+      "source_revision": "e635a959731d2a14f90269245ccbec4bf2645324",
+      "genotypes_sha256": "013e7846aad753ec521511ef2d8ded1296a813451c82a1b78aa01ba14f01001e"
+    },
+    {
+      "protein": "ParB-Noc",
+      "source": ".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla/data/BioSequence/Jalal2020_NBS.csv",
+      "source_sha256": "b55df35cee80483a407c5ca85b71ad9c295b669839de48d4ba0099032d6f767a",
+      "rows": 160000,
+      "singles_with_wt": 77,
+      "cube_shape": [
+        20,
+        20,
+        20,
+        20
+      ],
+      "source_url": "https://github.com/COLA-Laboratory/GraphFLA",
+      "source_revision": "9f86def1a12db76d26af16077ba28cb61ee0af5f",
+      "genotypes_sha256": "c13b6ebb57c311749d92b3c26e8afbd60286eef63bd58889e25291e4390f7ddb"
+    }
+  ]
+}

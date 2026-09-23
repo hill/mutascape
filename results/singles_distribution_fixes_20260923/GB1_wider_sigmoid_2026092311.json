@@ -1,0 +1,10 @@
+{
+  "protein": "GB1",
+  "model": "wider_sigmoid",
+  "seed": 2026092311,
+  "auc_sequence": 0.9950150000000001,
+  "w1": 2.322305983317718,
+  "local_walsh_l1": 0.5894125164443942,
+  "measured_median": 0.0003574310403574,
+  "generated_median": -0.06589613037121249
+}

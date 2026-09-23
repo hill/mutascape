@@ -1,0 +1,7 @@
+{
+  "status": "Further development after initial quantile confirmation. Uses original transfer split zero. No confirmation claims from these scores.",
+  "tail_count": 5,
+  "forest_trees": 64,
+  "minimum_leaf": 8,
+  "global_distribution_weight": 0.05
+}

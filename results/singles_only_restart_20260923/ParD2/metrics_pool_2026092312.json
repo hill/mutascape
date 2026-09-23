@@ -1,0 +1,15 @@
+{
+  "protein": "ParD2",
+  "model": "pool",
+  "seed": 2026092312,
+  "w1": 0.886134312533227,
+  "shape_w1": 0.34619632426107594,
+  "local_walsh_l1": 0.10203468900578776,
+  "measured_local_additive": 0.9151083835114783,
+  "generated_local_additive": 0.9661257280143721,
+  "measured_sign_switch": 0.48828125,
+  "generated_sign_switch": 0.29557291666666663,
+  "spearman": 0.7511890391890392,
+  "auc_base": 0.9265975,
+  "auc_sequence": 0.9402725000000001
+}

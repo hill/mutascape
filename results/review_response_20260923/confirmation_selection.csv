@@ -1,0 +1,161 @@
+file,reason
+Anderson_MPH_CaPTM.csv,Incomplete or outside candidate-count range
+Anderson_MPH_CdPTM.csv,Incomplete or outside candidate-count range
+Anderson_MPH_CoPTM.csv,Incomplete or outside candidate-count range
+Anderson_MPH_CuPTM.csv,Incomplete or outside candidate-count range
+Anderson_MPH_MgPTM.csv,Incomplete or outside candidate-count range
+Anderson_MPH_MnPTM.csv,Incomplete or outside candidate-count range
+Bakerlee2022_hap_37C.csv,Incomplete or outside candidate-count range
+Bakerlee2022_hap_4NQO.csv,Incomplete or outside candidate-count range
+Bakerlee2022_hap_YPDA.csv,Incomplete or outside candidate-count range
+Bakerlee2022_hap_gu.csv,Incomplete or outside candidate-count range
+Bakerlee2022_hap_salt.csv,Incomplete or outside candidate-count range
+Bakerlee2022_hap_suloc.csv,Incomplete or outside candidate-count range
+Bakerlee2022_hom_37C.csv,Incomplete or outside candidate-count range
+Bakerlee2022_hom_4NQO.csv,Incomplete or outside candidate-count range
+Bakerlee2022_hom_YPDA.csv,Incomplete or outside candidate-count range
+Bakerlee2022_hom_gu.csv,Incomplete or outside candidate-count range
+Bakerlee2022_hom_salt.csv,Incomplete or outside candidate-count range
+Bakerlee2022_hom_suloc.csv,Incomplete or outside candidate-count range
+Bank2016a.csv,Protein group already used in development or prior fitting
+Bendixsen2019_hdv.csv,RNA or regulatory nucleotide sequence
+Bendixsen2019_ligase.csv,RNA or regulatory nucleotide sequence
+Centurion2019.csv,RNA or regulatory nucleotide sequence
+Chou2011.csv,Incomplete or outside candidate-count range
+Diaz-Colunga_colorants.csv,Incomplete or outside candidate-count range
+Diaz-Colunga_pseudo.csv,Incomplete or outside candidate-count range
+Domingo2018.csv,Incomplete or outside candidate-count range
+Frohlich21_OXA-48_ic50_CAZtraj1.csv,Incomplete or outside candidate-count range
+Frohlich21_OXA-48_ic50_CAZtraj2.csv,Incomplete or outside candidate-count range
+Frohlich21_OXA-48_ic50_CAZtraj3.csv,Incomplete or outside candidate-count range
+Frohlich21_OXA-48_ic50_PIPtraj1.csv,Incomplete or outside candidate-count range
+Frohlich21_OXA-48_ic50_PIPtraj2.csv,Incomplete or outside candidate-count range
+Frohlich21_OXA-48_ic50_PIPtraj3.csv,Incomplete or outside candidate-count range
+Guerrero2019_C_muridarum_GroEL.csv,Incomplete or outside candidate-count range
+Guerrero2019_C_muridarum_LON.csv,Incomplete or outside candidate-count range
+Guerrero2019_C_muridarum_WT.csv,Incomplete or outside candidate-count range
+Guerrero2019_E_coli_GroEL.csv,Incomplete or outside candidate-count range
+Guerrero2019_E_coli_LON.csv,Incomplete or outside candidate-count range
+Guerrero2019_E_coli_WT.csv,Incomplete or outside candidate-count range
+Guerrero2019_L_grayi_GroEL.csv,Incomplete or outside candidate-count range
+Guerrero2019_L_grayi_LON.csv,Incomplete or outside candidate-count range
+Guerrero2019_L_grayi_WT.csv,Incomplete or outside candidate-count range
+Hall2010_diploid.csv,Incomplete or outside candidate-count range
+Hall2010_haploid.csv,Incomplete or outside candidate-count range
+Hall2019_Acetate.csv,Incomplete or outside candidate-count range
+Hall2019_Beef.csv,Incomplete or outside candidate-count range
+Hall2019_Casamino.csv,Incomplete or outside candidate-count range
+Hall2019_Glucose.csv,Incomplete or outside candidate-count range
+Hall2019_Milk.csv,Incomplete or outside candidate-count range
+Hall2019_NAG.csv,Incomplete or outside candidate-count range
+Hall2019_Rhamnose.csv,Incomplete or outside candidate-count range
+Hall2019_Trypsin.csv,Incomplete or outside candidate-count range
+Hall2020_NfsA_ec50_2039.csv,Incomplete or outside candidate-count range
+Hall2020_NfsA_ec50_3637.csv,Incomplete or outside candidate-count range
+Jalal2020_NBS.csv,Selected unused family
+Jalal2020_parS.csv,Alternative assay of selected family
+Johnston2024_TrpB3A.csv,Incomplete or outside candidate-count range
+Johnston2024_TrpB3B.csv,Incomplete or outside candidate-count range
+Johnston2024_TrpB3C.csv,Incomplete or outside candidate-count range
+Johnston2024_TrpB3D.csv,Incomplete or outside candidate-count range
+Johnston2024_TrpB3E.csv,Incomplete or outside candidate-count range
+Johnston2024_TrpB3F.csv,Incomplete or outside candidate-count range
+Johnston2024_TrpB3G.csv,Incomplete or outside candidate-count range
+Johnston2024_TrpB3H.csv,Incomplete or outside candidate-count range
+Johnston2024_TrpB3I.csv,Incomplete or outside candidate-count range
+Johnston2024_TrpB4.csv,Incomplete or outside candidate-count range
+Khan2011Flynn2013_DM25.csv,Incomplete or outside candidate-count range
+Khan2011Flynn2013_DM25_EGTA.csv,Incomplete or outside candidate-count range
+Khan2011Flynn2013_DM25_guanazole.csv,Incomplete or outside candidate-count range
+Kuo2020.csv,Incomplete or outside candidate-count range
+Lite2020_ParD2.csv,Incomplete or outside candidate-count range
+Lite2020_ParD3.csv,Incomplete or outside candidate-count range
+Lozovsky2009Jiang2013_Jiang2013.csv,Incomplete or outside candidate-count range
+Lozovsky2009Jiang2013_Lozovsky2009.csv,Incomplete or outside candidate-count range
+Lozovsky_DHFR_ic50_c57.csv,Incomplete or outside candidate-count range
+Lozovsky_DHFR_ic50_c58.csv,Incomplete or outside candidate-count range
+Lozovsky_DHFR_ic50_c59.csv,Incomplete or outside candidate-count range
+Lozovsky_DHFR_ic50_c60.csv,Incomplete or outside candidate-count range
+Lozovsky_DHFR_ic50_c61.csv,Incomplete or outside candidate-count range
+Lunzer2005_fitness.csv,Protein group already used in development or prior fitting
+Lunzer2005_nad.csv,Protein group already used in development or prior fitting
+Lunzer2005_nadp.csv,Protein group already used in development or prior fitting
+Malcolm1990.csv,Incomplete or outside candidate-count range
+Meini2015.csv,Incomplete or outside candidate-count range
+Michael2024_LamB.csv,Protein group already used in development or prior fitting
+Michael2024_Lspec.csv,Protein group already used in development or prior fitting
+Michael2024_OmpF.csv,Protein group already used in development or prior fitting
+Michael2024_Ospec.csv,Protein group already used in development or prior fitting
+Michael2024_base.csv,Protein group already used in development or prior fitting
+Mira2015_TEM_AM.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_AMC.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_AMP.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_CAZ.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_CEC.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_CPD.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_CPR.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_CRO.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_CTT.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_CTX.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_CXM.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_FEP.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_SAM.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_TZP.csv,Incomplete or outside candidate-count range
+Mira2015_TEM_ZOX.csv,Incomplete or outside candidate-count range
+Moulana2022_ACE2.csv,Protein group already used in development or prior fitting
+Moulana2023_CB6.csv,Protein group already used in development or prior fitting
+Moulana2023_CoV555.csv,Protein group already used in development or prior fitting
+Moulana2023_REGN10987.csv,Protein group already used in development or prior fitting
+Moulana2023_S309.csv,Protein group already used in development or prior fitting
+NEW_Chen2023_CreiLOV.csv,Incomplete or outside candidate-count range
+Ogbunugafor22_cyc.csv,Incomplete or outside candidate-count range
+Ogbunugafor22_pyr.csv,Incomplete or outside candidate-count range
+Palmer2015.csv,Incomplete or outside candidate-count range
+Palmer_DHFR_ic75.csv,Incomplete or outside candidate-count range
+Papkou2023_DHFR.csv,Incomplete or outside candidate-count range
+Phillips2021_CR6261_h1.csv,Incomplete or outside candidate-count range
+Phillips2021_CR6261_h9.csv,Incomplete or outside candidate-count range
+Phillips2021_CR9114_fluB.csv,Protein group already used in development or prior fitting
+Phillips2021_CR9114_h1.csv,Protein group already used in development or prior fitting
+Phillips2021_CR9114_h3.csv,Protein group already used in development or prior fitting
+Phillips2023_G189E.csv,Related immunoglobulin family already represented
+Phillips2023_MA90.csv,Related immunoglobulin family already represented
+Phillips2023_SI06.csv,Related immunoglobulin family already represented
+Podgornaia2015_PhoQ.csv,Incomplete or outside candidate-count range
+Poelwijk2019.csv,Protein group already used in development or prior fitting
+Schulz2025.csv,Protein group already used in development or prior fitting
+Skwara2023_Butyrate.csv,Incomplete or outside candidate-count range
+Skwara2023_GE_biomass.csv,Incomplete or outside candidate-count range
+Skwara2023_Kehe_data.csv,Incomplete or outside candidate-count range
+Skwara2023_Langenheder.csv,Incomplete or outside candidate-count range
+Skwara2023_pyoverdine.csv,Incomplete or outside candidate-count range
+Skwara2023_starch_data.csv,Incomplete or outside candidate-count range
+Soo2021_30C.csv,RNA or regulatory nucleotide sequence
+Soo2021_37C.csv,RNA or regulatory nucleotide sequence
+Sunden_AP.csv,Incomplete or outside candidate-count range
+Tamer_DHFR_kcat_trajg.csv,Incomplete or outside candidate-count range
+Tamer_DHFR_kcat_trajr.csv,Incomplete or outside candidate-count range
+Tamer_DHFR_ki_trajg.csv,Incomplete or outside candidate-count range
+Tamer_DHFR_ki_trajr.csv,Incomplete or outside candidate-count range
+Tu2022_T7.csv,Incomplete or outside candidate-count range
+Tu2022_TEV.csv,Incomplete or outside candidate-count range
+Weinreich2006Tan2011_Tan2011.csv,Incomplete or outside candidate-count range
+Weinreich2006Tan2011_Weinreich2006.csv,Incomplete or outside candidate-count range
+Westmann2024.csv,Incomplete or outside candidate-count range
+Whitlock2000.csv,Incomplete or outside candidate-count range
+Wong2018_brca2.csv,RNA or regulatory nucleotide sequence
+Wong2018_ikbkap.csv,RNA or regulatory nucleotide sequence
+Wong2018_smn1.csv,RNA or regulatory nucleotide sequence
+Wu2016_GB1.csv,Incomplete or outside candidate-count range
+Wu2020_Bei89.csv,Protein group already used in development or prior fitting
+Wu2020_Bk79.csv,Protein group already used in development or prior fitting
+Wu2020_Bris07L194.csv,Protein group already used in development or prior fitting
+Wu2020_Bris07P194.csv,Protein group already used in development or prior fitting
+Wu2020_HK68.csv,Protein group already used in development or prior fitting
+Wu2020_Mos99.csv,Protein group already used in development or prior fitting
+Wu2020_NDako16.csv,Protein group already used in development or prior fitting
+daSilva2010_CCR5.csv,Incomplete or outside candidate-count range
+daSilva2010_CXCR5.csv,Incomplete or outside candidate-count range
+deVisser2009.csv,Incomplete or outside candidate-count range
+new_PTE_catact_2NH.csv,Incomplete or outside candidate-count range
+new_PTE_catact_butyrate.csv,Incomplete or outside candidate-count range

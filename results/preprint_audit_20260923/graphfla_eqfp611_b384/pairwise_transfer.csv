@@ -1,0 +1,14 @@
+dataset,arm,reliable_pairs,scored_pairs,correct_pairs,winner_accuracy
+GraphFLA_Poelwijk2019,additive,18,18,11,0.6111111111111112
+GraphFLA_Poelwijk2019,dms_pairwise_0,18,18,11,0.6111111111111112
+GraphFLA_Poelwijk2019,dms_pairwise_1,18,18,11,0.6111111111111112
+GraphFLA_Poelwijk2019,dms_pairwise_2,18,18,11,0.6111111111111112
+GraphFLA_Poelwijk2019,dms_pairwise_mean,18,18,11,0.6111111111111112
+GraphFLA_Poelwijk2019,potts_low_0,18,18,13,0.7222222222222222
+GraphFLA_Poelwijk2019,potts_low_1,18,18,11,0.6111111111111112
+GraphFLA_Poelwijk2019,potts_low_2,18,18,11,0.6111111111111112
+GraphFLA_Poelwijk2019,potts_low_mean,18,18,13,0.7222222222222222
+GraphFLA_Poelwijk2019,rmf_high_0,18,18,14,0.7777777777777778
+GraphFLA_Poelwijk2019,rmf_high_1,18,18,14,0.7777777777777778
+GraphFLA_Poelwijk2019,rmf_high_2,18,18,15,0.8333333333333334
+GraphFLA_Poelwijk2019,rmf_high_mean,18,18,15,0.8333333333333334

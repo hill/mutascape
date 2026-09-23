@@ -1,0 +1,15 @@
+{
+  "protein": "DHFR",
+  "model": "linear",
+  "seed": 2026092313,
+  "w1": 2.649064416116806,
+  "shape_w1": 0.7239459520592356,
+  "local_walsh_l1": 0.15069529068563012,
+  "measured_local_additive": 0.8484800138529098,
+  "generated_local_additive": 0.9238276591957248,
+  "measured_sign_switch": 0.7513020833333333,
+  "generated_sign_switch": 0.33333333333333337,
+  "spearman": 0.27142687942687943,
+  "auc_base": 0.99077,
+  "auc_sequence": 0.9925925000000001
+}

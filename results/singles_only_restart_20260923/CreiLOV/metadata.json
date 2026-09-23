@@ -1,0 +1,9 @@
+{
+  "sequence": "MAGLRHTFVVADATLPDCPLVYASEGFYAMTGYGPDEVLGHNARFLQGEGTDPKEVQKIRDAIKKGEACSVRLLNYRKDGTPFWNLLTVTPIKTPDGRVSKFVGVQVDVTSKTEGKALA",
+  "source": ".mutascape/benchmark-data/combingym/Data/DMS/Raw/CreiLOV_raw.xlsx",
+  "source_sha256": "02b314ba88bec25a6a814d04294ad415f4b150b6285b6d5a4ec0a848df5f8b70",
+  "structure": {
+    "available": false,
+    "reason": "No verified residue mapping in this study"
+  }
+}

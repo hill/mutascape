@@ -1,0 +1,21 @@
+{
+  "sequence": "TDHS",
+  "source": ".mutascape/benchmark-data/ssmula/data/TEV/scale2max/TEV.csv",
+  "source_sha256": "63bb85b8bc7e0ab85499ada95340c5dc6a912cc2febdedbe50f8ebb94e6c13d5",
+  "structure": {
+    "available": true,
+    "source": ".mutascape/benchmark-data/ssmula/data/TEV/TEV.pdb",
+    "sha256": "508e9024938edaf0706679f47d2073fe36cb1f693b9f2499b4e5012c4b93784d",
+    "chain": "A",
+    "pairs": [
+      [
+        1,
+        3
+      ],
+      [
+        1,
+        4
+      ]
+    ]
+  }
+}

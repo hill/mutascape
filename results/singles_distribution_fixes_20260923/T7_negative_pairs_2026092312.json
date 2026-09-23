@@ -1,0 +1,10 @@
+{
+  "protein": "T7",
+  "model": "negative_pairs",
+  "seed": 2026092312,
+  "auc_sequence": 0.9944625,
+  "w1": 3.884216747423581,
+  "local_walsh_l1": 0.7391358709381405,
+  "measured_median": 0.0,
+  "generated_median": 0.006837027356190753
+}

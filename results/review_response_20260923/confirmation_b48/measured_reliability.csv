@@ -1,0 +1,2 @@
+dataset,n_methods,n_trials,split_half_median,split_half_lower,split_half_upper
+GraphFLA_Jalal2020_NBS,12,10,0.6454972243679028,0.45184805705753195,0.8351913809763262

@@ -1,0 +1,10 @@
+{
+  "protein": "T7",
+  "model": "linear",
+  "seed": 2026092312,
+  "auc_sequence": 0.9952099999999999,
+  "w1": 4.389365800183375,
+  "local_walsh_l1": 0.7373276469134705,
+  "measured_median": 0.0,
+  "generated_median": 0.20262339218487713
+}

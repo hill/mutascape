@@ -1,0 +1,15 @@
+{
+  "protein": "TEV",
+  "model": "linear",
+  "seed": 2026092311,
+  "w1": 2.8840365062772646,
+  "shape_w1": 0.4289658675765109,
+  "local_walsh_l1": 0.9109736175549875,
+  "measured_local_additive": 0.47304637704591124,
+  "generated_local_additive": 0.928533185823405,
+  "measured_sign_switch": 0.8294270833333333,
+  "generated_sign_switch": 0.31770833333333326,
+  "spearman": 0.06771405974548157,
+  "auc_base": 0.9178625,
+  "auc_sequence": 0.9232125
+}

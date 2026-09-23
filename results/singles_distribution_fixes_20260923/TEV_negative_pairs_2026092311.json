@@ -1,0 +1,10 @@
+{
+  "protein": "TEV",
+  "model": "negative_pairs",
+  "seed": 2026092311,
+  "auc_sequence": 0.9874124999999999,
+  "w1": 4.17360023550204,
+  "local_walsh_l1": 1.029329827395273,
+  "measured_median": -0.01093456993173395,
+  "generated_median": -0.3555001181327321
+}

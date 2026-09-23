@@ -1,0 +1,42 @@
+{
+  "purpose": "Exploratory checks after inspecting CreiLOV, with no new model selection",
+  "proteins": [
+    "CreiLOV",
+    "GB1",
+    "TrpB4",
+    "T7",
+    "TEV"
+  ],
+  "seeds": [
+    2026092311,
+    2026092312,
+    2026092313
+  ],
+  "strength": 0.3,
+  "settings": {
+    "wider_sigmoid": {
+      "mode": "sigmoid",
+      "margin": 0.5,
+      "negative_pair_mean": 0.0
+    },
+    "linear": {
+      "mode": "linear",
+      "margin": 0.05,
+      "negative_pair_mean": 0.0
+    },
+    "negative_pairs": {
+      "mode": "linear",
+      "margin": 0.05,
+      "negative_pair_mean": 0.3
+    }
+  },
+  "assessment": "Existing test genotypes and complete local subcubes",
+  "fitting": "WT and singles only. No target combination values select parameters.",
+  "penalty": "Subtract 0.3 times single-effect SD per mutated pair in linear mode",
+  "limits": "No search experiments and no independent confirmation after these checks",
+  "source_sha256": {
+    "/Users/tomhill/Uni/research-project/mutascape/scripts/check_singles_distribution_fixes.py": "44feed0e6dd0ffd2962835d9338e274befd19699c3251ee25d015f817d683d8a",
+    "src/mutascape/experimental/singles.py": "1263020cfb5e0f900f46198c2f5f32d034bd29c63a50db1a47c5bd56d477c71d",
+    "src/mutascape/benchmarks/evaluation.py": "3e562a7c884e0da74c7a878797f054dffab5fab72eac881a88a5be5191003fb5"
+  }
+}

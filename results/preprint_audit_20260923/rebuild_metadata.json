@@ -1,0 +1,20 @@
+{
+  "audit_code_sha256": {
+    "scripts/rebuild_preprint.py": "3a4c4b3d260bf35b77e44670fec52b08da6f6e0d9157a6fcfbe8ee94bb4443c7",
+    "scripts/audit_preprint_results.py": "f225e7d4f39f662486f534c17a3084c1328a1f0d0bcca53eafc3ed752d3db619",
+    "scripts/run_creilov_shape_validation.py": "d7c9152942da84a140cba7a3488ab0495a92686494a13ed17a7e55681507213d",
+    "scripts/plot_walsh_explainer.py": "431edada38a1ad0646e4ebe019232248ca8a7d71d571807f04118f37320efbb2",
+    "scripts/run_search_transfer.py": "5307b7c6dae2aa597fe3b0b1c4dd69fc353404e441b2accb584dd45c1f5db2eb",
+    "scripts/repair_graphfla_holdout.py": "c277f6b96f077167cd0b4cfcce97ce9b5142e818c4140b9ce9884e05cf7edcd1"
+  },
+  "software": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "scipy": "1.17.1",
+    "scikit-learn": "1.8.0"
+  },
+  "search": "Replayed saved trials. Paths and hashes are in search_provenance.json.",
+  "spectral_seed": 20260826,
+  "spectral_draws": 30,
+  "coupling": 0.1
+}

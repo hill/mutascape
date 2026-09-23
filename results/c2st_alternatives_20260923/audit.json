@@ -1,0 +1,54 @@
+{
+  "validation": "All 135 classifier outcomes, 45 spectra, and six disjoint genotype sets checked",
+  "script_used": "results/c2st_alternatives_20260923/experiment_source.py.txt",
+  "input_hashes": {
+    "results/creilov_c2st/metadata.json": "c65d4cf924903e2073a13a805808211894090a5c03abdc6df14c03b6079cabee",
+    "data/creilov/creilov.csv": "53135cc49d69606ceb0e8ab48fdc48d25e0fd0cc56a225e661345e28865f496c",
+    "data/creilov/creilov_wt.fasta": "9b93db99fabd431a14c347afd88cd4d5e8fde3884a7973c607fb9a79a270401a"
+  },
+  "results_sha256": {
+    "test_1.csv": "f1ba1b3723aa0d940f69522e9cbd0dcc190873b665627ad11cc93d0bd3bb7627",
+    "test_0.csv": "395b1c0e6e55dbdf24d1eef009ede85bce0ad849cb03daeb3ba562f87acde64a",
+    "summary.csv": "35af7bee569a9bcd9bcf7a6b7f98009c3925b2e75f5cef545607a5f391924610",
+    "test_2.csv": "03f505a4c6e41715691df8dc593e4e153f1a5dd15f1d716ab36e68d4a6fd2a01",
+    "paired_differences.csv": "b5da2d0335261aae0fed0cb7f34c2af73fba9297dcc668ac71a0f3bc6beed081",
+    "metrics.csv": "abf183a8d7a970691cadc9551f71437198511d5c807417f646ded445c70634ca",
+    "pilot_0.csv": "7c3d92ac22dfa7a6e007fb96b87c66a1a97bf544e4a3e2d3d51d190be0f393ba",
+    "pilot_1.csv": "100af55c55cb67b253ee5715763aff3b81ecc75a3becc37f10cf795daf4a8d42",
+    "comparison.csv": "13792d8a2648da7009aeb715b784a466496c32111b957a4270c73a8edf8d36e9",
+    "pilot_2.csv": "13de27d10d37f3102ff54a804829ec8a2f9b2df9a0de5d8ce284e32cdb5c7254",
+    "spectra.csv": "84bd27cee694cfa5d518bf108492b1b1f7c11eef9806766474b96d7bd6e4a0b1"
+  },
+  "split_counts": [
+    {
+      "split": 0,
+      "role": "pilot",
+      "count": 48
+    },
+    {
+      "split": 0,
+      "role": "test",
+      "count": 2000
+    },
+    {
+      "split": 1,
+      "role": "pilot",
+      "count": 48
+    },
+    {
+      "split": 1,
+      "role": "test",
+      "count": 2000
+    },
+    {
+      "split": 2,
+      "role": "pilot",
+      "count": 48
+    },
+    {
+      "split": 2,
+      "role": "test",
+      "count": 2000
+    }
+  ]
+}

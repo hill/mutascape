@@ -1,0 +1,14 @@
+{
+  "protein": "ParB-Noc",
+  "candidate": "lower_m0.5",
+  "seed": 2026092311,
+  "kendall_tau": 0.4806345965331828,
+  "w1": 1.862649198195321,
+  "shape_w1": 0.3261707059747979,
+  "local_walsh_l1": 0.6111702081204798,
+  "measured_local_additive": 0.6740971699019651,
+  "generated_local_additive": 0.9796822739622051,
+  "measured_sign_switch": 0.5625,
+  "generated_sign_switch": 0.22916666666666669,
+  "spearman": 0.34305569317620405
+}

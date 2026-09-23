@@ -165,6 +165,12 @@ class DMSLandscape:
     def source_digest(self) -> str:
         return source_digest(self.domain.wild_type_sequence, self.observations, self.completion)
 
+    def pair_scale(self, first: int, second: int) -> float:
+        """Return the standard deviation of pair effects between two sites."""
+        if self.contacts is not None and (first, second) not in self.contacts:
+            return 0.0
+        return self.strength * self.scale
+
     def evaluate_batch(self, variants: list[VariantLike]) -> NDArray[np.float64]:
         """Score supported variants with the same pair effects in every query."""
         parsed = [self.domain.parse(v) for v in variants]
@@ -190,7 +196,8 @@ class DMSLandscape:
             ]
             for i, j in combinations(range(len(positions)), 2):
                 p, q = positions[i], positions[j]
-                if self.contacts is not None and (p, q) not in self.contacts:
+                weight = self.pair_scale(p, q)
+                if not weight:
                     continue
                 first, first_codes = encoded[i]
                 second, second_codes = encoded[j]
@@ -204,7 +211,7 @@ class DMSLandscape:
                         table[a, b] = _pair(
                             (p, str(aa)), (q, str(bb)), self.domain.wild_type_sequence, self.seed
                         )
-                latent += self.strength * self.scale * table[first_codes, second_codes]
+                latent += weight * table[first_codes, second_codes]
         result = self.observations[()] + (
             self.readout.forward(latent) if self.readout is not None else latent
         )

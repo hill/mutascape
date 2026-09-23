@@ -1,0 +1,14 @@
+{
+  "protein": "DHFR",
+  "candidate": "lower_m1",
+  "seed": 2026092312,
+  "kendall_tau": 0.7211102550927979,
+  "w1": 1.6416249710299433,
+  "shape_w1": 0.8675613989831441,
+  "local_walsh_l1": 0.2003419722693524,
+  "measured_local_additive": 0.8484800138529098,
+  "generated_local_additive": 0.9486509999875861,
+  "measured_sign_switch": 0.7513020833333333,
+  "generated_sign_switch": 0.20572916666666666,
+  "spearman": 0.24637043437043443
+}

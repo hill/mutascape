@@ -1,0 +1,14 @@
+{
+  "protein": "CreiLOV",
+  "candidate": "esm_weighted",
+  "seed": 2026092311,
+  "kendall_tau": -0.4242424242424242,
+  "w1": 1.5343922429133932,
+  "shape_w1": 0.6557706222225306,
+  "local_walsh_l1": 0.0378711262434435,
+  "measured_local_additive": 0.916807460785375,
+  "generated_local_additive": 0.9093352228839983,
+  "measured_sign_switch": 0.47916666666666663,
+  "generated_sign_switch": 0.020833333333333332,
+  "spearman": -0.10810968010968011
+}

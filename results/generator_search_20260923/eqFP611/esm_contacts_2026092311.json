@@ -1,0 +1,14 @@
+{
+  "protein": "eqFP611",
+  "candidate": "esm_contacts",
+  "seed": 2026092311,
+  "kendall_tau": 0.1212121212121212,
+  "w1": 0.6534966874541406,
+  "shape_w1": 0.9445117217153454,
+  "local_walsh_l1": 0.2160615044371287,
+  "measured_local_additive": 0.8252452413821112,
+  "generated_local_additive": 0.9332759936006756,
+  "measured_sign_switch": 0.7669270833333333,
+  "generated_sign_switch": 0.0,
+  "spearman": 0.49866441965640623
+}

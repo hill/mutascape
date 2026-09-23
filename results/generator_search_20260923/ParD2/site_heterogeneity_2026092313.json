@@ -1,0 +1,14 @@
+{
+  "protein": "ParD2",
+  "candidate": "site_heterogeneity",
+  "seed": 2026092313,
+  "kendall_tau": NaN,
+  "w1": 0.1644701860611535,
+  "shape_w1": 0.09365206472375968,
+  "local_walsh_l1": 0.0670702585703164,
+  "measured_local_additive": 0.9151083835114783,
+  "generated_local_additive": 0.9486435127966365,
+  "measured_sign_switch": 0.48828125,
+  "generated_sign_switch": 0.18359375,
+  "spearman": 0.7997446277446277
+}

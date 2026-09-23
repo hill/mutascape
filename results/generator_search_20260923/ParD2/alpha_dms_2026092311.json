@@ -1,0 +1,14 @@
+{
+  "protein": "ParD2",
+  "candidate": "alpha_dms",
+  "seed": 2026092311,
+  "kendall_tau": NaN,
+  "w1": 0.46113543964689624,
+  "shape_w1": 0.21138322684837654,
+  "local_walsh_l1": 0.014491493006278089,
+  "measured_local_additive": 0.9151083835114783,
+  "generated_local_additive": 0.9223541300146174,
+  "measured_sign_switch": 0.48828125,
+  "generated_sign_switch": 0.2981770833333333,
+  "spearman": 0.7346938826938827
+}

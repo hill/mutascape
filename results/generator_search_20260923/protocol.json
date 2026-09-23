@@ -1,0 +1,45 @@
+{
+  "purpose": "Select at most one DMS-only change to the default generator",
+  "proteins": [
+    "DHFR",
+    "eqFP611",
+    "ParB-Noc",
+    "ParD2",
+    "CreiLOV"
+  ],
+  "candidates": [
+    "default",
+    "lower_m0.25",
+    "lower_m0.5",
+    "lower_m1",
+    "alpha_dms",
+    "site_heterogeneity",
+    "esm_contacts",
+    "esm_contacts_matched",
+    "esm_weighted"
+  ],
+  "seeds": [
+    2026092311,
+    2026092312,
+    2026092313
+  ],
+  "budget": 96,
+  "search_trials": 10,
+  "contact_probability": 0.5,
+  "esm_model": "esm2_t33_650M_UR50D",
+  "metrics": {
+    "w1": "Wasserstein distance on 1,000 test combinations over measured SD, lower better",
+    "local_walsh_l1": "Three-site local Walsh L1 over 256 cubes, lower better",
+    "kendall_tau": "Warm-start method ranking agreement at budget 96, higher better"
+  },
+  "selection": "Rank candidates within each protein on the seed median of each metric. Average the three ranks per protein. Adopt the candidate with the lowest mean score across proteins only if it scores below the default on at least four of five proteins. Otherwise keep the default.",
+  "not_testable": {
+    "dms_floor": "Only CreiLOV has a whole-protein DMS, from a different assay",
+    "ParB_Noc_contacts": "No full-length sequence available, so contact arms equal default"
+  },
+  "source_sha256": {
+    "/Users/tomhill/Uni/research-project/mutascape/scripts/search_generator_changes.py": "0a3fb81d0debeca7892f43baeaae5e87ec5ee3395ea3923b81540f629a70bbd5",
+    "src/mutascape/model.py": "c33414a91d0a031c1d060bac4df38cae78020a03e5ca2fd08c4cb5a339d23019",
+    "scripts/singles_warm_start.py": "f0a9802b0783cc214aabd8f4290c0979af542d18acaf908ba7301bda585c2698"
+  }
+}

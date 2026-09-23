@@ -29,7 +29,11 @@ from mutascape.benchmarks import (
     load_ssmula_landscapes,
     mutation_order_split,
 )
-from mutascape.benchmarks.generators import build_generators, build_primary_generators
+from mutascape.benchmarks.generators import (
+    build_generators,
+    build_primary_generators,
+    dms_pairwise_readout_tensor,
+)
 from mutascape.benchmarks.library import SearchSpace
 from mutascape.benchmarks.methods import METHODS, make_features, run_method
 from mutascape.benchmarks.splits import has_informative_singles
@@ -74,7 +78,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--graphfla-root",
         type=Path,
-        help="Score the GraphFLA collection using a prior fitted on the other sources",
+        help="Score GraphFLA with its target protein excluded from prior fitting",
     )
     parser.add_argument(
         "--output", type=Path, default=Path("notebooks/iclr/output_search_transfer")
@@ -197,6 +201,19 @@ def _score_landscape(dataset, prior, args, fold_index, dataset_index) -> list[di
         for name, tensor in generators.items():
             arms[name] = space.arm_values(tensor)
 
+    if getattr(args, "readout_ablation", False):
+        for draw in range(args.draws):
+            arms[f"dms_no_readout_{draw}"] = space.arm_values(
+                dms_pairwise_readout_tensor(
+                    cube,
+                    posterior,
+                    coupling=args.dms_pairwise_coupling,
+                    seed=seed + draw,
+                    use_readout=False,
+                )
+            )
+    if getattr(args, "score_models", None):
+        arms = {name: values for name, values in arms.items() if name in args.score_models}
     names = args.methods or list(METHODS)
     rows: list[dict[str, object]] = []
     for arm, values in arms.items():
@@ -272,6 +289,8 @@ def _fold_rows(fold, fold_index, cube_names, args) -> list[dict[str, object]]:
     prior = LandscapePrior.fit(list(fold.train), max_order=args.max_order)
     rows: list[dict[str, object]] = []
     for dataset_index, dataset in enumerate(targets):
+        if args.only and dataset.name not in set(args.only):
+            continue
         started = time.perf_counter()
         found = _score_landscape(dataset, prior, args, fold_index, dataset_index)
         rows.extend(found)
@@ -282,7 +301,27 @@ def _fold_rows(fold, fold_index, cube_names, args) -> list[dict[str, object]]:
     return rows
 
 
-def _graphfla_rows(dataset, prior, index, args) -> list[dict[str, object]]:
+def _graphfla_training(dataset, training_datasets):
+    """Exclude every assay of the target protein from prior fitting."""
+    training = [item for item in training_datasets if item.protein != dataset.protein]
+    if not training:
+        raise ValueError(f"no prior training datasets remain for {dataset.protein}")
+    return training
+
+
+def _graphfla_targets(targets, only):
+    """Keep each target's seed index fixed when selecting a subset."""
+    return [
+        (index, dataset)
+        for index, dataset in enumerate(targets)
+        if not only or dataset.name in set(only)
+    ]
+
+
+def _graphfla_rows(dataset, training_datasets, index, args) -> list[dict[str, object]]:
+    prior = LandscapePrior.fit(
+        _graphfla_training(dataset, training_datasets), max_order=args.max_order
+    )
     started = time.perf_counter()
     rows = _score_landscape(dataset, prior, args, index, 0)
     print(
@@ -300,7 +339,7 @@ def _transfer(scores: pd.DataFrame) -> pd.DataFrame:
         pivot = group.pivot(index="method", columns="arm", values="regret")
         if "measured" not in pivot:
             continue
-        for prefix in ("posterior", "dms_pairwise", "potts_low", "rmf_high"):
+        for prefix in ("posterior", "dms_pairwise", "dms_no_readout", "potts_low", "rmf_high"):
             draws = [column for column in pivot.columns if column.startswith(f"{prefix}_")]
             if draws:
                 # One draw is a benchmark instance. Their mean is what a user who
@@ -352,7 +391,7 @@ def _transfer(scores: pd.DataFrame) -> pd.DataFrame:
 def _with_ensemble_arms(scores: pd.DataFrame) -> pd.DataFrame:
     """Add expected-regret rows for generator ensembles."""
     frames = [scores]
-    for prefix in ("posterior", "dms_pairwise", "potts_low", "rmf_high"):
+    for prefix in ("posterior", "dms_pairwise", "dms_no_readout", "potts_low", "rmf_high"):
         selected = scores.loc[scores["arm"].str.startswith(f"{prefix}_")]
         if selected.empty:
             continue
@@ -360,7 +399,7 @@ def _with_ensemble_arms(scores: pd.DataFrame) -> pd.DataFrame:
         if "source" in selected:
             group_columns.insert(2, "source")
         ensemble = (
-            selected.groupby(group_columns, as_index=False)["regret"]
+            selected.groupby(group_columns, as_index=False, dropna=False)["regret"]
             .mean()
             .assign(arm=f"{prefix}_mean")
         )
@@ -386,14 +425,19 @@ def main() -> None:
     started = time.perf_counter()
     if args.graphfla_root is not None:
         targets = load_graphfla_landscapes(args.graphfla_root, strict=False)
-        if args.only:
-            targets = [dataset for dataset in targets if dataset.name in set(args.only)]
-        prior = LandscapePrior.fit(training_datasets, max_order=args.max_order)
-        batches = Parallel(n_jobs=args.jobs, verbose=10)(
-            delayed(_graphfla_rows)(dataset, prior, index, args)
-            for index, dataset in enumerate(targets)
+        selected = _graphfla_targets(targets, args.only)
+        prior_training = {
+            dataset.name: [item.name for item in _graphfla_training(dataset, training_datasets)]
+            for _, dataset in selected
+        }
+        (args.output / "prior_training.json").write_text(
+            json.dumps(prior_training, indent=2) + "\n"
         )
-        validation_panel = "graphfla"
+        batches = Parallel(n_jobs=args.jobs, verbose=10)(
+            delayed(_graphfla_rows)(dataset, training_datasets, index, args)
+            for index, dataset in selected
+        )
+        validation_panel = "graphfla_protein_holdout"
     else:
         target_sources = _target_sources(args.target_source)
         target_candidates = [
@@ -405,9 +449,7 @@ def main() -> None:
         )
         eligibility.to_csv(args.output / "target_eligibility.csv", index=False)
         cube_names = set(eligibility.loc[eligibility["included"], "dataset"])
-        if args.only:
-            cube_names = {name for name in cube_names if name in set(args.only)}
-        if not cube_names:
+        if not cube_names or (args.only and not cube_names.intersection(args.only)):
             raise SystemExit("no target landscapes meet the selection rules")
         folds = list(iter_protein_holdouts(training_datasets))
         batches = Parallel(n_jobs=args.jobs, verbose=10)(
@@ -419,6 +461,11 @@ def main() -> None:
         raise SystemExit("no landscapes scored")
     _validate_scores(scores, expected_trials=args.seeds)
 
+    _write_results(scores, args, validation_panel, started)
+
+
+def _write_results(scores, args, validation_panel, started) -> None:
+    """Write trial statistics and run metadata."""
     transfer = _transfer(scores)
     validity_scores = _with_ensemble_arms(scores)
     pairwise = pairwise_winner_transfer(validity_scores, seed=args.seed)

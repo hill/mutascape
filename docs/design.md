@@ -12,8 +12,8 @@ are combined, their fitness effects can interact non-additively - a phenomenon c
 **epistasis**. Epistasis makes combinatorial fitness landscapes rugged, creating local
 optima and deceptive gradients that challenge ML-guided search.
 
-The core problem: we lack benchmarks with **controlled, tuneable epistasis** grounded
-in protein biophysics. Without such benchmarks, we cannot systematically answer
+The core problem: we lack benchmarks with **controlled, tuneable epistasis** based
+on protein biophysics. Without such benchmarks, we cannot systematically answer
 questions like "at what level of epistasis does method X outperform method Y?" or
 "does encoding choice matter more in rugged vs smooth landscapes?"
 
@@ -78,7 +78,7 @@ mutascape fills the gap between these approaches:
 The original thesis narrative was: SLIP asks "what epistasis does evolution encode?",
 Sandhu asks "what happens under abstract tuneable ruggedness?", and mutascape asks
 "what epistasis does 3D structure predict?" The current paper should be phrased more
-conservatively: mutascape asks whether DMS- and structure-grounded generators can
+conservatively: mutascape asks whether generators that use DMS measurements and protein structure can
 produce reproducible benchmark landscapes with measurable similarity to real
 combinatorial landscapes.
 
@@ -319,7 +319,7 @@ Subsequent work extended this:
   effects. This is conceptually related but uses a VAE rather than masked
   language modelling.
 
-**Relevance to mutascape**: pLM scores provide biophysically grounded
+**Relevance to mutascape**: pLM scores provide sequence-based
 single-site fitness estimates for positions not covered by experimental
 DMS data. This enables full-protein combinatorial landscapes where every
 position is mutable, with the additive baseline coming from either

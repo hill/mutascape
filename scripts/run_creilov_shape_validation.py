@@ -146,68 +146,115 @@ def _spectrum_table(
 
 
 def _plot(histogram: pd.DataFrame, spectrum: pd.DataFrame, output: Path) -> None:
-    colour = "#6d5bd0"
-    measured = "#17151c"
-    additive = "#8b8793"
-    figure, axes = plt.subplots(1, 2, figsize=(11.5, 4.2), constrained_layout=True)
+    style = {
+        "font.family": "STIX Two Text",
+        "mathtext.fontset": "stix",
+        "font.size": 9,
+        "text.color": "#161616",
+        "axes.labelcolor": "#161616",
+        "axes.edgecolor": "#161616",
+        "axes.linewidth": 0.6,
+        "pdf.fonttype": 42,
+        "svg.fonttype": "none",
+        "savefig.facecolor": "white",
+    }
+    with plt.rc_context(style):
+        blue, red, grey = "#167db5", "#d84a45", "#737373"
+        pale_blue, pale_red = "#c1deeb", "#f3cdca"
+        figure, axes = plt.subplots(1, 2, figsize=(7.1, 2.65))
+        axes[0].plot(
+            histogram["fitness"], histogram["measured"], color=red, lw=0.9, label="Measured"
+        )
+        axes[0].fill_between(
+            histogram["fitness"],
+            histogram["mutascape_lower"],
+            histogram["mutascape_upper"],
+            color=pale_blue,
+            linewidth=0,
+        )
+        axes[0].plot(
+            histogram["fitness"],
+            histogram["mutascape_median"],
+            color=blue,
+            lw=0.9,
+            label="Mutascape",
+        )
+        selected = histogram.iloc[2::4]
+        axes[0].errorbar(
+            selected["fitness"],
+            selected["mutascape_median"],
+            yerr=np.vstack(
+                [
+                    selected["mutascape_median"] - selected["mutascape_lower"],
+                    selected["mutascape_upper"] - selected["mutascape_median"],
+                ]
+            ),
+            fmt="none",
+            ecolor=blue,
+            elinewidth=0.65,
+            capsize=2,
+            capthick=0.65,
+        )
+        axes[0].plot(
+            histogram["fitness"],
+            histogram["no_pairs"],
+            color=grey,
+            linestyle="--",
+            lw=0.8,
+            label="No pair interactions",
+        )
+        axes[0].set(xlabel="Standardised fitness", ylabel="Density", ylim=(0, None))
+        axes[0].set_title("(a) Fitness distribution", loc="left", fontsize=10, pad=10)
 
-    axes[0].plot(histogram["fitness"], histogram["measured"], color=measured, label="Measured")
-    axes[0].plot(
-        histogram["fitness"],
-        histogram["mutascape_median"],
-        color=colour,
-        label="Mutascape",
-    )
-    axes[0].fill_between(
-        histogram["fitness"],
-        histogram["mutascape_lower"],
-        histogram["mutascape_upper"],
-        color=colour,
-        alpha=0.18,
-        linewidth=0,
-    )
-    axes[0].plot(
-        histogram["fitness"],
-        histogram["no_pairs"],
-        color=additive,
-        linestyle="--",
-        label="No pair interactions",
-    )
-    axes[0].set(xlabel="Standardised fitness", ylabel="Density", title="Fitness distribution")
-    axes[0].legend(frameon=False)
-
-    orders = spectrum["order"].to_numpy()
-    lower = spectrum["mutascape_median"] - spectrum["mutascape_lower"]
-    upper = spectrum["mutascape_upper"] - spectrum["mutascape_median"]
-    axes[1].bar(orders - 0.2, spectrum["measured"], width=0.4, color=measured, label="Measured")
-    axes[1].bar(
-        orders + 0.2,
-        spectrum["mutascape_median"],
-        width=0.4,
-        color=colour,
-        label="Mutascape",
-        yerr=np.vstack([lower, upper]),
-        error_kw={"elinewidth": 0.8, "capsize": 1.5},
-    )
-    axes[1].scatter(
-        orders,
-        spectrum["no_pairs"],
-        marker="_",
-        color=additive,
-        label="No pair interactions",
-    )
-    axes[1].set(
-        xlabel="Interaction order",
-        ylabel="Fitness variance fraction",
-        title="Walsh spectrum",
-        xticks=orders,
-    )
-    axes[1].legend(frameon=False)
-    for axis in axes:
-        axis.spines[["top", "right"]].set_visible(False)
-
-    figure.savefig(output / "creilov_shape_validation.pdf")
-    figure.savefig(output / "creilov_shape_validation.png", dpi=180)
+        orders = spectrum["order"].to_numpy()
+        lower = spectrum["mutascape_median"] - spectrum["mutascape_lower"]
+        upper = spectrum["mutascape_upper"] - spectrum["mutascape_median"]
+        axes[1].bar(
+            orders - 0.2,
+            spectrum["measured"],
+            width=0.4,
+            facecolor=pale_red,
+            edgecolor=red,
+            linewidth=0.65,
+        )
+        axes[1].bar(
+            orders + 0.2,
+            spectrum["mutascape_median"],
+            width=0.4,
+            facecolor=pale_blue,
+            edgecolor=blue,
+            linewidth=0.65,
+            yerr=np.vstack([lower, upper]),
+            error_kw={"ecolor": "#161616", "elinewidth": 0.65, "capsize": 2, "capthick": 0.65},
+        )
+        axes[1].scatter(orders, spectrum["no_pairs"], marker="_", color=grey, s=35, zorder=4)
+        axes[1].set(
+            xlabel="Interaction order",
+            ylabel="Fitness variance fraction",
+            xticks=[1, 3, 5, 7, 9, 11, 13, 15],
+            ylim=(0, None),
+        )
+        axes[1].set_title("(b) Walsh spectrum", loc="left", fontsize=10, pad=10)
+        for axis in axes:
+            axis.spines[["top", "right"]].set_visible(False)
+            axis.tick_params(length=3, width=0.6)
+        handles, labels = axes[0].get_legend_handles_labels()
+        figure.legend(
+            handles,
+            labels,
+            frameon=False,
+            ncol=3,
+            loc="upper center",
+            bbox_to_anchor=(0.5, 1.01),
+            fontsize=9,
+            handlelength=2,
+        )
+        figure.subplots_adjust(left=0.08, right=0.99, bottom=0.19, top=0.77, wspace=0.32)
+        for extension in ("pdf", "svg", "png"):
+            figure.savefig(
+                output / f"creilov_shape_validation.{extension}", bbox_inches="tight", dpi=240
+            )
+        plt.close(figure)
 
 
 def _full_dms_observations(path: Path, target, library_singles: pd.DataFrame) -> pd.DataFrame:

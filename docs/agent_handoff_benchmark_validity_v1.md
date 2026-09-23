@@ -197,7 +197,7 @@ The paper should not claim broad generator superiority. It should not claim accu
 | Issue | Effect before the fix | Fix and check |
 |---|---|---|
 | Unequal generator draw counts | Reduced Mutascape variance compared with controls | Three matched draws for Mutascape, Potts, and RMF |
-| Potts changed wild type and singles | Confounded the readout comparison | Pair terms vanish at wild-type states, with exact-anchor tests |
+| Potts changed wild type and singles | Confounded the readout comparison | Pair terms vanish at wild-type states, with tests that check measured fitness stays exact |
 | GraphFLA used the first row as reference | Changed the genotype origin after row reordering | Declared reference sequences and ordering regression tests |
 | GraphFLA positions used file order | Could reorder positions lexicographically | Numeric `posN` sorting and column-order tests |
 | High budgets removed small landscapes | Changed the panel between budgets | Keep any landscape with at least four candidates |

@@ -715,7 +715,7 @@ class Landscape:
         seed: int,
         batch_size: int = 4096,
     ) -> Iterator[pd.DataFrame]:
-        """Yield a weighted, unique sample in bounded DataFrame batches.
+        """Yield a weighted, unique sample in DataFrame batches of a fixed maximum size.
 
         ``depth_weights`` assigns a relative share to each mutation depth.
         Shares are converted to exact integer counts with largest-remainder

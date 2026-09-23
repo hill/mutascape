@@ -7,9 +7,44 @@ import pandas as pd
 from scipy.stats import kendalltau
 
 
-def _mean_regret(scores: pd.DataFrame, dataset: str, arm: str) -> pd.Series:
+def _mean_regret(scores: pd.DataFrame, dataset: str | int, arm: str) -> pd.Series:
     selected = scores.loc[(scores["dataset"] == dataset) & (scores["arm"] == arm)]
     return selected.groupby("method")["regret"].mean()
+
+
+def reliable_method_pairs(
+    scores: pd.DataFrame,
+    *,
+    seed: int = 0,
+    n_bootstrap: int = 1_000,
+    confidence: float = 0.95,
+) -> pd.DataFrame:
+    """Return measured method pairs whose paired interval excludes zero."""
+    rng = np.random.default_rng(seed)
+    tail = (1.0 - confidence) / 2.0
+    rows = []
+    for dataset, dataset_scores in scores.groupby("dataset"):
+        measured = dataset_scores.loc[dataset_scores["arm"] == "measured"].pivot(
+            index="trial", columns="method", values="regret"
+        )
+        for first, second in combinations(sorted(measured.columns), 2):
+            differences = (measured[first] - measured[second]).dropna().to_numpy(dtype=float)
+            if differences.size < 4:
+                continue
+            indices = rng.integers(0, differences.size, size=(n_bootstrap, differences.size))
+            low, high = np.quantile(differences[indices].mean(axis=1), [tail, 1.0 - tail])
+            if high < 0 or low > 0:
+                rows.append(
+                    {
+                        "dataset": dataset,
+                        "first": first,
+                        "second": second,
+                        "sign": -1 if high < 0 else 1,
+                        "lower": float(low),
+                        "upper": float(high),
+                    }
+                )
+    return pd.DataFrame(rows, columns=["dataset", "first", "second", "sign", "lower", "upper"])
 
 
 def pairwise_winner_transfer(
@@ -19,44 +54,25 @@ def pairwise_winner_transfer(
     n_bootstrap: int = 1_000,
     confidence: float = 0.95,
 ) -> pd.DataFrame:
-    """Score synthetic arms on method pairs with a reliable measured winner.
+    """Score synthetic comparisons on method pairs with a reliable measured winner.
 
     Trials are paired by seed. A measured pair counts only when the bootstrap
     interval for its mean regret difference excludes zero. Lower regret wins.
     A synthetic tie counts as a miss because it does not recover that winner.
     """
-    rng = np.random.default_rng(seed)
-    tail = (1.0 - confidence) / 2.0
-    rows: list[dict[str, object]] = []
+    pairs = reliable_method_pairs(scores, seed=seed, n_bootstrap=n_bootstrap, confidence=confidence)
+    rows = []
     for dataset, dataset_scores in scores.groupby("dataset"):
-        measured = dataset_scores.loc[dataset_scores["arm"] == "measured"].pivot(
-            index="trial", columns="method", values="regret"
-        )
-        reliable: list[tuple[str, str, int]] = []
-        for first, second in combinations(sorted(measured.columns), 2):
-            differences = (measured[first] - measured[second]).dropna().to_numpy(dtype=float)
-            if differences.size < 4:
-                continue
-            indices = rng.integers(0, differences.size, size=(n_bootstrap, differences.size))
-            bootstrap = differences[indices].mean(axis=1)
-            low, high = np.quantile(bootstrap, [tail, 1.0 - tail])
-            if high < 0:
-                reliable.append((first, second, -1))
-            elif low > 0:
-                reliable.append((first, second, 1))
-
+        reliable = pairs.loc[pairs.dataset == dataset]
         for arm in sorted(set(dataset_scores["arm"]) - {"measured"}):
-            means = _mean_regret(scores, str(dataset), arm)
-            correct = 0
-            scored = 0
-            for first, second, measured_sign in reliable:
-                if first not in means or second not in means:
+            means = _mean_regret(scores, dataset, arm)
+            correct = scored = 0
+            for pair in reliable.itertuples(index=False):
+                if pair.first not in means or pair.second not in means:
                     continue
                 scored += 1
-                synthetic_difference = float(means[first] - means[second])
-                if synthetic_difference == 0:
-                    continue
-                correct += int(np.sign(synthetic_difference) == measured_sign)
+                difference = float(means[pair.first] - means[pair.second])
+                correct += int(np.sign(difference) == pair.sign)
             rows.append(
                 {
                     "dataset": dataset,
@@ -137,3 +153,16 @@ def reliability_adjusted_transfer(
     merged = transfer.merge(reliability, on="dataset", how="inner")
     merged["meets_reliability_floor"] = merged["kendall_tau"] >= merged["split_half_lower"]
     return merged
+
+
+def fixed_method_ranking(scores: pd.DataFrame, *, excluded_protein: str) -> pd.Series:
+    """Fit a fixed method ranking with one vote per training protein.
+
+    Exclude every assay of the test protein before averaging measured regret.
+    First average trials within each assay, then assays within each protein.
+    """
+    training = scores.loc[(scores.protein != excluded_protein) & (scores.arm == "measured")]
+    if training.empty:
+        raise ValueError("no training proteins remain")
+    assays = training.groupby(["protein", "dataset", "method"]).regret.mean()
+    return assays.groupby(["protein", "method"]).mean().groupby("method").mean()

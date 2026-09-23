@@ -1,119 +1,84 @@
 # Project status
 
-Checkpoint date is 2026-08-25.
+Updated 2026-09-23.
 
-## Publication claim
+## Publication model
 
-Mutascape generates synthetic combinatorial protein fitness oracles for search benchmarks. It does not predict one protein's unknown landscape.
+The manuscript presents `QuantileCalibratedLandscape` as Mutascape.
+It creates fixed synthetic landscapes for combinatorial ML-assisted directed evolution benchmarks.
+It does not predict the true fitness of unmeasured combinations or replace measured search benchmarks.
 
-The operational validity test is task transfer. A synthetic benchmark should preserve conclusions about which search method performs better on measured combinatorial data.
+Inputs comprise a wild-type sequence, same-assay wild-type and single-mutant fitness, and a random sample of measured combinations.
+The model fits mutation-depth terms and a shared random pair field.
+It maps generated combination percentiles to the pilot fitness distribution.
+Wild type and singles retain their measured values.
+Pilot combinations fit the model but need not retain their measured values.
+A seed fixes each generated landscape.
 
-## Default model
+The Python import remains `mutascape.experimental.QuantileCalibratedLandscape` for compatibility.
+The `from_dms` interface and browser studio retain their singles-only generator.
+Exact enumeration limits the new model to one million declared variants by default.
 
-The default is `dms-pairwise-v1`.
+## Five-protein evaluation
 
-1. Wild type and measured single mutants define the target anchor.
-2. A fitted saturating readout limits stacked effects.
-3. Baseline-corrected random pair tables add shared local variation.
-4. A seed fixes one lazy oracle draw.
-5. The coupling remains fixed at `0.1`.
+The evaluation includes DHFR, eqFP611, ParB-Noc, ParD2 and CreiLOV.
+Each protein supplies one pilot of 192 measured combinations and 1,000 separate evaluation genotypes.
+Three generator draws share that pilot.
+A nested 48-combination pilot provides a measurement-budget sensitivity check.
 
-The model has no structural contact filter, donor transplant, depth residual, floor texture, or explicit higher-order term.
+At 192 pilot combinations, the mean of protein-median boosted C2ST AUCs is 0.679.
+Adding sequence indicators gives 0.739.
+Mean Wasserstein distance is 0.107 measured standard deviations.
+The classifiers still detect differences between generated and measured examples.
 
-`0.1` is not the best coupling on the development panel. Task transfer at 48 queries peaks near `0.05` and falls at every larger value, because the pair table has zero mean and the added variation reads as disagreement. Keep `0.1` anyway. A panel that has already guided model selection cannot settle the choice, and reporting a value on the descending side keeps the headline conservative.
+Search comparisons use 12 methods, ten seeds, and budgets of 48 or 96 queries.
+Candidates exclude wild type, singles and pilot combinations.
+Mean pair agreement is 94.3 per cent, compared with 88.9 per cent for fixed rankings from other proteins.
+Mean Kendall correlation is 0.653.
+These percentages describe eligible method pairs and do not give the chance of selecting the best method.
 
-Three results say the coupling is a weak parameter and not worth calibrating.
+Standard-generator controls use the same candidates, budgets and search seeds.
+Mutascape has the largest mean Kendall correlation.
+Potts has slightly higher mean pair agreement, at 94.7 per cent.
+NK with K=1 reaches 93.4 per cent agreement and Kendall correlation 0.555.
+NK with K=2 reaches 71.4 per cent and 0.314.
+No model leads every protein, budget and metric.
 
-- Singles carry no roughness signal. A held-out ridge over 25 landscapes scores `R^2` below zero on non-additive variance share, order ratio, and log local optima, so a per-target solve has nothing to solve against.
-- The coupling barely moves ruggedness. Raising it from `0` to `0.8` changes peak fraction by at most about three times, against a measured gap of 30 to 130 times. Pair tables are shared by every genotype carrying the pair, so they move neighbourhoods together rather than making peaks.
-- Reproducing the measured peak fraction needs genotype-pinned noise at one to two times the landscape spread. Measured local optima are therefore largely assay error, which belongs in the observation layer rather than the latent landscape.
+The controls have different input requirements.
+Additive, Potts and RMF receive singles only, while NK receives sequence alphabets without target fitness.
+Mutascape also receives the measured pilot.
+The comparison does not isolate model form from measurement cost.
 
-Ruggedness is handled by `Campaign(noise=...)`, which perturbs a read rather than the landscape. That keeps regret defined against the true optimum and gives the level a measurable target in replicate variance.
+## Structural limits
 
-## Current evidence
+Spectrum distances are 0.688 for DHFR, 0.211 for eqFP611 and 0.436 for ParB-Noc.
+CreiLOV's projected binary spectrum has distance 0.033.
+Its signed pair-coefficient cosine similarity is only 0.089.
+A close variance spectrum does not identify the correct interacting substitutions.
+ParD2 has no reported spectrum because its library is incomplete.
 
-The development panel uses 16 complete SSMuLA landscapes. The external panel uses seven GraphFLA protein landscapes. Both compare 12 search methods at budgets of 48, 96, 192, and 384 queries. Each run uses ten search trials and three matched generator draws.
+Spectral calculations use full available libraries, including calibration genotypes.
+C2ST and distribution distance use separate evaluation genotypes.
+All five proteins appeared in earlier project work, so these tests do not establish transfer to previously unstudied families.
+One pilot per protein leaves uncertainty across new calibration samples unmeasured.
 
-- At 48 queries, development rank transfer is `0.529`.
-- Development winner accuracy is `0.885`.
-- The development reliability pass rate is `0.875`, or 14 of 16 landscapes.
-- External rank transfer is `0.439`.
-- External winner accuracy is `0.864`.
-- The external reliability pass rate is `1.000`, or seven of seven landscapes.
+## Manuscript and result sources
 
-The browser keeps 96 queries as the frozen reference. Mutascape reaches `0.454` development rank transfer and `0.787` winner accuracy there. External rank transfer is `0.644`, and winner accuracy is `0.742`.
+The manuscript retains all four figures and the full 31-assay development table.
+Its earlier generator table now labels the singles-only reference explicitly.
+A separate table compares the final model with Additive, Potts, RMF and both NK settings.
+Bold values mark the largest displayed value for each metric within a row, including ties.
+The search and CreiLOV figures include error bars with their interpretation in the captions.
 
-No generator leads every budget and metric. Potts and RMF remain strong controls. At 384 external queries, several rank coefficients reach one because many methods find the optimum. This is search saturation, not evidence of full landscape recovery.
+The versioned summary is `src/mutascape/data/validation/quantile-confirmation-v1.json`.
+Local trial records remain under `results/quantile_confirmation_20260923` and `results/quantile_generator_comparison_20260923`.
+The [result report](quantile_calibration_2026-09-23.md) gives the development history and reproduction commands.
+The [input guide](quantile_generator.md) describes the Python API.
 
-The current positive claim is a low-budget decision-transfer result. The wider result shows that task validity depends on budget and decision measure.
+Run `uv run python -m scripts.rebuild_preprint` to rebuild manuscript tables, figures and the PDF from saved results.
 
-## Known failure
+## Next research
 
-The current claim covers method-ranking studies. It excludes claims about peak counts, adaptive paths, genotype values, or molecular epistasis. Walsh spectra, local optima, Wasserstein distance, and two-sample tests remain diagnostics.
-
-## Keep
-
-- The SSMuLA, CombinGym, and fixed GraphFLA loaders.
-- The 12-method budget-matched search runner.
-- Trial-level regret and paired winner outputs.
-- Measured split-half reliability.
-- The saturating readout and exact single-mutant anchors.
-- The stable lazy oracle.
-- The browser studio and task-transfer chart.
-- Additive, Potts, RMF, NK, ridge, and prior-model controls.
-- Walsh, local-optima, and navigability diagnostics.
-
-## Keep as research arms
-
-- The empirical higher-order prior.
-- Donor interaction transplant.
-- Site-pair scales.
-- Spectral calibration.
-- Structural contacts and MSA couplings.
-- Floor texture and censoring policies.
-- Point prediction, C2ST, MMD, and interval calibration.
-
-These components remain useful for ablations. They are outside the default generator.
-
-## Remove from the main claim
-
-- Accurate genotype prediction from sparse DMS.
-- Calibrated biological uncertainty from oracle draws.
-- Whole-protein accuracy at high mutation depth.
-- Structural realism without an independent task gain.
-- One scalar distribution metric as proof of realism.
-- Local-optima matching under the current coupling.
-
-## Next experiments
-
-1. Freeze `dms-pairwise-v1` without further tuning on the current panels.
-2. Register one new source-held-out protein panel before changing the generator.
-3. Increase trial counts for the 48-query and 96-query confirmatory runs.
-4. Report uncertainty for panel medians and reliable winner accuracy.
-5. Keep structure-aware and higher-order models outside the main paper until they improve task transfer on new data.
-
-## Reproducibility hooks
-
-- `scripts/run_search_transfer.py` runs the primary task test.
-- `scripts/run_coupling_sensitivity.py` scores every primary metric against the coupling.
-- `scripts/run_epistatic_horizon.py` compares generated and measured epistatic horizons.
-- `scripts/run_ruggedness_calibration.py` sweeps the coupling and genotype-pinned noise against measured peak fraction.
-- `scripts/run_roughness_predictors.py` tests whether singles predict roughness.
-- `scripts/freeze_benchmark_validity.py` checks and freezes the four-budget result.
-- `scripts/run_topology_benchmark.py` runs secondary shape checks.
-- `scripts/plot_benchmark_validity.py` builds the manuscript figures.
-- `src/mutascape/data/validation/benchmark-validity-v1.json` holds the frozen four-budget result.
-- `tests/test_benchmark_validity.py` checks the task metrics.
-- `tests/test_benchmark_generators.py` checks exact anchors and lazy equivalence.
-
-## Status flags
-
-- `[ready]` small DMS-pairwise oracle
-- `[ready]` exact lazy and enumerated agreement
-- `[ready]` 16-landscape development task test
-- `[ready]` seven-landscape external protein test
-- `[ready]` browser visualisations
-- `[ready]` v1 manuscript draft
-- `[known gap]` global topology fidelity
-- `[ready]` four-budget sensitivity study
-- `[pending]` registered second external source
+1. Evaluate new protein families under a fixed protocol.
+2. Repeat pilot selection to estimate variation across calibration samples.
+3. Compare pilot measurements with direct optimisation under an equal total experimental budget.

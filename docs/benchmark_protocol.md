@@ -111,7 +111,22 @@ These metrics diagnose failures. No one measure establishes benchmark validity.
 
 The main controls are additive, Potts, and Rough Mount Fuji. The previous empirical prior model remains an ablation. NK and pairwise ridge remain exploratory controls.
 
-Potts is the closest baseline because it combines measured fields with random pair tables. Its pair tables use the same wild-type baseline correction as Mutascape. Both keep wild type and singles exact. Mutascape adds the fitted readout.
+Potts preserves wild type and singles, but differs in pair construction, scale, and coupling.
+It does not isolate the readout.
+The matched control uses the same unit pair coefficients, coupling 0.1, and seeds.
+It uses raw single effects and their scale without a fitted readout.
+
+## Fixed-ranking control
+
+Fit a method ranking from measured searches on other proteins at the same budget.
+Exclude every assay of the test protein across all collections.
+Average trials within assays, assays within proteins, then training proteins.
+Score this ranking and each generator on the same eligible comparisons.
+Report results after excluding random-search comparisons and after substituting another protein's synthetic ranking.
+
+Mutascape exceeds the fixed-ranking control in four of twelve development comparisons.
+The prospective ParB-Noc assay exceeds it at all four budgets.
+These results do not establish a universal generator advantage.
 
 ## Interpretation rule
 
@@ -149,3 +164,6 @@ done
 ```
 
 Add `--graphfla-root` for the fixed external panel. Source manifests pin the required revisions.
+Every target excludes all assays of its protein from prior fitting.
+GraphFLA runs save those training datasets in `prior_training.json`.
+Selecting datasets with `--only` preserves their seeds from the full panel.

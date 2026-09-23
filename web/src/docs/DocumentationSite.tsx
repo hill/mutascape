@@ -422,7 +422,7 @@ oracle.save_manifest("oracle.json")`}
 
 const MODEL_SECTIONS: Section[] = [
   { id: "the-equation", title: "The equation" },
-  { id: "singles", title: "Measured anchors" },
+  { id: "singles", title: "Measured fitness values" },
   { id: "couplings", title: "Pair interactions" },
   { id: "global-epistasis", title: "Saturating readout" },
 ]
@@ -481,7 +481,7 @@ function ModelPage({ onNavigate }: { onNavigate: (page: DocsPage) => void }) {
       </section>
 
       <section className="docs-section" id="singles">
-        <h2>Measured anchors</h2>
+        <h2>Measured fitness values</h2>
         <p>
           Additive effects are summed in the preimage of <InlineMath formula="g" />, so each stored
           effect is the value that <InlineMath formula="g" /> maps back onto the measurement.
@@ -584,13 +584,89 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
         </ol>
       </section>
 
+      <section className="docs-section">
+        <div className="docs-section-heading">
+          <h2>Compare against a fixed method ranking</h2>
+        </div>
+        <p>
+          High pair agreement can reflect method orderings shared across proteins. Fit a fixed
+          ranking from measured searches on other proteins, excluding every assay of the test
+          protein. Score it on the same eligible comparisons as the generator.
+        </p>
+        <p>
+          At 48 queries, this control scores 91.9%, 84.0%, and 73.8% on SSMuLA, CombinGym, and
+          GraphFLA. Mutascape scores 89.5%, 69.1%, and 73.5%. It exceeds the control in four of
+          twelve development comparisons. The 31 assay entries include repeated proteins across
+          collections.
+        </p>
+        <p>
+          A prospective ParB-Noc test exceeds the control at every budget. Median classifier AUCs
+          remain 0.900 and 0.963, and median spectral distance is 1.033. Search agreement does not
+          imply matching shape. Four GraphFLA assays have nearly saturated searches at 384 queries,
+          which limits their ranking resolution.
+        </p>
+      </section>
+
+      <section className="docs-section">
+        <div className="docs-section-heading">
+          <h2>Mutascape with measured combinations</h2>
+        </div>
+        <p>
+          The manuscript uses QuantileCalibratedLandscape. It fits mutation-depth effects and a
+          fitness-distribution map from same-assay wild type, singles and a random measured pilot.
+          Each seed fixes one landscape. Wild type and singles retain their measurements exactly.
+          Pilot combinations fit shared terms and can have different generated fitness.
+        </p>
+        <CodeBlock
+          label="Python"
+          code={`from mutascape.experimental import QuantileCalibratedLandscape
+
+model = QuantileCalibratedLandscape.fit(sequence, singles, pilot)
+oracle = model.draw(seed=42)
+values = oracle.evaluate_batch(variants)`}
+        />
+        <p>
+          Use a uniform sample of supported combinations. Each draw enumerates the library before
+          queries start, with a default limit of one million variants. Both tables need mutations
+          and fitness columns. The singles table must include measured wild type as an empty
+          mutation dictionary.
+        </p>
+        <p>
+          With 192 pilot combinations across five proteins, mean boosted-classifier AUC is 0.679, or
+          0.739 with sequence indicators. Mean method-pair agreement is 94.3 per cent, compared with
+          88.9 per cent for a fixed ranking from other proteins. The comparison uses 12 methods and
+          query budgets of 48 and 96. Classifiers still detect differences, and spectra vary across
+          proteins. Three draws share one pilot per protein.
+        </p>
+        <p>
+          The Python import remains in mutascape.experimental. The from_dms interface and browser
+          studio retain the singles-only generator. The reference results below describe that
+          interface, rather than the manuscript model.
+        </p>
+      </section>
+
       <FigureSection
         id="creilov-shape"
         title="CreiLOV shape check"
-        description="Thirty fixed draws match the standardised histogram shape and the measured allocation of variance across Walsh interaction orders. Raw fitness location remains a known mismatch."
+        description="Thirty fixed draws give a close standardised histogram and projected Walsh spectrum. The projection averages amino-acid variants within mutated-site patterns and fills 118 missing patterns with the observed mean. Raw fitness remains mismatched."
         src="/assets/docs/creilov-shape-validation.png"
         alt="Measured and synthetic CreiLOV fitness distributions and Walsh interaction-order spectra"
       />
+
+      <section className="docs-section" id="spectral-limits">
+        <h2>What a Walsh spectrum measures</h2>
+        <p>
+          Walsh analysis separates variation into additive effects, pair interactions, and higher
+          orders. Matching their variance fractions does not establish matching interactions, peaks,
+          or search paths. Complete-library checks on DHFR and eqFP611 red show excess additive
+          variance, so the CreiLOV result does not establish general spectral realism.
+        </p>
+        <p>
+          The search results use protein-balanced summaries. Every test excludes all assays of its
+          target protein from prior fitting. This includes all three CombinGym eqFP611 readouts when
+          testing eqFP611 in GraphFLA.
+        </p>
+      </section>
 
       <section className="docs-section" id="minimal-campaign">
         <h2>Adversarial assessment</h2>

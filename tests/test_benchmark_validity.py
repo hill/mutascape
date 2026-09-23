@@ -13,6 +13,8 @@ from mutascape.benchmarks.validity import (
 )
 from scripts.freeze_benchmark_validity import _arm_metrics, _reliability_floor
 from scripts.run_search_transfer import (
+    _graphfla_targets,
+    _graphfla_training,
     _include_posterior_baseline,
     _target_eligibility,
     _target_sources,
@@ -286,3 +288,120 @@ def test_transfer_marks_a_constant_method_ranking_as_undefined():
     assert pd.isna(transfer.loc[0, "kendall_tau"])
     assert pd.isna(transfer.loc[0, "spearman"])
     assert pd.isna(transfer.loc[0, "pearson"])
+
+
+def test_graphfla_prior_excludes_all_readouts_of_target_protein(monkeypatch):
+    from types import SimpleNamespace
+
+    target = SimpleNamespace(name="GraphFLA_Poelwijk2019", protein="eqFP611")
+    training = [
+        SimpleNamespace(name=name, protein=protein)
+        for name, protein in [
+            ("eqFP611_red", "eqFP611"),
+            ("eqFP611_blue", "eqFP611"),
+            ("eqFP611_combined", "eqFP611"),
+            ("GB1", "GB1"),
+        ]
+    ]
+    assert [item.name for item in _graphfla_training(target, training)] == ["GB1"]
+    with pytest.raises(ValueError, match="no prior training"):
+        _graphfla_training(target, training[:3])
+
+    from scripts import run_search_transfer as runner
+
+    fitted = []
+    prior = object()
+
+    def fit(datasets, **kwargs):
+        fitted.extend(datasets)
+        return prior
+
+    def score(dataset, supplied_prior, args, fold_index, dataset_index):
+        assert supplied_prior is prior
+        assert dataset is target
+        return []
+
+    monkeypatch.setattr(runner.LandscapePrior, "fit", fit)
+    monkeypatch.setattr(runner, "_score_landscape", score)
+    runner._graphfla_rows(target, training, 5, SimpleNamespace(max_order=3))
+    assert [item.name for item in fitted] == ["GB1"]
+
+
+def test_graphfla_subset_preserves_full_panel_seed_indices():
+    from types import SimpleNamespace
+
+    targets = [SimpleNamespace(name=spec.name) for spec in GRAPHFLA_EXTERNAL_MANIFEST]
+    selected = _graphfla_targets(targets, ["GraphFLA_Poelwijk2019"])
+    assert selected == [(5, targets[5])]
+    assert _graphfla_targets(targets, None) == list(enumerate(targets))
+
+
+def test_protein_holdout_subset_preserves_dataset_seed_index(monkeypatch):
+    from types import SimpleNamespace
+
+    from scripts import run_search_transfer as runner
+
+    targets = [SimpleNamespace(name="first"), SimpleNamespace(name="second")]
+    fold = SimpleNamespace(train=[], test=targets)
+    args = SimpleNamespace(only=["second"], max_order=3)
+    indices = []
+    monkeypatch.setattr(runner.LandscapePrior, "fit", lambda *a, **kw: None)
+
+    def score(dataset, prior, args, fold_index, dataset_index):
+        indices.append((fold_index, dataset_index))
+        return []
+
+    monkeypatch.setattr(runner, "_score_landscape", score)
+    runner._fold_rows(fold, 4, {"first", "second"}, args)
+    assert indices == [(4, 1)]
+
+
+def test_fixed_ranking_excludes_every_assay_of_target_and_balances_proteins():
+    from mutascape.benchmarks.validity import fixed_method_ranking
+
+    rows = []
+    for protein, datasets, value in [
+        ("target", ["t1", "t2"], 999),
+        ("a", ["a1", "a2", "a3"], 0),
+        ("b", ["b1"], 1),
+    ]:
+        for dataset in datasets:
+            rows.append(
+                dict(
+                    protein=protein, dataset=dataset, method="method", arm="measured", regret=value
+                )
+            )
+    scores = pd.DataFrame(rows)
+    assert fixed_method_ranking(scores, excluded_protein="target")["method"] == 0.5
+    scores.loc[scores.protein == "target", "regret"] = -999
+    assert fixed_method_ranking(scores, excluded_protein="target")["method"] == 0.5
+
+
+def test_ensemble_keeps_legacy_rows_when_source_is_missing():
+    scores = pd.DataFrame(
+        [
+            dict(dataset="old", protein="p", arm="dms_pairwise_0", method="m", trial=0, regret=0.2),
+            dict(
+                dataset="old",
+                protein="p",
+                arm="dms_no_readout_0",
+                method="m",
+                trial=0,
+                regret=0.4,
+                source="ssmula",
+            ),
+        ]
+    )
+    combined = _with_ensemble_arms(scores)
+    result = combined.loc[combined.arm == "dms_pairwise_mean"]
+    assert len(result) == 1
+    assert result.regret.iloc[0] == pytest.approx(0.2)
+
+
+def test_pair_scoring_preserves_numeric_dataset_identifiers():
+    scores = _scores()
+    scores["dataset"] = 20260920
+    result = pairwise_winner_transfer(scores, seed=42).set_index("arm")
+    assert result.loc["same", "scored_pairs"] == 3
+    assert result.loc["same", "winner_accuracy"] == 1.0
+    assert result.loc["reverse", "winner_accuracy"] == 0.0

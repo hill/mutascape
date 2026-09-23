@@ -44,7 +44,7 @@ The theoretical foundation for wrapping the additive + pairwise fitness function
   - Walsh-Hadamard variance decomposition on a complete factorial protein landscape. Useful rhetoric: complete maps reveal high-order epistasis and accessible-path topology, but exhaustive epistasis mapping becomes infeasible quickly; sparsity is a potential organizing principle. This is the reference for the `fourier.py` module in mutascape.
 
 - **Poelwijk, F. J., Tanase-Nicola, S., Kiviet, D. J., & Tans, S. J. (2011).** *Reciprocal sign epistasis is a necessary condition for multi-peaked fitness landscapes.* **Journal of Theoretical Biology** 272(1): 141-144. https://doi.org/10.1016/j.jtbi.2010.12.015
-  - Formalises reciprocal sign epistasis as the fundamental driver of multi-peakedness. The validation metric `reciprocal_sign_frac` in `accessible_paths` is grounded here.
+  - Formalises reciprocal sign epistasis as the fundamental driver of multi-peakedness. The validation metric `reciprocal_sign_frac` in `accessible_paths` uses this definition.
 
 - **Weinreich, D. M., Delaney, N. F., Depristo, M. A., & Hartl, D. L. (2006).** *Darwinian evolution can follow only very few mutational paths to fitter proteins.* **Science** 312(5770): 111-114. https://doi.org/10.1126/science.1123539
   - Accessible-path enumeration on a small complete factorial landscape. The reference for `accessible_paths` in `metrics.py`.
@@ -61,7 +61,7 @@ The theoretical foundation for wrapping the additive + pairwise fitness function
 ## Protein stability as a fitness driver
 
 - **Tokuriki, N., & Tawfik, D. S. (2009).** *Stability effects of mutations and protein evolvability.* **Current Opinion in Structural Biology** 19(5): 596-604. https://doi.org/10.1016/j.sbi.2009.08.003
-  - Review: most mutations are destabilising; fitness is bounded by stability. Motivates the choice of a sigmoidal stability-fitness map.
+  - Review: most mutations are destabilising; stability limits fitness. Motivates the choice of a sigmoidal stability-fitness map.
 
 - **Bershtein, S., Segal, M., Bekerman, R., Tokuriki, N., & Tawfik, D. S. (2006).** *Robustness-epistasis link shapes the fitness landscape of a randomly drifting protein.* **Nature** 444: 929-932. https://doi.org/10.1038/nature05385
   - Direct experimental demonstration that stability thresholds generate epistasis. The empirical counterpart to Sailer & Harms 2017's theoretical result.

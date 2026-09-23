@@ -20,6 +20,7 @@ from mutascape.benchmarks.library import SearchSpace
 from mutascape.benchmarks.methods import METHODS, make_features, run_method
 from mutascape.benchmarks.validity import pairwise_winner_transfer
 from mutascape.completion import LandscapePrior, PosteriorLandscape, dms_pairwise_unit_coefficient
+from mutascape.experimental import PilotCalibratedLandscape
 from mutascape.nonlinearity import GlobalEpistasisSigmoid
 from mutascape.validation.fourier import binary_cube_spectral_metrics
 
@@ -182,12 +183,23 @@ def main():
         object.__setattr__(space, "wild_type_row", int(wt_index[0]))
         search_features = make_features(space)
         full_arms = {"measured": raw.fitness.to_numpy()}
+        calibrated = (
+            PilotCalibratedLandscape.fit(sequence, singles, pilot)
+            if args.burden and args.readout
+            else None
+        )
+        if calibrated is not None:
+            (output / f"model_{split_seed}.json").write_text(
+                json.dumps(calibrated.to_dict(), indent=2) + "\n"
+            )
         for draw in draw_seeds:
             values = (
                 base + model.predict(design) + scale * pair_noise(all_mutations, sequence, draw)
             )
             if readout is not None:
                 values = readout.forward(values)
+            if calibrated is not None:
+                values = calibrated.draw(draw).evaluate_batch(all_mutations)
             full_arms[f"pilot_{draw}"] = values
             spectra.append(
                 dict(

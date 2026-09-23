@@ -178,7 +178,7 @@ def hamming_reweighting(idx_matrix: np.ndarray, identity_threshold: float = 0.8)
     n_seqs, L = idx_matrix.shape
     distance_threshold = 1.0 - identity_threshold
     cluster_sizes = np.zeros(n_seqs, dtype=np.float64)
-    # Chunked to keep memory bounded; O(N^2 L) work total.
+    # Chunks limit memory use. Total work is O(N^2 L).
     chunk = max(1, min(256, n_seqs))
     for start in range(0, n_seqs, chunk):
         block = idx_matrix[start : start + chunk]

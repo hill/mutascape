@@ -1,0 +1,1338 @@
+{
+  "id": "quantile-confirmation-v1",
+  "model": "quantile-pilot-v1",
+  "proteins": [
+    "DHFR",
+    "eqFP611",
+    "ParB-Noc",
+    "ParD2",
+    "CreiLOV"
+  ],
+  "pilotSizes": [
+    48,
+    192
+  ],
+  "testGenotypesPerProtein": 1000,
+  "draws": 3,
+  "calibrationSetsPerProtein": 1,
+  "searchMethods": 12,
+  "searchTrials": 10,
+  "searchBudgets": [
+    48,
+    96
+  ],
+  "fidelity": [
+    {
+      "protein": "CreiLOV",
+      "pilot_size": 48,
+      "model": "marginal_only",
+      "histogram_original": 0.7587525,
+      "histogram_sequence": 0.832665,
+      "logistic_original": 0.582875,
+      "w1": 0.2656471272,
+      "spearman": 0.0087087087,
+      "walsh_l1": 1.9272691205
+    },
+    {
+      "protein": "CreiLOV",
+      "pilot_size": 48,
+      "model": "quantile",
+      "histogram_original": 0.704445,
+      "histogram_sequence": 0.80487,
+      "logistic_original": 0.59073,
+      "w1": 0.2360311996,
+      "spearman": 0.4779402819,
+      "walsh_l1": 0.0404798421
+    },
+    {
+      "protein": "CreiLOV",
+      "pilot_size": 192,
+      "model": "marginal_only",
+      "histogram_original": 0.7177375,
+      "histogram_sequence": 0.7994475,
+      "logistic_original": 0.53509,
+      "w1": 0.1231581148,
+      "spearman": 0.0087087087,
+      "walsh_l1": 1.9267874268
+    },
+    {
+      "protein": "CreiLOV",
+      "pilot_size": 192,
+      "model": "quantile",
+      "histogram_original": 0.6592775,
+      "histogram_sequence": 0.7846,
+      "logistic_original": 0.56058,
+      "w1": 0.0816110553,
+      "spearman": 0.4775085455,
+      "walsh_l1": 0.0330309008
+    },
+    {
+      "protein": "DHFR",
+      "pilot_size": 48,
+      "model": "marginal_only",
+      "histogram_original": 0.7528525,
+      "histogram_sequence": 0.7653175,
+      "logistic_original": 0.5686,
+      "w1": 0.0998741673,
+      "spearman": 0.0078482478,
+      "walsh_l1": 1.6047827744
+    },
+    {
+      "protein": "DHFR",
+      "pilot_size": 48,
+      "model": "quantile",
+      "histogram_original": 0.7432775,
+      "histogram_sequence": 0.7643325,
+      "logistic_original": 0.527035,
+      "w1": 0.1125955156,
+      "spearman": 0.2817107697,
+      "walsh_l1": 0.5406846971
+    },
+    {
+      "protein": "DHFR",
+      "pilot_size": 192,
+      "model": "marginal_only",
+      "histogram_original": 0.69812,
+      "histogram_sequence": 0.71614,
+      "logistic_original": 0.5604,
+      "w1": 0.1737241905,
+      "spearman": 0.0078482478,
+      "walsh_l1": 1.5917543563
+    },
+    {
+      "protein": "DHFR",
+      "pilot_size": 192,
+      "model": "quantile",
+      "histogram_original": 0.704935,
+      "histogram_sequence": 0.734305,
+      "logistic_original": 0.570085,
+      "w1": 0.1904701816,
+      "spearman": 0.311034563,
+      "walsh_l1": 0.6877237231
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot_size": 48,
+      "model": "marginal_only",
+      "histogram_original": 0.681515,
+      "histogram_sequence": 0.691595,
+      "logistic_original": 0.5676075,
+      "w1": 0.1432025392,
+      "spearman": -0.0011821377,
+      "walsh_l1": 1.2902939598
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot_size": 48,
+      "model": "quantile",
+      "histogram_original": 0.631635,
+      "histogram_sequence": 0.6595975,
+      "logistic_original": 0.532345,
+      "w1": 0.1385466164,
+      "spearman": 0.3672594806,
+      "walsh_l1": 0.4576018361
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot_size": 192,
+      "model": "marginal_only",
+      "histogram_original": 0.67028,
+      "histogram_sequence": 0.6810975,
+      "logistic_original": 0.5786075,
+      "w1": 0.1321172837,
+      "spearman": -0.0002789622,
+      "walsh_l1": 1.2903328766
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot_size": 192,
+      "model": "quantile",
+      "histogram_original": 0.626375,
+      "histogram_sequence": 0.64727,
+      "logistic_original": 0.5139825,
+      "w1": 0.1097435972,
+      "spearman": 0.3013706783,
+      "walsh_l1": 0.4356778103
+    },
+    {
+      "protein": "ParD2",
+      "pilot_size": 48,
+      "model": "marginal_only",
+      "histogram_original": 0.8735375,
+      "histogram_sequence": 0.872975,
+      "logistic_original": 0.70046,
+      "w1": 0.1382496551,
+      "spearman": -0.0039221919,
+      "walsh_l1": null
+    },
+    {
+      "protein": "ParD2",
+      "pilot_size": 48,
+      "model": "quantile",
+      "histogram_original": 0.7834925,
+      "histogram_sequence": 0.79028,
+      "logistic_original": 0.52819,
+      "w1": 0.1089470587,
+      "spearman": 0.7896892657,
+      "walsh_l1": null
+    },
+    {
+      "protein": "ParD2",
+      "pilot_size": 192,
+      "model": "marginal_only",
+      "histogram_original": 0.836515,
+      "histogram_sequence": 0.8405525,
+      "logistic_original": 0.70148,
+      "w1": 0.145571038,
+      "spearman": -0.0039221919,
+      "walsh_l1": null
+    },
+    {
+      "protein": "ParD2",
+      "pilot_size": 192,
+      "model": "quantile",
+      "histogram_original": 0.7363475,
+      "histogram_sequence": 0.751605,
+      "logistic_original": 0.535925,
+      "w1": 0.1032297194,
+      "spearman": 0.7336808777,
+      "walsh_l1": null
+    },
+    {
+      "protein": "eqFP611",
+      "pilot_size": 48,
+      "model": "marginal_only",
+      "histogram_original": 0.7993525,
+      "histogram_sequence": 0.8256625,
+      "logistic_original": 0.69333,
+      "w1": 0.2700560134,
+      "spearman": 0.029005109,
+      "walsh_l1": 1.693699996
+    },
+    {
+      "protein": "eqFP611",
+      "pilot_size": 48,
+      "model": "quantile",
+      "histogram_original": 0.76697,
+      "histogram_sequence": 0.82434,
+      "logistic_original": 0.62679,
+      "w1": 0.2369809845,
+      "spearman": 0.3722056322,
+      "walsh_l1": 0.3835866423
+    },
+    {
+      "protein": "eqFP611",
+      "pilot_size": 192,
+      "model": "marginal_only",
+      "histogram_original": 0.7224475,
+      "histogram_sequence": 0.758125,
+      "logistic_original": 0.658005,
+      "w1": 0.0553373295,
+      "spearman": 0.029005109,
+      "walsh_l1": 1.6932812285
+    },
+    {
+      "protein": "eqFP611",
+      "pilot_size": 192,
+      "model": "quantile",
+      "histogram_original": 0.666575,
+      "histogram_sequence": 0.7790525,
+      "logistic_original": 0.53069,
+      "w1": 0.0508501918,
+      "spearman": 0.2694536335,
+      "walsh_l1": 0.2109058372
+    }
+  ],
+  "search": [
+    {
+      "protein": "CreiLOV",
+      "pilot_size": 48,
+      "budget": 48,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 31,
+      "scored_pairs": 34,
+      "winner_accuracy": 0.9117647059,
+      "kendall_tau": 0.6060606061
+    },
+    {
+      "protein": "CreiLOV",
+      "pilot_size": 48,
+      "budget": 48,
+      "model": "quantile",
+      "correct_pairs": 33,
+      "scored_pairs": 34,
+      "winner_accuracy": 0.9705882353,
+      "kendall_tau": 0.7272727273
+    },
+    {
+      "protein": "CreiLOV",
+      "pilot_size": 48,
+      "budget": 96,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 41,
+      "scored_pairs": 44,
+      "winner_accuracy": 0.9318181818,
+      "kendall_tau": 0.7575757576
+    },
+    {
+      "protein": "CreiLOV",
+      "pilot_size": 48,
+      "budget": 96,
+      "model": "quantile",
+      "correct_pairs": 44,
+      "scored_pairs": 44,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.8181818182
+    },
+    {
+      "protein": "CreiLOV",
+      "pilot_size": 192,
+      "budget": 48,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 33,
+      "scored_pairs": 35,
+      "winner_accuracy": 0.9428571429,
+      "kendall_tau": 0.6666666667
+    },
+    {
+      "protein": "CreiLOV",
+      "pilot_size": 192,
+      "budget": 48,
+      "model": "quantile",
+      "correct_pairs": 35,
+      "scored_pairs": 35,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.8787878788
+    },
+    {
+      "protein": "CreiLOV",
+      "pilot_size": 192,
+      "budget": 96,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 39,
+      "scored_pairs": 40,
+      "winner_accuracy": 0.975,
+      "kendall_tau": 0.7575757576
+    },
+    {
+      "protein": "CreiLOV",
+      "pilot_size": 192,
+      "budget": 96,
+      "model": "quantile",
+      "correct_pairs": 40,
+      "scored_pairs": 40,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.7575757576
+    },
+    {
+      "protein": "DHFR",
+      "pilot_size": 48,
+      "budget": 48,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 17,
+      "scored_pairs": 17,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.5649019553
+    },
+    {
+      "protein": "DHFR",
+      "pilot_size": 48,
+      "budget": 48,
+      "model": "quantile",
+      "correct_pairs": 16,
+      "scored_pairs": 17,
+      "winner_accuracy": 0.9411764706,
+      "kendall_tau": 0.6
+    },
+    {
+      "protein": "DHFR",
+      "pilot_size": 48,
+      "budget": 96,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 24,
+      "scored_pairs": 24,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.6870429186
+    },
+    {
+      "protein": "DHFR",
+      "pilot_size": 48,
+      "budget": 96,
+      "model": "quantile",
+      "correct_pairs": 23,
+      "scored_pairs": 24,
+      "winner_accuracy": 0.9583333333,
+      "kendall_tau": 0.4732962328
+    },
+    {
+      "protein": "DHFR",
+      "pilot_size": 192,
+      "budget": 48,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 33,
+      "scored_pairs": 35,
+      "winner_accuracy": 0.9428571429,
+      "kendall_tau": 0.4187178947
+    },
+    {
+      "protein": "DHFR",
+      "pilot_size": 192,
+      "budget": 48,
+      "model": "quantile",
+      "correct_pairs": 34,
+      "scored_pairs": 35,
+      "winner_accuracy": 0.9714285714,
+      "kendall_tau": 0.515687954
+    },
+    {
+      "protein": "DHFR",
+      "pilot_size": 192,
+      "budget": 96,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 23,
+      "scored_pairs": 24,
+      "winner_accuracy": 0.9583333333,
+      "kendall_tau": 0.6462303276
+    },
+    {
+      "protein": "DHFR",
+      "pilot_size": 192,
+      "budget": 96,
+      "model": "quantile",
+      "correct_pairs": 23,
+      "scored_pairs": 24,
+      "winner_accuracy": 0.9583333333,
+      "kendall_tau": 0.5846845822
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot_size": 48,
+      "budget": 48,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 30,
+      "scored_pairs": 34,
+      "winner_accuracy": 0.8823529412,
+      "kendall_tau": 0.5846845822
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot_size": 48,
+      "budget": 48,
+      "model": "quantile",
+      "correct_pairs": 34,
+      "scored_pairs": 34,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.6511823566
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot_size": 48,
+      "budget": 96,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 30,
+      "scored_pairs": 37,
+      "winner_accuracy": 0.8108108108,
+      "kendall_tau": 0.5757575758
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot_size": 48,
+      "budget": 96,
+      "model": "quantile",
+      "correct_pairs": 37,
+      "scored_pairs": 37,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.7575757576
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot_size": 192,
+      "budget": 48,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 18,
+      "scored_pairs": 20,
+      "winner_accuracy": 0.9,
+      "kendall_tau": 0.4732962328
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot_size": 192,
+      "budget": 48,
+      "model": "quantile",
+      "correct_pairs": 20,
+      "scored_pairs": 20,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.8461538462
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot_size": 192,
+      "budget": 96,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 25,
+      "scored_pairs": 31,
+      "winner_accuracy": 0.8064516129,
+      "kendall_tau": 0.5757575758
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot_size": 192,
+      "budget": 96,
+      "model": "quantile",
+      "correct_pairs": 29,
+      "scored_pairs": 31,
+      "winner_accuracy": 0.935483871,
+      "kendall_tau": 0.7575757576
+    },
+    {
+      "protein": "ParD2",
+      "pilot_size": 48,
+      "budget": 48,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 36,
+      "scored_pairs": 36,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.8000946914
+    },
+    {
+      "protein": "ParD2",
+      "pilot_size": 48,
+      "budget": 48,
+      "model": "quantile",
+      "correct_pairs": 35,
+      "scored_pairs": 36,
+      "winner_accuracy": 0.9722222222,
+      "kendall_tau": 0.8616404369
+    },
+    {
+      "protein": "ParD2",
+      "pilot_size": 48,
+      "budget": 96,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 43,
+      "scored_pairs": 45,
+      "winner_accuracy": 0.9555555556,
+      "kendall_tau": 0.8397191228
+    },
+    {
+      "protein": "ParD2",
+      "pilot_size": 48,
+      "budget": 96,
+      "model": "quantile",
+      "correct_pairs": 43,
+      "scored_pairs": 45,
+      "winner_accuracy": 0.9555555556,
+      "kendall_tau": 0.7442084075
+    },
+    {
+      "protein": "ParD2",
+      "pilot_size": 192,
+      "budget": 48,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 20,
+      "scored_pairs": 21,
+      "winner_accuracy": 0.9523809524,
+      "kendall_tau": 0.5846845822
+    },
+    {
+      "protein": "ParD2",
+      "pilot_size": 192,
+      "budget": 48,
+      "model": "quantile",
+      "correct_pairs": 20,
+      "scored_pairs": 21,
+      "winner_accuracy": 0.9523809524,
+      "kendall_tau": 0.6201736729
+    },
+    {
+      "protein": "ParD2",
+      "pilot_size": 192,
+      "budget": 96,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 36,
+      "scored_pairs": 36,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.7786486411
+    },
+    {
+      "protein": "ParD2",
+      "pilot_size": 192,
+      "budget": 96,
+      "model": "quantile",
+      "correct_pairs": 35,
+      "scored_pairs": 36,
+      "winner_accuracy": 0.9722222222,
+      "kendall_tau": 0.8091838819
+    },
+    {
+      "protein": "eqFP611",
+      "pilot_size": 48,
+      "budget": 48,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 4,
+      "scored_pairs": 6,
+      "winner_accuracy": 0.6666666667,
+      "kendall_tau": 0.1984790654
+    },
+    {
+      "protein": "eqFP611",
+      "pilot_size": 48,
+      "budget": 48,
+      "model": "quantile",
+      "correct_pairs": 6,
+      "scored_pairs": 6,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.442760992
+    },
+    {
+      "protein": "eqFP611",
+      "pilot_size": 48,
+      "budget": 96,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 8,
+      "scored_pairs": 8,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.2424242424
+    },
+    {
+      "protein": "eqFP611",
+      "pilot_size": 48,
+      "budget": 96,
+      "model": "quantile",
+      "correct_pairs": 7,
+      "scored_pairs": 8,
+      "winner_accuracy": 0.875,
+      "kendall_tau": 0.259549547
+    },
+    {
+      "protein": "eqFP611",
+      "pilot_size": 192,
+      "budget": 48,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 9,
+      "scored_pairs": 12,
+      "winner_accuracy": 0.75,
+      "kendall_tau": 0.1679438246
+    },
+    {
+      "protein": "eqFP611",
+      "pilot_size": 192,
+      "budget": 48,
+      "model": "quantile",
+      "correct_pairs": 10,
+      "scored_pairs": 12,
+      "winner_accuracy": 0.8333333333,
+      "kendall_tau": 0.259549547
+    },
+    {
+      "protein": "eqFP611",
+      "pilot_size": 192,
+      "budget": 96,
+      "model": "fixed_other_proteins",
+      "correct_pairs": 14,
+      "scored_pairs": 21,
+      "winner_accuracy": 0.6666666667,
+      "kendall_tau": 0.3939393939
+    },
+    {
+      "protein": "eqFP611",
+      "pilot_size": 192,
+      "budget": 96,
+      "model": "quantile",
+      "correct_pairs": 17,
+      "scored_pairs": 21,
+      "winner_accuracy": 0.8095238095,
+      "kendall_tau": 0.5038314737
+    }
+  ],
+  "generatorComparison": [
+    {
+      "protein": "CreiLOV",
+      "budget": 48,
+      "model": "additive",
+      "reliable_pairs": 35,
+      "scored_pairs": 35,
+      "correct_pairs": 32,
+      "winner_accuracy": 0.9142857143,
+      "kendall_tau": 0.6363636364
+    },
+    {
+      "protein": "CreiLOV",
+      "budget": 48,
+      "model": "nk_k1",
+      "reliable_pairs": 35,
+      "scored_pairs": 35,
+      "correct_pairs": 33,
+      "winner_accuracy": 0.9428571429,
+      "kendall_tau": 0.8181818182
+    },
+    {
+      "protein": "CreiLOV",
+      "budget": 48,
+      "model": "nk_k2",
+      "reliable_pairs": 35,
+      "scored_pairs": 35,
+      "correct_pairs": 34,
+      "winner_accuracy": 0.9714285714,
+      "kendall_tau": 0.6666666667
+    },
+    {
+      "protein": "CreiLOV",
+      "budget": 48,
+      "model": "potts",
+      "reliable_pairs": 35,
+      "scored_pairs": 35,
+      "correct_pairs": 34,
+      "winner_accuracy": 0.9714285714,
+      "kendall_tau": 0.7272727273
+    },
+    {
+      "protein": "CreiLOV",
+      "budget": 48,
+      "model": "quantile",
+      "reliable_pairs": 35,
+      "scored_pairs": 35,
+      "correct_pairs": 35,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.8787878788
+    },
+    {
+      "protein": "CreiLOV",
+      "budget": 48,
+      "model": "rmf",
+      "reliable_pairs": 35,
+      "scored_pairs": 35,
+      "correct_pairs": 33,
+      "winner_accuracy": 0.9428571429,
+      "kendall_tau": 0.696969697
+    },
+    {
+      "protein": "CreiLOV",
+      "budget": 96,
+      "model": "additive",
+      "reliable_pairs": 40,
+      "scored_pairs": 40,
+      "correct_pairs": 40,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.625972437
+    },
+    {
+      "protein": "CreiLOV",
+      "budget": 96,
+      "model": "nk_k1",
+      "reliable_pairs": 40,
+      "scored_pairs": 40,
+      "correct_pairs": 40,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.5757575758
+    },
+    {
+      "protein": "CreiLOV",
+      "budget": 96,
+      "model": "nk_k2",
+      "reliable_pairs": 40,
+      "scored_pairs": 40,
+      "correct_pairs": 38,
+      "winner_accuracy": 0.95,
+      "kendall_tau": 0.6363636364
+    },
+    {
+      "protein": "CreiLOV",
+      "budget": 96,
+      "model": "potts",
+      "reliable_pairs": 40,
+      "scored_pairs": 40,
+      "correct_pairs": 40,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.6363636364
+    },
+    {
+      "protein": "CreiLOV",
+      "budget": 96,
+      "model": "quantile",
+      "reliable_pairs": 40,
+      "scored_pairs": 40,
+      "correct_pairs": 40,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.7575757576
+    },
+    {
+      "protein": "CreiLOV",
+      "budget": 96,
+      "model": "rmf",
+      "reliable_pairs": 40,
+      "scored_pairs": 40,
+      "correct_pairs": 39,
+      "winner_accuracy": 0.975,
+      "kendall_tau": 0.4545454545
+    },
+    {
+      "protein": "DHFR",
+      "budget": 48,
+      "model": "additive",
+      "reliable_pairs": 35,
+      "scored_pairs": 35,
+      "correct_pairs": 34,
+      "winner_accuracy": 0.9714285714,
+      "kendall_tau": 0.4409585518
+    },
+    {
+      "protein": "DHFR",
+      "budget": 48,
+      "model": "nk_k1",
+      "reliable_pairs": 35,
+      "scored_pairs": 35,
+      "correct_pairs": 30,
+      "winner_accuracy": 0.8571428571,
+      "kendall_tau": 0.2656574309
+    },
+    {
+      "protein": "DHFR",
+      "budget": 48,
+      "model": "nk_k2",
+      "reliable_pairs": 35,
+      "scored_pairs": 35,
+      "correct_pairs": 15,
+      "winner_accuracy": 0.4285714286,
+      "kendall_tau": 0.0312538154
+    },
+    {
+      "protein": "DHFR",
+      "budget": 48,
+      "model": "potts",
+      "reliable_pairs": 35,
+      "scored_pairs": 35,
+      "correct_pairs": 35,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.4724555913
+    },
+    {
+      "protein": "DHFR",
+      "budget": 48,
+      "model": "quantile",
+      "reliable_pairs": 35,
+      "scored_pairs": 35,
+      "correct_pairs": 34,
+      "winner_accuracy": 0.9714285714,
+      "kendall_tau": 0.515687954
+    },
+    {
+      "protein": "DHFR",
+      "budget": 48,
+      "model": "rmf",
+      "reliable_pairs": 35,
+      "scored_pairs": 35,
+      "correct_pairs": 35,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.449734035
+    },
+    {
+      "protein": "DHFR",
+      "budget": 96,
+      "model": "additive",
+      "reliable_pairs": 24,
+      "scored_pairs": 24,
+      "correct_pairs": 23,
+      "winner_accuracy": 0.9583333333,
+      "kendall_tau": 0.5486726407
+    },
+    {
+      "protein": "DHFR",
+      "budget": 96,
+      "model": "nk_k1",
+      "reliable_pairs": 24,
+      "scored_pairs": 24,
+      "correct_pairs": 23,
+      "winner_accuracy": 0.9583333333,
+      "kendall_tau": 0.4000473457
+    },
+    {
+      "protein": "DHFR",
+      "budget": 96,
+      "model": "nk_k2",
+      "reliable_pairs": 24,
+      "scored_pairs": 24,
+      "correct_pairs": 17,
+      "winner_accuracy": 0.7083333333,
+      "kendall_tau": 0.123091491
+    },
+    {
+      "protein": "DHFR",
+      "budget": 96,
+      "model": "potts",
+      "reliable_pairs": 24,
+      "scored_pairs": 24,
+      "correct_pairs": 22,
+      "winner_accuracy": 0.9166666667,
+      "kendall_tau": 0.527147622
+    },
+    {
+      "protein": "DHFR",
+      "budget": 96,
+      "model": "quantile",
+      "reliable_pairs": 24,
+      "scored_pairs": 24,
+      "correct_pairs": 23,
+      "winner_accuracy": 0.9583333333,
+      "kendall_tau": 0.5846845822
+    },
+    {
+      "protein": "DHFR",
+      "budget": 96,
+      "model": "rmf",
+      "reliable_pairs": 24,
+      "scored_pairs": 24,
+      "correct_pairs": 22,
+      "winner_accuracy": 0.9166666667,
+      "kendall_tau": 0.5231388367
+    },
+    {
+      "protein": "ParB-Noc",
+      "budget": 48,
+      "model": "additive",
+      "reliable_pairs": 20,
+      "scored_pairs": 20,
+      "correct_pairs": 20,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.8992518258
+    },
+    {
+      "protein": "ParB-Noc",
+      "budget": 48,
+      "model": "nk_k1",
+      "reliable_pairs": 20,
+      "scored_pairs": 20,
+      "correct_pairs": 20,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.625972437
+    },
+    {
+      "protein": "ParB-Noc",
+      "budget": 48,
+      "model": "nk_k2",
+      "reliable_pairs": 20,
+      "scored_pairs": 20,
+      "correct_pairs": 19,
+      "winner_accuracy": 0.95,
+      "kendall_tau": 0.5384615385
+    },
+    {
+      "protein": "ParB-Noc",
+      "budget": 48,
+      "model": "potts",
+      "reliable_pairs": 20,
+      "scored_pairs": 20,
+      "correct_pairs": 20,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.8091838819
+    },
+    {
+      "protein": "ParB-Noc",
+      "budget": 48,
+      "model": "quantile",
+      "reliable_pairs": 20,
+      "scored_pairs": 20,
+      "correct_pairs": 20,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.8461538462
+    },
+    {
+      "protein": "ParB-Noc",
+      "budget": 48,
+      "model": "rmf",
+      "reliable_pairs": 20,
+      "scored_pairs": 20,
+      "correct_pairs": 20,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.7538461538
+    },
+    {
+      "protein": "ParB-Noc",
+      "budget": 96,
+      "model": "additive",
+      "reliable_pairs": 31,
+      "scored_pairs": 31,
+      "correct_pairs": 31,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.9007896044
+    },
+    {
+      "protein": "ParB-Noc",
+      "budget": 96,
+      "model": "nk_k1",
+      "reliable_pairs": 31,
+      "scored_pairs": 31,
+      "correct_pairs": 31,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.7575757576
+    },
+    {
+      "protein": "ParB-Noc",
+      "budget": 96,
+      "model": "nk_k2",
+      "reliable_pairs": 31,
+      "scored_pairs": 31,
+      "correct_pairs": 26,
+      "winner_accuracy": 0.8387096774,
+      "kendall_tau": 0.5151515152
+    },
+    {
+      "protein": "ParB-Noc",
+      "budget": 96,
+      "model": "potts",
+      "reliable_pairs": 31,
+      "scored_pairs": 31,
+      "correct_pairs": 31,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.7575757576
+    },
+    {
+      "protein": "ParB-Noc",
+      "budget": 96,
+      "model": "quantile",
+      "reliable_pairs": 31,
+      "scored_pairs": 31,
+      "correct_pairs": 29,
+      "winner_accuracy": 0.935483871,
+      "kendall_tau": 0.7575757576
+    },
+    {
+      "protein": "ParB-Noc",
+      "budget": 96,
+      "model": "rmf",
+      "reliable_pairs": 31,
+      "scored_pairs": 31,
+      "correct_pairs": 30,
+      "winner_accuracy": 0.9677419355,
+      "kendall_tau": 0.7878787879
+    },
+    {
+      "protein": "ParD2",
+      "budget": 48,
+      "model": "additive",
+      "reliable_pairs": 21,
+      "scored_pairs": 21,
+      "correct_pairs": 20,
+      "winner_accuracy": 0.9523809524,
+      "kendall_tau": 0.3692744729
+    },
+    {
+      "protein": "ParD2",
+      "budget": 48,
+      "model": "nk_k1",
+      "reliable_pairs": 21,
+      "scored_pairs": 21,
+      "correct_pairs": 21,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.5846845822
+    },
+    {
+      "protein": "ParD2",
+      "budget": 48,
+      "model": "nk_k2",
+      "reliable_pairs": 21,
+      "scored_pairs": 21,
+      "correct_pairs": 9,
+      "winner_accuracy": 0.4285714286,
+      "kendall_tau": 0.0
+    },
+    {
+      "protein": "ParD2",
+      "budget": 48,
+      "model": "potts",
+      "reliable_pairs": 21,
+      "scored_pairs": 21,
+      "correct_pairs": 21,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.5846845822
+    },
+    {
+      "protein": "ParD2",
+      "budget": 48,
+      "model": "quantile",
+      "reliable_pairs": 21,
+      "scored_pairs": 21,
+      "correct_pairs": 20,
+      "winner_accuracy": 0.9523809524,
+      "kendall_tau": 0.6201736729
+    },
+    {
+      "protein": "ParD2",
+      "budget": 48,
+      "model": "rmf",
+      "reliable_pairs": 21,
+      "scored_pairs": 21,
+      "correct_pairs": 21,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.6462303276
+    },
+    {
+      "protein": "ParD2",
+      "budget": 96,
+      "model": "additive",
+      "reliable_pairs": 36,
+      "scored_pairs": 36,
+      "correct_pairs": 33,
+      "winner_accuracy": 0.9166666667,
+      "kendall_tau": 0.6870429186
+    },
+    {
+      "protein": "ParD2",
+      "budget": 96,
+      "model": "nk_k1",
+      "reliable_pairs": 36,
+      "scored_pairs": 36,
+      "correct_pairs": 33,
+      "winner_accuracy": 0.9166666667,
+      "kendall_tau": 0.5649019553
+    },
+    {
+      "protein": "ParD2",
+      "budget": 96,
+      "model": "nk_k2",
+      "reliable_pairs": 36,
+      "scored_pairs": 36,
+      "correct_pairs": 13,
+      "winner_accuracy": 0.3611111111,
+      "kendall_tau": -0.1679438246
+    },
+    {
+      "protein": "ParD2",
+      "budget": 96,
+      "model": "potts",
+      "reliable_pairs": 36,
+      "scored_pairs": 36,
+      "correct_pairs": 36,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.8091838819
+    },
+    {
+      "protein": "ParD2",
+      "budget": 96,
+      "model": "quantile",
+      "reliable_pairs": 36,
+      "scored_pairs": 36,
+      "correct_pairs": 35,
+      "winner_accuracy": 0.9722222222,
+      "kendall_tau": 0.8091838819
+    },
+    {
+      "protein": "ParD2",
+      "budget": 96,
+      "model": "rmf",
+      "reliable_pairs": 36,
+      "scored_pairs": 36,
+      "correct_pairs": 32,
+      "winner_accuracy": 0.8888888889,
+      "kendall_tau": 0.5954371961
+    },
+    {
+      "protein": "eqFP611",
+      "budget": 48,
+      "model": "additive",
+      "reliable_pairs": 12,
+      "scored_pairs": 12,
+      "correct_pairs": 10,
+      "winner_accuracy": 0.8333333333,
+      "kendall_tau": 0.259549547
+    },
+    {
+      "protein": "eqFP611",
+      "budget": 48,
+      "model": "nk_k1",
+      "reliable_pairs": 12,
+      "scored_pairs": 12,
+      "correct_pairs": 12,
+      "winner_accuracy": 1.0,
+      "kendall_tau": 0.4732962328
+    },
+    {
+      "protein": "eqFP611",
+      "budget": 48,
+      "model": "nk_k2",
+      "reliable_pairs": 12,
+      "scored_pairs": 12,
+      "correct_pairs": 10,
+      "winner_accuracy": 0.8333333333,
+      "kendall_tau": 0.3816905103
+    },
+    {
+      "protein": "eqFP611",
+      "budget": 48,
+      "model": "potts",
+      "reliable_pairs": 12,
+      "scored_pairs": 12,
+      "correct_pairs": 11,
+      "winner_accuracy": 0.9166666667,
+      "kendall_tau": 0.3511552695
+    },
+    {
+      "protein": "eqFP611",
+      "budget": 48,
+      "model": "quantile",
+      "reliable_pairs": 12,
+      "scored_pairs": 12,
+      "correct_pairs": 10,
+      "winner_accuracy": 0.8333333333,
+      "kendall_tau": 0.259549547
+    },
+    {
+      "protein": "eqFP611",
+      "budget": 48,
+      "model": "rmf",
+      "reliable_pairs": 12,
+      "scored_pairs": 12,
+      "correct_pairs": 8,
+      "winner_accuracy": 0.6666666667,
+      "kendall_tau": 0.2900847879
+    },
+    {
+      "protein": "eqFP611",
+      "budget": 96,
+      "model": "additive",
+      "reliable_pairs": 21,
+      "scored_pairs": 21,
+      "correct_pairs": 15,
+      "winner_accuracy": 0.7142857143,
+      "kendall_tau": 0.4689790496
+    },
+    {
+      "protein": "eqFP611",
+      "budget": 96,
+      "model": "nk_k1",
+      "reliable_pairs": 21,
+      "scored_pairs": 21,
+      "correct_pairs": 14,
+      "winner_accuracy": 0.6666666667,
+      "kendall_tau": 0.4848484848
+    },
+    {
+      "protein": "eqFP611",
+      "budget": 96,
+      "model": "nk_k2",
+      "reliable_pairs": 21,
+      "scored_pairs": 21,
+      "correct_pairs": 14,
+      "winner_accuracy": 0.6666666667,
+      "kendall_tau": 0.4122257512
+    },
+    {
+      "protein": "eqFP611",
+      "budget": 96,
+      "model": "potts",
+      "reliable_pairs": 21,
+      "scored_pairs": 21,
+      "correct_pairs": 14,
+      "winner_accuracy": 0.6666666667,
+      "kendall_tau": 0.4545454545
+    },
+    {
+      "protein": "eqFP611",
+      "budget": 96,
+      "model": "quantile",
+      "reliable_pairs": 21,
+      "scored_pairs": 21,
+      "correct_pairs": 17,
+      "winner_accuracy": 0.8095238095,
+      "kendall_tau": 0.5038314737
+    },
+    {
+      "protein": "eqFP611",
+      "budget": 96,
+      "model": "rmf",
+      "reliable_pairs": 21,
+      "scored_pairs": 21,
+      "correct_pairs": 9,
+      "winner_accuracy": 0.4285714286,
+      "kendall_tau": 0.2121212121
+    }
+  ],
+  "generatorProtocol": {
+    "pilot_size": 192,
+    "budgets": [
+      48,
+      96
+    ],
+    "proteins": [
+      "DHFR",
+      "eqFP611",
+      "ParB-Noc",
+      "ParD2",
+      "CreiLOV"
+    ],
+    "draws": [
+      2026093001,
+      2026093002,
+      2026093003
+    ],
+    "search_seeds": [
+      2026100100,
+      2026100237,
+      2026100374,
+      2026100511,
+      2026100648,
+      2026100785,
+      2026100922,
+      2026101059,
+      2026101196,
+      2026101333
+    ],
+    "settings": {
+      "potts_coupling": 0.25,
+      "rmf_roughness": 1.0,
+      "nk_k": [
+        1,
+        2
+      ]
+    },
+    "inputs": "Additive, Potts and RMF use measured singles. NK uses sequence alphabets only.",
+    "domain": "The final-model search domain excludes wild type, singles and 192 pilot combinations.",
+    "selection": "Fixed standard-generator settings before scoring. No tuning against these outcomes.",
+    "source_sha256": "74fee69806d7813a57fb0b4821c747acf6bc87996a5f3569e0c32caf8b1b53ad"
+  },
+  "splitAudit": [
+    {
+      "protein": "DHFR",
+      "pilot": 192,
+      "test": 1000,
+      "excluded": 6576,
+      "overlap": 0
+    },
+    {
+      "protein": "eqFP611",
+      "pilot": 192,
+      "test": 1000,
+      "excluded": 6576,
+      "overlap": 0
+    },
+    {
+      "protein": "ParB-Noc",
+      "pilot": 192,
+      "test": 1000,
+      "excluded": 6576,
+      "overlap": 0
+    },
+    {
+      "protein": "ParD2",
+      "pilot": 192,
+      "test": 1000,
+      "excluded": 0,
+      "overlap": 0
+    },
+    {
+      "protein": "CreiLOV",
+      "pilot": 192,
+      "test": 1000,
+      "excluded": 24944,
+      "overlap": 0
+    }
+  ],
+  "sourceSha256": {
+    "comparison.csv": "d94298db9d49b8610fc70885ec2c67d830f4caa71ae45c84b08fb149cc8b2a42",
+    "search_comparison.csv": "2f48907f3e9ed0df9687ab2c08f7e6a2b701e5915d7a37817eda5c7a32589ffb",
+    "protocol.json": "54089e5ebbec8befe609a3ec6d7763ebab85ee191c23a0e89ce18860a783e724",
+    "split_audit.json": "026bc2a184397afea842f3dfa78b9ee3ba800dae5909d3f75782041852ad67ca"
+  },
+  "generatorComparisonSha256": "b340aa6b0852fc6412a54977f57c19336d5a6115ba2607ce69a2083776076060",
+  "scope": "One pilot per protein. Draw ranges are not confidence intervals. All five proteins appeared in project work. The search comparisons use measured candidate domains."
+}

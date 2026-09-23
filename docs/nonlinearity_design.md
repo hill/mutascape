@@ -50,7 +50,7 @@ Given a set of observed single-site fitness effects $\{h_i(a)\}$ (either from DM
 
    $$-\sum_i \log \phi\big(g^{-1}(h_i)\big) - \sum_i \log\big|{\partial g^{-1}}/{\partial h}\big|_{h_i}$$
 
-   where $\phi$ is the standard normal density and the Jacobian term comes from the change of variables. Minimised with `scipy.optimize.minimize_scalar` over a bounded interval.
+   where $\phi$ is the standard normal density and the Jacobian term comes from the change of variables. Minimised with `scipy.optimize.minimize_scalar` within fixed limits.
 
 The Gaussian prior on $g^{-1}(h)$ is convention, not physics. We are declaring that implicit stability effects look standard-normal. Different priors (Laplace for sparse effects, heavy-tailed for lethal-dominated proteins) can be swapped in without changing the API.
 

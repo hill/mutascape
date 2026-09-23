@@ -147,16 +147,16 @@ def dms_pairwise_readout_tensor(
     *,
     coupling: float,
     seed: int,
+    use_readout: bool = True,
 ) -> NDArray[np.float64]:
-    """Measured singles plus baseline-corrected random pairs and the fitted readout.
+    """Measured singles plus baseline-corrected random pairs and an optional readout.
 
     The pair table is zero whenever either residue is wild type. Wild type and
-    every measured single therefore stay exact. This is the smallest generator
-    that combines the best simple search-transfer arm with the readout that the
-    ablation identified as necessary.
+    every measured single therefore stay exact. Disabling the readout uses raw
+    single effects and their scale with the same unit pair coefficients.
     """
     shape = _shape(cube)
-    readout = posterior.nonlinearity
+    readout = posterior.nonlinearity if use_readout else None
     effects = posterior.preimage_effects if readout is not None else posterior.single_effects
     scale = posterior.preimage_scale if readout is not None else posterior.target_scale
     fields = [

@@ -31,7 +31,7 @@ The status notes report 543 Python tests and 34 web tests passing previously. Th
 
 ## Current evidence
 
-- The public model preserves measured anchors, adds seeded pair interactions, and applies a saturating readout informed by other proteins.
+- The public model preserves measured fitness values, adds seeded pair interactions, and applies a saturating readout informed by other proteins.
 - Optional calibrated ESM-2 completion already exists. It fills missing singles, not missing combinatorial measurements.
 - At 48 queries, reported method-pair ordering agreement is 89.5% for SSMuLA, 69.1% for CombinGym, and 73.5% for GraphFLA.
 - These percentages concern statistically distinguishable pairs. They do not mean the best method wins that often.
@@ -42,7 +42,7 @@ The status notes report 543 Python tests and 34 web tests passing previously. Th
 - Corrected replicate AUCs are about 0.51 for replicates 1/2 and 0.65 to 0.67 for comparisons involving replicate 3.
 - Neither the old 0.699 claim nor the proxy median 0.820 defines a valid acceptance threshold.
 
-A separate prototype uses 48 measured combinations to fit burden terms and a bounded readout.
+A separate prototype uses 48 measured combinations to fit burden terms and a saturating readout.
 Its confirmation medians are C2ST AUC 0.595/0.619, raw Wasserstein 0.062, and method-pair agreement 87.2%.
 These results remain within CreiLOV. They cannot support a singles-only claim or independent-protein validation.
 Keep this prototype out of the public default and main headline.

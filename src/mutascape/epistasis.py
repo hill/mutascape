@@ -501,7 +501,7 @@ class ContactNKEpistasis(EpistasisModel):
         ruggedness strength. Typical values: 0.1-1.0.
     max_neighbours : int or None
         Cap the number of structural neighbours per position. None means
-        "use all contacts." Lower values keep compute bounded for large
+        "use all contacts." Lower values limit computation for large
         proteins (per-position tensor size is 20^(1+K)).
     seed : int or None
         Random seed for reproducibility.

@@ -43,7 +43,7 @@ The pilot model fits two mean terms and one residual scale.
 It keeps wild type and measured singles exact.
 The burden terms vanish at mutation depths zero and one.
 Its seeded pair field shares coefficients across genotypes, so repeated queries define a fixed landscape.
-The bounded version fits sigmoid bounds from pilot and single-mutant values, with a five per cent margin.
+The sigmoid version fits readout limits from pilot and single-mutant values, with a five per cent margin.
 
 This changes the input contract.
 The pilot model needs a small measured combinatorial batch.
@@ -75,7 +75,7 @@ The final run excluded the earlier 192-variant pilot samples as well as all deve
 This repairs an omission in the first confirmation split definition.
 The model family and its settings did not change after that check.
 
-| Metric | Default generator | Bounded burden prototype |
+| Metric | Default generator | Sigmoid burden prototype |
 |---|---:|---:|
 | Median logistic C2ST AUC | 1.000 | 0.595 |
 | Median histogram C2ST AUC | 1.000 | 0.619 |

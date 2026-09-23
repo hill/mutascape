@@ -148,3 +148,21 @@ def test_potts_tensor_preserves_wild_type_and_singles():
     assert tensor[0, 0] == pytest.approx(0.0)
     assert tensor[1, 0] == pytest.approx(0.4)
     assert tensor[0, 1] == pytest.approx(-0.3)
+
+
+def test_readout_control_keeps_the_unit_pair_field_and_measured_singles():
+    from mutascape.completion import dms_pairwise_unit_coefficient
+
+    cube = CubeSpec(
+        positions=(1, 2), alphabets={1: ["A", "C"], 2: ["A", "D"]}, wild_type={1: "A", 2: "A"}
+    )
+    posterior = SimpleNamespace(
+        wild_type_sequence="AA",
+        nonlinearity=GlobalEpistasisSigmoid(floor=-1, ceiling=2, scale=1),
+        single_effects={(1, "C"): 0.3, (2, "D"): -0.1},
+        target_scale=0.2,
+    )
+    control = dms_pairwise_readout_tensor(cube, posterior, coupling=0.1, seed=7, use_readout=False)
+    coefficient = dms_pairwise_unit_coefficient((1, "C"), (2, "D"), "AA", 7)
+    assert control[1, 1] == pytest.approx(0.2 + 0.02 * coefficient)
+    np.testing.assert_allclose([control[0, 0], control[1, 0], control[0, 1]], [0, 0.3, -0.1])

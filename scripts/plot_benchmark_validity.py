@@ -93,47 +93,67 @@ def _metrics(root: Path) -> tuple[pd.Series, pd.Series, pd.Series]:
 
 def plot_summary(ssmula: Path, combingym: Path, graphfla: Path, output: Path) -> None:
     panels = [("SSMuLA", ssmula), ("CombinGym", combingym), ("GraphFLA", graphfla)]
-    figure, axes = plt.subplots(
-        1,
-        len(panels),
-        figsize=(3.45 * len(panels), 2.75),
-        squeeze=False,
-    )
-    y = np.arange(len(ARMS))
-    width = 0.25
-    for axis, (title, root) in zip(axes[0], panels):
-        tau, winners, reliability = _metrics(root)
-        axis.barh(y - width, tau, width, label="Rank transfer", color="#e8792e")
-        axis.barh(y, winners, width, label="Pairwise winners", color="#3d6ddd")
-        axis.barh(
-            y + width,
-            reliability,
-            width,
-            label="Reliability pass",
-            color="#55b685",
+    style = {
+        "font.family": "STIX Two Text",
+        "mathtext.fontset": "stix",
+        "font.size": 9,
+        "text.color": "#161616",
+        "axes.labelcolor": "#161616",
+        "axes.edgecolor": "#161616",
+        "axes.linewidth": 0.6,
+        "pdf.fonttype": 42,
+        "svg.fonttype": "none",
+        "savefig.facecolor": "white",
+    }
+    with plt.rc_context(style):
+        figure, axes = plt.subplots(1, 3, figsize=(7.1, 2.45))
+        y = np.arange(len(ARMS))
+        width = 0.22
+        colours = [
+            ("#167db5", "#c1deeb"),
+            ("#d84a45", "#f3cdca"),
+            ("#737373", "#e6e6e6"),
+        ]
+        metrics = ["Kendall correlation", "Pair agreement", "Repeatability"]
+        for index, (axis, (title, root)) in enumerate(zip(axes, panels)):
+            for offset, values, label, (edge, fill) in zip(
+                (-width, 0, width), _metrics(root), metrics, colours
+            ):
+                axis.barh(
+                    y + offset,
+                    values,
+                    width,
+                    label=label,
+                    facecolor=fill,
+                    edgecolor=edge,
+                    linewidth=0.65,
+                    zorder=3,
+                )
+            axis.set_title(f"({chr(97 + index)}) {title}", loc="left", fontsize=10, pad=10)
+            axis.set_yticks(y, LABELS)
+            axis.invert_yaxis()
+            axis.set_xlim(0, 1)
+            axis.set_xticks([0, 0.5, 1], ["0", "0.5", "1"])
+            axis.set_xlabel("Score", labelpad=4)
+            axis.tick_params(axis="y", length=0, pad=5)
+            axis.tick_params(axis="x", length=3, width=0.6)
+            axis.spines[["top", "right", "left"]].set_visible(False)
+        handles, labels = axes[0].get_legend_handles_labels()
+        figure.legend(
+            handles,
+            labels,
+            frameon=False,
+            ncol=3,
+            loc="upper center",
+            bbox_to_anchor=(0.5, 1.0),
+            fontsize=9,
+            handlelength=1.5,
+            columnspacing=1.8,
         )
-        axis.set_title(title, loc="left", fontweight="bold")
-        axis.set_yticks(y, LABELS)
-        axis.invert_yaxis()
-        axis.set_xlim(0, 1)
-        axis.set_xlabel("Score")
-        axis.grid(axis="x", alpha=0.2)
-        axis.spines[["top", "right"]].set_visible(False)
-    handles, labels = axes[0, 0].get_legend_handles_labels()
-    figure.legend(
-        handles,
-        labels,
-        frameon=False,
-        ncol=3,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 1.0),
-        fontsize=7,
-        handlelength=1.2,
-        columnspacing=0.8,
-    )
-    figure.tight_layout(rect=(0, 0, 1, 0.91))
-    figure.savefig(output / "search_transfer.pdf", bbox_inches="tight")
-    plt.close(figure)
+        figure.subplots_adjust(left=0.09, right=0.99, bottom=0.18, top=0.76, wspace=0.65)
+        for extension in ("pdf", "svg", "png"):
+            figure.savefig(output / f"search_transfer.{extension}", bbox_inches="tight", dpi=240)
+        plt.close(figure)
 
 
 def plot_landscapes(ssmula: Path, output: Path) -> None:
@@ -156,7 +176,7 @@ def plot_landscapes(ssmula: Path, output: Path) -> None:
     axis.axvline(0, color="#667085", linewidth=0.8)
     axis.set_yticks(y, pivot.index)
     axis.set_xlim(-1, 1)
-    axis.set_xlabel("Kendall rank transfer")
+    axis.set_xlabel("Kendall correlation")
     axis.grid(axis="x", alpha=0.2)
     axis.spines[["top", "right", "left"]].set_visible(False)
     axis.legend(frameon=False, ncol=3, loc="upper center", bbox_to_anchor=(0.5, 1.17))
@@ -199,6 +219,15 @@ def plot_budget_curve(
             upper = [values.quantile(0.75) for values in distributions]
             axis.plot(budgets, medians, marker="o", label=label, color=colour, linewidth=2)
             axis.fill_between(budgets, lower, upper, color=colour, alpha=0.12)
+        if title == "GraphFLA":
+            axis.axvspan(350, 420, color="#667085", alpha=0.12)
+            axis.annotate(
+                "4/7 nearly saturated",
+                (384, 0.97),
+                xytext=(140, 0.85),
+                fontsize=7,
+                arrowprops={"arrowstyle": "->", "lw": 0.7},
+            )
         axis.axhline(0, color="#667085", linewidth=0.8)
         axis.set_title(title, loc="left", fontweight="bold")
         axis.set_xscale("log", base=2)
@@ -207,7 +236,7 @@ def plot_budget_curve(
         axis.set_xlabel("Query budget")
         axis.grid(alpha=0.2)
         axis.spines[["top", "right"]].set_visible(False)
-    axes[0, 0].set_ylabel("Kendall rank transfer")
+    axes[0, 0].set_ylabel("Kendall correlation")
     axes[0, 0].legend(frameon=False, ncol=3, loc="upper left", fontsize=7)
     figure.tight_layout()
     figure.savefig(output / "budget_transfer.pdf", bbox_inches="tight")

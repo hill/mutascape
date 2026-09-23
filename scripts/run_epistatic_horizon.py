@@ -247,7 +247,7 @@ def main() -> None:
 
     # The horizon has a pole where the mean pair term crosses zero, so a single
     # landscape can report a large negative value. The mean pair term itself,
-    # scaled by the mean adaptive single effect, stays bounded and carries the
+    # scaled by the mean adaptive single effect, stays within fixed limits and carries the
     # sign, which is what separates systematic epistasis from noise.
     table["epistasis_ratio"] = table["mean_adaptive_epistasis"] / table["mean_adaptive_single"]
     table["all_epistasis_ratio"] = table["mean_all_epistasis"] / table["mean_abs_single"]

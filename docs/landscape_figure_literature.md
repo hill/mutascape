@@ -59,7 +59,7 @@ Its caption states that limit.
 A landscape sample is one complete fitness function sampled from the seeded generator.
 It differs from a genotype sample, which contains selected sequences within a landscape.
 Repeated queries to one landscape sample give the same value.
-Several landscape samples vary the unmeasured interactions while preserving supplied anchors.
+Several landscape samples vary the unmeasured interactions while preserving supplied fitness measurements.
 They quantify sensitivity to the generator, rather than biological uncertainty.
 
 The manuscript and earlier figure labels now use landscape sample or sample.

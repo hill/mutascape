@@ -29,7 +29,7 @@ Chance C2ST performance does not prove biological realism. Weak features and low
 
 No reviewed project combines all of these parts in one workflow.
 
-- Sparse experimental DMS anchors a whole-protein oracle.
+- Sparse DMS measurements supply single-mutant effects for a whole-protein oracle.
 - Cross-protein empirical priors complete missing interactions.
 - Posterior samples expose uncertainty in unseen sequence space.
 - Held-out empirical landscapes test fitness and topology.

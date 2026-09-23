@@ -1,0 +1,16 @@
+{
+  "landscape": "Hsp90",
+  "arm": "potts",
+  "seed": 2026092413,
+  "w1": 0.8148711401599489,
+  "shape_w1": 0.36039536382735754,
+  "local_walsh_l1": 0.4575577782598879,
+  "measured_local_additive": 0.7304656571104702,
+  "generated_local_additive": 0.9592445462404141,
+  "measured_sign_switch": 0.44921875,
+  "generated_sign_switch": 0.16796875,
+  "spearman": 0.6646679135663802,
+  "kendall_tau_48": 0.44963551562230825,
+  "success_tau_48": 0.8118441408859887,
+  "success_rate_48": 0.8833333333333333
+}

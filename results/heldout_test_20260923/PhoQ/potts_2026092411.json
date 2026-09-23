@@ -1,0 +1,22 @@
+{
+  "landscape": "PhoQ",
+  "arm": "potts",
+  "seed": 2026092411,
+  "w1": 2.5824275804996604,
+  "shape_w1": 0.6968565699131282,
+  "local_walsh_l1": 0.5935696520424897,
+  "measured_local_additive": 0.6210227358851921,
+  "generated_local_additive": 0.9178075619064369,
+  "measured_sign_switch": 0.31901041666666663,
+  "generated_sign_switch": 0.37890625,
+  "spearman": 0.29184793681773546,
+  "kendall_tau_48": 0.5085133809309825,
+  "success_tau_48": NaN,
+  "success_rate_48": 0.85,
+  "kendall_tau_96": 0.5757575757575757,
+  "success_tau_96": NaN,
+  "success_rate_96": 0.9666666666666667,
+  "kendall_tau_192": 0.5649019553110248,
+  "success_tau_192": NaN,
+  "success_rate_192": 0.9833333333333334
+}

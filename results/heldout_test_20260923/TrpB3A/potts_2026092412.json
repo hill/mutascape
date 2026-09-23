@@ -1,0 +1,22 @@
+{
+  "landscape": "TrpB3A",
+  "arm": "potts",
+  "seed": 2026092412,
+  "w1": 37.82316920206057,
+  "shape_w1": 0.17430023385379823,
+  "local_walsh_l1": 0.7482960088668008,
+  "measured_local_additive": 0.5415122964710617,
+  "generated_local_additive": 0.915660300904462,
+  "measured_sign_switch": 0.77734375,
+  "generated_sign_switch": 0.5130208333333333,
+  "spearman": 0.11627691227691228,
+  "kendall_tau_48": NaN,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0,
+  "kendall_tau_96": NaN,
+  "success_tau_96": NaN,
+  "success_rate_96": 1.0,
+  "kendall_tau_192": NaN,
+  "success_tau_192": NaN,
+  "success_rate_192": 1.0
+}

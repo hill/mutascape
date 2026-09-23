@@ -1,0 +1,22 @@
+{
+  "landscape": "RBD-REGN10987",
+  "arm": "shuffled_singles",
+  "seed": 2026092411,
+  "w1": 0.4715350755264497,
+  "shape_w1": 0.3009289603475239,
+  "local_walsh_l1": 0.13990148592286247,
+  "measured_local_additive": 0.8719845993056244,
+  "generated_local_additive": 0.9419353422670556,
+  "measured_sign_switch": 0.6145833333333333,
+  "generated_sign_switch": 0.20052083333333334,
+  "spearman": 0.09330617730617732,
+  "kendall_tau_48": 0.303030303030303,
+  "success_tau_48": 0.38490017945975047,
+  "success_rate_48": 0.8000000000000002,
+  "kendall_tau_96": 0.2727272727272727,
+  "success_tau_96": 0.5763539780776888,
+  "success_rate_96": 0.9499999999999998,
+  "kendall_tau_192": 0.09231861823449955,
+  "success_tau_192": 1.0,
+  "success_rate_192": 0.9833333333333334
+}

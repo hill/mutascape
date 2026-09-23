@@ -1,0 +1,22 @@
+{
+  "landscape": "TrpB3A",
+  "arm": "structure_only",
+  "seed": 2026092411,
+  "w1": 9.79445945197831,
+  "shape_w1": 0.624254990052437,
+  "local_walsh_l1": 0.23894766002386245,
+  "measured_local_additive": 0.5415122964710617,
+  "generated_local_additive": 0.6609861264829929,
+  "measured_sign_switch": 0.77734375,
+  "generated_sign_switch": 0.1328125,
+  "spearman": 0.07180886380886382,
+  "kendall_tau_48": NaN,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0,
+  "kendall_tau_96": NaN,
+  "success_tau_96": NaN,
+  "success_rate_96": 1.0,
+  "kendall_tau_192": NaN,
+  "success_tau_192": NaN,
+  "success_rate_192": 1.0
+}

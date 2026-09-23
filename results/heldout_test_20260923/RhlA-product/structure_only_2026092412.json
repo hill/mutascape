@@ -1,0 +1,22 @@
+{
+  "landscape": "RhlA-product",
+  "arm": "structure_only",
+  "seed": 2026092412,
+  "w1": 1.0791780003198561,
+  "shape_w1": 0.47311706679213394,
+  "local_walsh_l1": 0.32103497158487204,
+  "measured_local_additive": 0.7214399060904039,
+  "generated_local_additive": 0.8819573918828398,
+  "measured_sign_switch": 0.71875,
+  "generated_sign_switch": 0.10416666666666666,
+  "spearman": -0.034160134160134165,
+  "kendall_tau_48": 0.3333333333333333,
+  "success_tau_48": 0.28428676634208877,
+  "success_rate_48": 0.6666666666666666,
+  "kendall_tau_96": 0.2595495470347952,
+  "success_tau_96": 0.4489795918367347,
+  "success_rate_96": 0.8333333333333334,
+  "kendall_tau_192": 0.32062002869004114,
+  "success_tau_192": 0.6741998624632421,
+  "success_rate_192": 0.9916666666666667
+}

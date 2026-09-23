@@ -1,0 +1,16 @@
+{
+  "landscape": "CR6261-h1",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092411,
+  "w1": 0.8210447693131142,
+  "shape_w1": 0.1804214649520902,
+  "local_walsh_l1": 0.10620896715918732,
+  "measured_local_additive": 0.946265778690083,
+  "generated_local_additive": 0.8931612951104893,
+  "measured_sign_switch": 0.17578125,
+  "generated_sign_switch": 0.7434895833333333,
+  "spearman": 0.6946310538166359,
+  "kendall_tau_48": 0.19847906537954926,
+  "success_tau_48": -0.11363636363636363,
+  "success_rate_48": 0.6
+}

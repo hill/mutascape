@@ -1,0 +1,16 @@
+{
+  "landscape": "IMDH",
+  "arm": "shuffled_singles",
+  "seed": 2026092413,
+  "w1": 0.6095474185711892,
+  "shape_w1": 0.6234262945569891,
+  "local_walsh_l1": 0.021289444954506045,
+  "measured_local_additive": 0.9309217995842478,
+  "generated_local_additive": 0.9202770771069948,
+  "measured_sign_switch": 0.0859375,
+  "generated_sign_switch": 0.12369791666666667,
+  "spearman": 0.2836021737596727,
+  "kendall_tau_48": NaN,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0
+}

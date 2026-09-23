@@ -1,0 +1,16 @@
+{
+  "landscape": "H3-Bk79",
+  "arm": "potts",
+  "seed": 2026092413,
+  "w1": 0.9713727355732888,
+  "shape_w1": 0.22076398040440462,
+  "local_walsh_l1": 0.01640814592103587,
+  "measured_local_additive": 0.9283651339583957,
+  "generated_local_additive": 0.9339967895414693,
+  "measured_sign_switch": 0.3802083333333333,
+  "generated_sign_switch": 0.27734375,
+  "spearman": 0.5364586565102223,
+  "kendall_tau_48": 0.5581052602166382,
+  "success_tau_48": 0.8222064167913465,
+  "success_rate_48": 0.85
+}

@@ -1,0 +1,22 @@
+{
+  "landscape": "RBD-S309",
+  "arm": "shuffled_singles",
+  "seed": 2026092413,
+  "w1": 0.5561690294415483,
+  "shape_w1": 0.5435317832827823,
+  "local_walsh_l1": 0.13659807105536734,
+  "measured_local_additive": 0.8642379425305415,
+  "generated_local_additive": 0.9325369780582253,
+  "measured_sign_switch": 0.5755208333333333,
+  "generated_sign_switch": 0.18359375,
+  "spearman": 0.15625116025116026,
+  "kendall_tau_48": 0.6666666666666666,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0,
+  "kendall_tau_96": 0.6969696969696969,
+  "success_tau_96": NaN,
+  "success_rate_96": 1.0,
+  "kendall_tau_192": 0.35668561398608045,
+  "success_tau_192": NaN,
+  "success_rate_192": 1.0
+}

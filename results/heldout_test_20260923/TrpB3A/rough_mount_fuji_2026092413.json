@@ -1,0 +1,22 @@
+{
+  "landscape": "TrpB3A",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092413,
+  "w1": 37.57379121039309,
+  "shape_w1": 0.2797402720963442,
+  "local_walsh_l1": 0.7564661101566558,
+  "measured_local_additive": 0.5415122964710617,
+  "generated_local_additive": 0.9197453515493895,
+  "measured_sign_switch": 0.77734375,
+  "generated_sign_switch": 0.6263020833333333,
+  "spearman": 0.09456674256674258,
+  "kendall_tau_48": NaN,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0,
+  "kendall_tau_96": NaN,
+  "success_tau_96": NaN,
+  "success_rate_96": 1.0,
+  "kendall_tau_192": NaN,
+  "success_tau_192": NaN,
+  "success_rate_192": 1.0
+}

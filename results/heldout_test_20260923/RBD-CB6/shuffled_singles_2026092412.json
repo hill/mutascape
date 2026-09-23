@@ -1,0 +1,22 @@
+{
+  "landscape": "RBD-CB6",
+  "arm": "shuffled_singles",
+  "seed": 2026092412,
+  "w1": 1.029463107284198,
+  "shape_w1": 0.22671520830688685,
+  "local_walsh_l1": 0.01640125362263038,
+  "measured_local_additive": 0.9364115125475013,
+  "generated_local_additive": 0.9352921763317597,
+  "measured_sign_switch": 0.51171875,
+  "generated_sign_switch": 0.17708333333333331,
+  "spearman": 0.20503117303117302,
+  "kendall_tau_48": 0.1515151515151515,
+  "success_tau_48": 0.20847696198419843,
+  "success_rate_48": 0.7416666666666666,
+  "kendall_tau_96": 0.2727272727272727,
+  "success_tau_96": 0.3853373177942262,
+  "success_rate_96": 0.9166666666666666,
+  "kendall_tau_192": -0.04652421051992354,
+  "success_tau_192": NaN,
+  "success_rate_192": 1.0
+}

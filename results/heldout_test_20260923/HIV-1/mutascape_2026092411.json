@@ -1,0 +1,19 @@
+{
+  "landscape": "HIV-1",
+  "arm": "mutascape",
+  "seed": 2026092411,
+  "w1": 0.6929960032378211,
+  "shape_w1": 0.5822978194527476,
+  "local_walsh_l1": 0.07396192519045683,
+  "measured_local_additive": 0.7082383896933848,
+  "generated_local_additive": 0.6719720445047571,
+  "measured_sign_switch": 0.765625,
+  "generated_sign_switch": 0.014322916666666664,
+  "spearman": 0.2491920631532825,
+  "kendall_tau_48": NaN,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0,
+  "kendall_tau_96": NaN,
+  "success_tau_96": NaN,
+  "success_rate_96": 1.0
+}

@@ -1,0 +1,16 @@
+{
+  "landscape": "lambda-J-LamB",
+  "arm": "mutascape",
+  "seed": 2026092413,
+  "w1": 0.9629153585587873,
+  "shape_w1": 0.3781723955494548,
+  "local_walsh_l1": 0.04880705001920896,
+  "measured_local_additive": 0.8549919071431625,
+  "generated_local_additive": 0.8793954321527672,
+  "measured_sign_switch": 0.6028645833333333,
+  "generated_sign_switch": 0.16536458333333334,
+  "spearman": 0.5935763618067343,
+  "kendall_tau_48": NaN,
+  "success_tau_48": NaN,
+  "success_rate_48": 0.8666666666666667
+}

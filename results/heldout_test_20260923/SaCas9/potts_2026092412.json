@@ -1,0 +1,19 @@
+{
+  "landscape": "SaCas9",
+  "arm": "potts",
+  "seed": 2026092412,
+  "w1": 18.811092269610615,
+  "shape_w1": 0.3347943629716892,
+  "local_walsh_l1": 0.6389195064280183,
+  "measured_local_additive": 0.6495754449928767,
+  "generated_local_additive": 0.9690351982068859,
+  "measured_sign_switch": 0.84765625,
+  "generated_sign_switch": 0.19921875,
+  "spearman": 0.07172429972429974,
+  "kendall_tau_48": NaN,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0,
+  "kendall_tau_96": NaN,
+  "success_tau_96": NaN,
+  "success_rate_96": 1.0
+}

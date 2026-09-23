@@ -1,0 +1,16 @@
+{
+  "landscape": "H3-HK68",
+  "arm": "nk_k2",
+  "seed": 2026092412,
+  "w1": 0.08993407032665467,
+  "shape_w1": 0.08980811593632299,
+  "local_walsh_l1": 0.292454116964155,
+  "measured_local_additive": 0.9008991535141578,
+  "generated_local_additive": 0.7546720950320802,
+  "measured_sign_switch": 0.4244791666666667,
+  "generated_sign_switch": 0.5208333333333333,
+  "spearman": -0.08463889850113125,
+  "kendall_tau_48": 0.3511552695176641,
+  "success_tau_48": 0.4472135954999579,
+  "success_rate_48": 0.6333333333333334
+}

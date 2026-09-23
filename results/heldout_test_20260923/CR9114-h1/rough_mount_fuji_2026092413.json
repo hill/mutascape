@@ -1,0 +1,22 @@
+{
+  "landscape": "CR9114-h1",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092413,
+  "w1": 1.459068037432909,
+  "shape_w1": 0.3959819858327251,
+  "local_walsh_l1": 0.14653001005984972,
+  "measured_local_additive": 0.9131768120535994,
+  "generated_local_additive": 0.8399118070236745,
+  "measured_sign_switch": 0.5950520833333333,
+  "generated_sign_switch": 0.6015625,
+  "spearman": 0.5822044879954359,
+  "kendall_tau_48": 0.13740858372430334,
+  "success_tau_48": 0.16216874328520062,
+  "success_rate_48": 0.725,
+  "kendall_tau_96": 0.2121212121212121,
+  "success_tau_96": 0.26130213378560535,
+  "success_rate_96": 0.9083333333333332,
+  "kendall_tau_192": 0.4848484848484848,
+  "success_tau_192": 0.42640143271122083,
+  "success_rate_192": 0.9916666666666667
+}

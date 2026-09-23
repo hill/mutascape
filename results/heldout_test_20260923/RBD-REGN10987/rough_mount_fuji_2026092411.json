@@ -1,0 +1,22 @@
+{
+  "landscape": "RBD-REGN10987",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092411,
+  "w1": 0.26700145868180597,
+  "shape_w1": 0.1896073600644796,
+  "local_walsh_l1": 0.02016303931198416,
+  "measured_local_additive": 0.8719845993056244,
+  "generated_local_additive": 0.8694082136269017,
+  "measured_sign_switch": 0.6145833333333333,
+  "generated_sign_switch": 0.7057291666666665,
+  "spearman": 0.8255627975627977,
+  "kendall_tau_48": 0.4545454545454545,
+  "success_tau_48": 0.6432675209026768,
+  "success_rate_48": 0.6749999999999999,
+  "kendall_tau_96": 0.5454545454545454,
+  "success_tau_96": 0.7163353188265661,
+  "success_rate_96": 0.8833333333333333,
+  "kendall_tau_192": 0.4615930911724977,
+  "success_tau_192": 1.0,
+  "success_rate_192": 0.975
+}

@@ -1,0 +1,22 @@
+{
+  "landscape": "RhlA-RLs",
+  "arm": "potts",
+  "seed": 2026092412,
+  "w1": 0.8390029882392305,
+  "shape_w1": 0.223464527240824,
+  "local_walsh_l1": 0.3032664644512699,
+  "measured_local_additive": 0.7930053655057949,
+  "generated_local_additive": 0.94463859773143,
+  "measured_sign_switch": 0.5442708333333333,
+  "generated_sign_switch": 0.33203125,
+  "spearman": 0.044521304521304525,
+  "kendall_tau_48": -0.4526019054848143,
+  "success_tau_48": NaN,
+  "success_rate_48": 0.8166666666666665,
+  "kendall_tau_96": -0.07754035086653922,
+  "success_tau_96": NaN,
+  "success_rate_96": 0.9833333333333334,
+  "kendall_tau_192": 0.05504818825631803,
+  "success_tau_192": NaN,
+  "success_rate_192": 0.9833333333333334
+}

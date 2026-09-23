@@ -1,0 +1,22 @@
+{
+  "landscape": "H1-MA90",
+  "arm": "structure_only",
+  "seed": 2026092412,
+  "w1": 1.5378272141206426,
+  "shape_w1": 0.23208089435066942,
+  "local_walsh_l1": 0.009829802555149125,
+  "measured_local_additive": 0.9535406687271393,
+  "generated_local_additive": 0.9521741528811211,
+  "measured_sign_switch": 0.42578124999999994,
+  "generated_sign_switch": 0.1640625,
+  "spearman": 0.26543143343143344,
+  "kendall_tau_48": 0.5038314736557788,
+  "success_tau_48": NaN,
+  "success_rate_48": 0.8250000000000001,
+  "kendall_tau_96": 0.2727272727272727,
+  "success_tau_96": NaN,
+  "success_rate_96": 0.9416666666666665,
+  "kendall_tau_192": 0.1442263244544471,
+  "success_tau_192": NaN,
+  "success_rate_192": 0.975
+}

@@ -1,0 +1,16 @@
+{
+  "landscape": "ParD3",
+  "pilot_size": 48,
+  "replicate": 0,
+  "w1": 0.11132739400466328,
+  "shape_w1": 0.09330526916695406,
+  "local_walsh_l1": 0.04207939659406657,
+  "measured_local_additive": 0.8943062630996172,
+  "generated_local_additive": 0.8798270773880641,
+  "measured_sign_switch": 0.4205729166666667,
+  "generated_sign_switch": 0.37239583333333326,
+  "spearman": 0.5402899922899923,
+  "c2st": 0.5269999999999999,
+  "kendall_tau_96": NaN,
+  "kendall_tau_192": NaN
+}

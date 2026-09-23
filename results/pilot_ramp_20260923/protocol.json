@@ -1,0 +1,59 @@
+{
+  "purpose": "Measure the return on each extra measured combination given to the generator",
+  "landscapes": [
+    "DHFR",
+    "eqFP611",
+    "ParB-Noc",
+    "ParD2",
+    "CreiLOV",
+    "GB1",
+    "TrpB4",
+    "T7",
+    "TEV",
+    "PhoQ",
+    "CR9114-h1",
+    "CR6261-h1",
+    "RBD-ACE2",
+    "RBD-S309",
+    "RBD-CB6",
+    "RBD-CoV555",
+    "RBD-REGN10987",
+    "H1-MA90",
+    "H1-G189E",
+    "H3-HK68",
+    "H3-Bk79",
+    "COV107-23",
+    "Hsp90",
+    "IMDH",
+    "lambda-J-LamB",
+    "RhlA-RLs",
+    "RhlA-product",
+    "SaCas9",
+    "HIV-1",
+    "ParB-parS",
+    "ParD3",
+    "TrpB3A",
+    "TrpB3F"
+  ],
+  "sizes": [
+    0,
+    24,
+    48,
+    96,
+    192
+  ],
+  "replicates": 3,
+  "budgets": [
+    96,
+    192
+  ],
+  "draw_seed": 2026092431,
+  "pilot_seed": 2026092441,
+  "sampling": "Uniform without replacement from measured combinations, excluding the evaluation genotypes and every subcube corner",
+  "domain": "Every campaign searches the same domain, with the whole pilot pool removed, so only the pilot the generator saw changes along the ramp",
+  "source_sha256": {
+    "/Users/tomhill/Uni/research-project/mutascape/scripts/pilot_ramp.py": "a951d8f10f35da21bb1b6b2dc1103ad765b45951f42ee60df82ac32bc1a4e00b",
+    "src/mutascape/calibrated.py": "02e2e0b930912b0556f928f563b30c2166101e45c591db74989dc0f65e40b690",
+    "scripts/heldout_test.py": "f1159a7b3885a846fb31ed114347a7c25f450d8dd220af34835c87bda83f325b"
+  }
+}

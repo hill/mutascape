@@ -1,0 +1,22 @@
+{
+  "landscape": "H1-MA90",
+  "arm": "potts",
+  "seed": 2026092411,
+  "w1": 0.9941319395434279,
+  "shape_w1": 0.23738130753802283,
+  "local_walsh_l1": 0.05094757286906415,
+  "measured_local_additive": 0.9535406687271393,
+  "generated_local_additive": 0.9790144551616714,
+  "measured_sign_switch": 0.42578124999999994,
+  "generated_sign_switch": 0.19010416666666666,
+  "spearman": 0.2055816615816616,
+  "kendall_tau_48": 0.8091838819320085,
+  "success_tau_48": NaN,
+  "success_rate_48": 0.9249999999999999,
+  "kendall_tau_96": 0.5757575757575757,
+  "success_tau_96": NaN,
+  "success_rate_96": 0.9666666666666668,
+  "kendall_tau_192": 0.6598521777048596,
+  "success_tau_192": NaN,
+  "success_rate_192": 1.0
+}

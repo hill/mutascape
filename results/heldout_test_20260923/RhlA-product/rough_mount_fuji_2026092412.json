@@ -1,0 +1,22 @@
+{
+  "landscape": "RhlA-product",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092412,
+  "w1": 1.345273708613372,
+  "shape_w1": 0.38673908165120763,
+  "local_walsh_l1": 0.49367350103407376,
+  "measured_local_additive": 0.7214399060904039,
+  "generated_local_additive": 0.9682766566074407,
+  "measured_sign_switch": 0.71875,
+  "generated_sign_switch": 0.17838541666666666,
+  "spearman": 0.004493368493368494,
+  "kendall_tau_48": 0.1538643637241659,
+  "success_tau_48": 0.48245064067700766,
+  "success_rate_48": 0.7666666666666666,
+  "kendall_tau_96": 0.08618128166583651,
+  "success_tau_96": 0.5384131153174351,
+  "success_rate_96": 0.9083333333333332,
+  "kendall_tau_192": 0.4220361099651049,
+  "success_tau_192": 0.6741998624632421,
+  "success_rate_192": 0.9833333333333334
+}

@@ -1,0 +1,16 @@
+{
+  "landscape": "Hsp90",
+  "arm": "nk_k1",
+  "seed": 2026092411,
+  "w1": 0.41967784205854314,
+  "shape_w1": 0.4170619255912341,
+  "local_walsh_l1": 0.41087287478447193,
+  "measured_local_additive": 0.7304656571104702,
+  "generated_local_additive": 0.9359020945027061,
+  "measured_sign_switch": 0.44921875,
+  "generated_sign_switch": 0.14453125,
+  "spearman": -0.1169105972850398,
+  "kendall_tau_48": 0.6174654780291237,
+  "success_tau_48": 0.7278602642426106,
+  "success_rate_48": 0.9416666666666668
+}

@@ -1,0 +1,19 @@
+{
+  "landscape": "HIV-1",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092413,
+  "w1": 8.880276605129298,
+  "shape_w1": 0.29197381255135174,
+  "local_walsh_l1": 0.3634299655368766,
+  "measured_local_additive": 0.7082383896933848,
+  "generated_local_additive": 0.8899533724618232,
+  "measured_sign_switch": 0.765625,
+  "generated_sign_switch": 0.38671875,
+  "spearman": 0.21211926030098507,
+  "kendall_tau_48": NaN,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0,
+  "kendall_tau_96": NaN,
+  "success_tau_96": NaN,
+  "success_rate_96": 1.0
+}

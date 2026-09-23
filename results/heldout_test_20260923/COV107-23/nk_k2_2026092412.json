@@ -1,0 +1,19 @@
+{
+  "landscape": "COV107-23",
+  "arm": "nk_k2",
+  "seed": 2026092412,
+  "w1": 0.20750161980005233,
+  "shape_w1": 0.20696867096774646,
+  "local_walsh_l1": 0.10732536661927164,
+  "measured_local_additive": 0.8170107927573816,
+  "generated_local_additive": 0.8706734760670174,
+  "measured_sign_switch": 0.6171875,
+  "generated_sign_switch": 0.35677083333333337,
+  "spearman": 0.15096083145307196,
+  "kendall_tau_48": -0.5954371961386479,
+  "success_tau_48": -0.20184335693983277,
+  "success_rate_48": 0.8083333333333332,
+  "kendall_tau_96": -0.04652421051992354,
+  "success_tau_96": 0.46966821831386213,
+  "success_rate_96": 0.9333333333333332
+}

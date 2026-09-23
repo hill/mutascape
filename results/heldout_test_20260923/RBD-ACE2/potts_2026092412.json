@@ -1,0 +1,22 @@
+{
+  "landscape": "RBD-ACE2",
+  "arm": "potts",
+  "seed": 2026092412,
+  "w1": 1.199508588505287,
+  "shape_w1": 0.1476818721825201,
+  "local_walsh_l1": 0.01090923691145701,
+  "measured_local_additive": 0.9537200131036457,
+  "generated_local_additive": 0.9591746315593742,
+  "measured_sign_switch": 0.3359375,
+  "generated_sign_switch": 0.24088541666666663,
+  "spearman": 0.032400608400608405,
+  "kendall_tau_48": 0.3636363636363636,
+  "success_tau_48": 0.5378341163622514,
+  "success_rate_48": 0.725,
+  "kendall_tau_96": 0.5454545454545454,
+  "success_tau_96": 0.8356290217967334,
+  "success_rate_96": 0.9333333333333332,
+  "kendall_tau_192": 0.5513349465842539,
+  "success_tau_192": 1.0,
+  "success_rate_192": 0.9916666666666667
+}

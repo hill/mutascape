@@ -1,0 +1,22 @@
+{
+  "landscape": "PhoQ",
+  "arm": "nk_k2",
+  "seed": 2026092412,
+  "w1": 0.756880933338613,
+  "shape_w1": 0.7384913146494385,
+  "local_walsh_l1": 0.0627360508477729,
+  "measured_local_additive": 0.6210227358851921,
+  "generated_local_additive": 0.6411744305052998,
+  "measured_sign_switch": 0.31901041666666663,
+  "generated_sign_switch": 0.7252604166666667,
+  "spearman": 0.003279858260535206,
+  "kendall_tau_48": 0.47673129462279606,
+  "success_tau_48": NaN,
+  "success_rate_48": 0.3416666666666666,
+  "kendall_tau_96": 0.3636363636363636,
+  "success_tau_96": NaN,
+  "success_rate_96": 0.6333333333333334,
+  "kendall_tau_192": 0.3333333333333333,
+  "success_tau_192": NaN,
+  "success_rate_192": 0.9333333333333335
+}

@@ -1,0 +1,22 @@
+{
+  "landscape": "RBD-CoV555",
+  "arm": "nk_k2",
+  "seed": 2026092413,
+  "w1": 0.2697930286890976,
+  "shape_w1": 0.26991288405878355,
+  "local_walsh_l1": 0.11224420816553306,
+  "measured_local_additive": 0.9513003112798455,
+  "generated_local_additive": 0.9052899944828797,
+  "measured_sign_switch": 0.6861979166666666,
+  "generated_sign_switch": 0.265625,
+  "spearman": -0.08016846816846818,
+  "kendall_tau_48": 0.39393939393939387,
+  "success_tau_48": NaN,
+  "success_rate_48": 0.5666666666666665,
+  "kendall_tau_96": 0.2121212121212121,
+  "success_tau_96": NaN,
+  "success_rate_96": 0.8833333333333333,
+  "kendall_tau_192": 0.1212121212121212,
+  "success_tau_192": NaN,
+  "success_rate_192": 0.9916666666666667
+}

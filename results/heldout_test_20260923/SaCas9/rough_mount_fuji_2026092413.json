@@ -1,0 +1,19 @@
+{
+  "landscape": "SaCas9",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092413,
+  "w1": 14.997948321462154,
+  "shape_w1": 0.3040177237339716,
+  "local_walsh_l1": 0.46402621946818523,
+  "measured_local_additive": 0.6495754449928767,
+  "generated_local_additive": 0.8815885547269693,
+  "measured_sign_switch": 0.84765625,
+  "generated_sign_switch": 0.48828124999999994,
+  "spearman": -0.015191943191943193,
+  "kendall_tau_48": NaN,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0,
+  "kendall_tau_96": NaN,
+  "success_tau_96": NaN,
+  "success_rate_96": 1.0
+}

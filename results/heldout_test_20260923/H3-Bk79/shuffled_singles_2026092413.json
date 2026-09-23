@@ -1,0 +1,16 @@
+{
+  "landscape": "H3-Bk79",
+  "arm": "shuffled_singles",
+  "seed": 2026092413,
+  "w1": 0.6267989970785165,
+  "shape_w1": 0.38264159667666303,
+  "local_walsh_l1": 0.010490716849826769,
+  "measured_local_additive": 0.9283651339583957,
+  "generated_local_additive": 0.9265356793708732,
+  "measured_sign_switch": 0.3802083333333333,
+  "generated_sign_switch": 0.19270833333333331,
+  "spearman": -0.20888185951111937,
+  "kendall_tau_48": 0.4333333333333333,
+  "success_tau_48": 0.6771111667693442,
+  "success_rate_48": 0.85
+}

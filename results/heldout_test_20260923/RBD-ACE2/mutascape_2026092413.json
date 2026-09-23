@@ -1,0 +1,22 @@
+{
+  "landscape": "RBD-ACE2",
+  "arm": "mutascape",
+  "seed": 2026092413,
+  "w1": 1.0107169181553197,
+  "shape_w1": 0.8293298750922159,
+  "local_walsh_l1": 0.18122763050828206,
+  "measured_local_additive": 0.9537200131036457,
+  "generated_local_additive": 0.8631061978495047,
+  "measured_sign_switch": 0.3359375,
+  "generated_sign_switch": 0.13411458333333331,
+  "spearman": 0.3138839418839419,
+  "kendall_tau_48": 0.40004734568283135,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0,
+  "kendall_tau_96": 0.6462303276414968,
+  "success_tau_96": NaN,
+  "success_rate_96": 1.0,
+  "kendall_tau_192": 0.7243592729269804,
+  "success_tau_192": NaN,
+  "success_rate_192": 1.0
+}

@@ -1,0 +1,16 @@
+{
+  "landscape": "CR6261-h1",
+  "arm": "structure_only",
+  "seed": 2026092411,
+  "w1": 0.8878731587814108,
+  "shape_w1": 0.5466100086412597,
+  "local_walsh_l1": 0.09446469122810235,
+  "measured_local_additive": 0.946265778690083,
+  "generated_local_additive": 0.8990334330760318,
+  "measured_sign_switch": 0.17578125,
+  "generated_sign_switch": 0.11458333333333333,
+  "spearman": 0.6905054914401043,
+  "kendall_tau_48": 0.6769230769230771,
+  "success_tau_48": 0.75,
+  "success_rate_48": 0.8250000000000002
+}

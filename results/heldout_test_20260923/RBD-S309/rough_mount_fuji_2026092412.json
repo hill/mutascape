@@ -1,0 +1,22 @@
+{
+  "landscape": "RBD-S309",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092412,
+  "w1": 0.11462724284375182,
+  "shape_w1": 0.07243242589243731,
+  "local_walsh_l1": 0.013246467414184178,
+  "measured_local_additive": 0.8642379425305415,
+  "generated_local_additive": 0.8600545233422209,
+  "measured_sign_switch": 0.5755208333333333,
+  "generated_sign_switch": 0.6197916666666667,
+  "spearman": 0.6637775797775798,
+  "kendall_tau_48": 0.39393939393939387,
+  "success_tau_48": 0.533001790889026,
+  "success_rate_48": 0.8833333333333333,
+  "kendall_tau_96": 0.39393939393939387,
+  "success_tau_96": 0.4761904761904763,
+  "success_rate_96": 0.9583333333333334,
+  "kendall_tau_192": 0.5151515151515151,
+  "success_tau_192": 1.0,
+  "success_rate_192": 0.9916666666666667
+}

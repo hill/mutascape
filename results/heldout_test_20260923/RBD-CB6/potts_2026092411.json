@@ -1,0 +1,22 @@
+{
+  "landscape": "RBD-CB6",
+  "arm": "potts",
+  "seed": 2026092411,
+  "w1": 0.4129025574636103,
+  "shape_w1": 0.14514712527872828,
+  "local_walsh_l1": 0.07903151053895913,
+  "measured_local_additive": 0.9364115125475013,
+  "generated_local_additive": 0.9759272678169808,
+  "measured_sign_switch": 0.51171875,
+  "generated_sign_switch": 0.25520833333333337,
+  "spearman": 0.7205090525090526,
+  "kendall_tau_48": 0.2595495470347952,
+  "success_tau_48": 0.380304365287082,
+  "success_rate_48": 0.85,
+  "kendall_tau_96": 0.3333333333333333,
+  "success_tau_96": 0.7237468644557459,
+  "success_rate_96": 0.9333333333333335,
+  "kendall_tau_192": 0.6789276551612556,
+  "success_tau_192": 1.0,
+  "success_rate_192": 0.9833333333333334
+}

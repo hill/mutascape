@@ -1,0 +1,16 @@
+{
+  "landscape": "IMDH",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092412,
+  "w1": 0.5294971835584548,
+  "shape_w1": 0.24138040692891052,
+  "local_walsh_l1": 0.07359284341979239,
+  "measured_local_additive": 0.9309217995842478,
+  "generated_local_additive": 0.8941253778743516,
+  "measured_sign_switch": 0.0859375,
+  "generated_sign_switch": 0.4348958333333333,
+  "spearman": 0.685482763601693,
+  "kendall_tau_48": NaN,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0
+}

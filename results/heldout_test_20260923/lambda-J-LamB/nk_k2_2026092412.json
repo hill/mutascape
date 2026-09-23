@@ -1,0 +1,16 @@
+{
+  "landscape": "lambda-J-LamB",
+  "arm": "nk_k2",
+  "seed": 2026092412,
+  "w1": 0.36201365147485043,
+  "shape_w1": 0.3481319322839147,
+  "local_walsh_l1": 0.045085251598804714,
+  "measured_local_additive": 0.8549919071431625,
+  "generated_local_additive": 0.877534532942565,
+  "measured_sign_switch": 0.6028645833333333,
+  "generated_sign_switch": 0.3567708333333333,
+  "spearman": -0.2324609491700701,
+  "kendall_tau_48": NaN,
+  "success_tau_48": NaN,
+  "success_rate_48": 0.6833333333333332
+}

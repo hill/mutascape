@@ -1,0 +1,19 @@
+{
+  "landscape": "COV107-23",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092411,
+  "w1": 0.9214597264546499,
+  "shape_w1": 0.2107854689676391,
+  "local_walsh_l1": 0.1322132982221763,
+  "measured_local_additive": 0.8170107927573816,
+  "generated_local_additive": 0.8831174418684697,
+  "measured_sign_switch": 0.6171875,
+  "generated_sign_switch": 0.46093749999999994,
+  "spearman": 0.6507617572348889,
+  "kendall_tau_48": -0.2727272727272727,
+  "success_tau_48": -0.044335109852147274,
+  "success_rate_48": 0.8249999999999998,
+  "kendall_tau_96": -0.12844577259807538,
+  "success_tau_96": 0.4889058650817127,
+  "success_rate_96": 0.9583333333333334
+}

@@ -1,0 +1,16 @@
+{
+  "landscape": "H3-Bk79",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092413,
+  "w1": 1.1462357476274148,
+  "shape_w1": 0.1413678033477336,
+  "local_walsh_l1": 0.03601633714907179,
+  "measured_local_additive": 0.9283651339583957,
+  "generated_local_additive": 0.9103569653838597,
+  "measured_sign_switch": 0.3802083333333333,
+  "generated_sign_switch": 0.37630208333333337,
+  "spearman": 0.6308730789455255,
+  "kendall_tau_48": 0.3770998555757729,
+  "success_tau_48": 0.77005354108682,
+  "success_rate_48": 0.8916666666666666
+}

@@ -1,0 +1,22 @@
+{
+  "landscape": "ParD3",
+  "arm": "shuffled_singles",
+  "seed": 2026092412,
+  "w1": 1.906954425456384,
+  "shape_w1": 0.7160239250678495,
+  "local_walsh_l1": 0.18005345192207456,
+  "measured_local_additive": 0.8943062630996172,
+  "generated_local_additive": 0.9843329890606546,
+  "measured_sign_switch": 0.4205729166666667,
+  "generated_sign_switch": 0.34244791666666663,
+  "spearman": -0.1014843054843055,
+  "kendall_tau_48": NaN,
+  "success_tau_48": NaN,
+  "success_rate_48": 0.6916666666666668,
+  "kendall_tau_96": NaN,
+  "success_tau_96": NaN,
+  "success_rate_96": 0.9166666666666666,
+  "kendall_tau_192": NaN,
+  "success_tau_192": NaN,
+  "success_rate_192": 1.0
+}

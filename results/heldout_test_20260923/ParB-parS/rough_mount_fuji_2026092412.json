@@ -1,0 +1,22 @@
+{
+  "landscape": "ParB-parS",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092412,
+  "w1": 3.309903086908618,
+  "shape_w1": 0.3423701917093661,
+  "local_walsh_l1": 0.2665286692308971,
+  "measured_local_additive": 0.7580205982133431,
+  "generated_local_additive": 0.8912849328287917,
+  "measured_sign_switch": 0.47395833333333326,
+  "generated_sign_switch": 0.65234375,
+  "spearman": 0.4486526928346258,
+  "kendall_tau_48": 0.038604571824109146,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0,
+  "kendall_tau_96": -0.1679438245519263,
+  "success_tau_96": NaN,
+  "success_rate_96": 1.0,
+  "kendall_tau_192": 0.2727272727272727,
+  "success_tau_192": NaN,
+  "success_rate_192": 1.0
+}

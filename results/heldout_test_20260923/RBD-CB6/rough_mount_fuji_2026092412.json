@@ -1,0 +1,22 @@
+{
+  "landscape": "RBD-CB6",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092412,
+  "w1": 0.690523643458637,
+  "shape_w1": 0.08253984955480019,
+  "local_walsh_l1": 0.2357777375264976,
+  "measured_local_additive": 0.9364115125475013,
+  "generated_local_additive": 0.8185226437842524,
+  "measured_sign_switch": 0.51171875,
+  "generated_sign_switch": 0.6940104166666665,
+  "spearman": 0.7805974805974807,
+  "kendall_tau_48": 0.0606060606060606,
+  "success_tau_48": 0.33824071260127303,
+  "success_rate_48": 0.7333333333333334,
+  "kendall_tau_96": 0.3636363636363636,
+  "success_tau_96": 0.7237468644557459,
+  "success_rate_96": 0.9750000000000001,
+  "kendall_tau_192": 0.5454545454545454,
+  "success_tau_192": 1.0,
+  "success_rate_192": 0.975
+}

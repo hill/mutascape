@@ -1,0 +1,22 @@
+{
+  "landscape": "RhlA-RLs",
+  "arm": "rough_mount_fuji",
+  "seed": 2026092411,
+  "w1": 0.8366453781610986,
+  "shape_w1": 0.20335479482690536,
+  "local_walsh_l1": 0.24607690057983034,
+  "measured_local_additive": 0.7930053655057949,
+  "generated_local_additive": 0.91604381579571,
+  "measured_sign_switch": 0.5442708333333333,
+  "generated_sign_switch": 0.5130208333333333,
+  "spearman": 0.05065153465153466,
+  "kendall_tau_48": -0.31574088695053054,
+  "success_tau_48": NaN,
+  "success_rate_48": 1.0,
+  "kendall_tau_96": -0.2121212121212121,
+  "success_tau_96": NaN,
+  "success_rate_96": 1.0,
+  "kendall_tau_192": 0.03077287274483318,
+  "success_tau_192": NaN,
+  "success_rate_192": 1.0
+}

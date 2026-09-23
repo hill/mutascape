@@ -1,6 +1,7 @@
-# Optional extension with measured combinations
+# Combination-calibrated Mutascape
 
-`QuantileCalibratedLandscape` fits the existing pilot model, then calibrates the distribution of generated combination fitness.
+Combination-calibrated Mutascape uses measured combinations to fit depth effects, interaction strength and a fitness-distribution map.
+Its Python class is `QuantileCalibratedLandscape`.
 It uses measured combinations from a uniform sample of the intended library.
 The wild type and singles must come from the same assay.
 
@@ -39,11 +40,11 @@ restored = QuantileCalibratedLandscape.from_dict(saved)
 landscape = restored.draw(seed=42)
 ```
 
-The [matched comparison](singles_pilot_extension_results.md) tests the extension on the same genotypes as the singles-only manuscript model.
-It uses 192 pilot combinations per protein and excludes every evaluation genotype and spectral-test corner.
+The [matched comparison](singles_pilot_extension_results.md) tests Combination-calibrated Mutascape on the same genotypes as the singles-only manuscript model.
+It uses 192 calibration combinations per protein and excludes every evaluation genotype and spectral-test corner.
 Across four confirmation proteins, mean sequence-aware C2ST AUC is 0.667, compared with 0.979 for singles-only generation.
-These scores describe one pilot per protein.
+These scores describe one calibration set per protein.
 
-The manuscript presents `SimpleLandscape` as the main generator and this model as an optional extension.
-The [earlier pilot study](quantile_calibration_2026-09-23.md) records a separate five-protein search experiment.
+The manuscript presents `SimpleLandscape` as the main generator and Combination-calibrated Mutascape as an optional model.
+The [earlier combination-calibration study](quantile_calibration_2026-09-23.md) records a separate five-protein search experiment.
 A close fitness distribution does not establish correct interactions or better search-method rankings.

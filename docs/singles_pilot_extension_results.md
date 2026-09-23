@@ -1,4 +1,4 @@
-# Matched test of the optional combination extension
+# Matched test of Combination-calibrated Mutascape
 
 The manuscript model uses only WT, a sequence and same-assay single-mutant fitness.
 This experiment tests what 192 additional combination measurements contribute.
@@ -26,7 +26,7 @@ Mean sequence-aware AUC changes from 0.979 to 0.667.
 Mean scaled Wasserstein distance changes from 1.116 to 0.100.
 Mean local Walsh distance changes from 0.500 to 0.234.
 
-| Protein | C2ST, singles | C2ST, pilot | W1/SD, singles | W1/SD, pilot | Walsh, singles | Walsh, pilot |
+| Protein | C2ST, singles | C2ST, calibrated | W1/SD, singles | W1/SD, calibrated | Walsh, singles | Walsh, calibrated |
 |---|---:|---:|---:|---:|---:|---:|
 | DHFR | 0.988 | 0.733 | 1.393 | 0.170 | 0.172 | 0.221 |
 | eqFP611 | 0.988 | 0.798 | 0.640 | 0.106 | 0.195 | 0.056 |
@@ -46,15 +46,17 @@ CreiLOV illustrates why the diagnostics differ.
 Its AUC changes from 1.000 to 0.753, but local Walsh distance increases from 0.028 to 0.089.
 A closer fitness distribution does not guarantee a closer spectrum.
 
-The classifiers still detect differences after fitting the extension.
+The classifiers still detect differences after fitting Combination-calibrated Mutascape.
 Variation between landscape seeds does not measure uncertainty from collecting a different pilot.
-The experiment uses one pilot per protein and does not test search rankings for the extension.
+The experiment uses one pilot per protein and does not test search rankings for Combination-calibrated Mutascape.
 Earlier pilot-search results use different test designs and should not be substituted here.
 The cost includes 192 measured combinations per target, beyond WT and singles.
 
 ## Reproduction
 
 Run from the Mutascape repository after preparing the singles-only study.
+The archived protocol records source hashes from commit `d85d8e8`, before the naming update.
+Use that commit to repeat an existing preparation with its original hash checks.
 
 ```sh
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 uv run python -m scripts.assess_singles_pilot_extension prepare

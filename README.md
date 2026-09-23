@@ -36,7 +36,7 @@ The default pair strength is 0.3 and the sigmoid extends 5% beyond the WT and si
 Queries do not enumerate the library.
 See the [singles input guide](docs/singles_generator.md).
 
-An [optional extension](docs/quantile_generator.md) uses measured combinations to fit depth effects and a fitness-distribution map.
+[Combination-calibrated Mutascape](docs/quantile_generator.md) uses measured combinations to fit depth effects and a fitness-distribution map.
 It needs those additional measurements and currently enumerates the library.
 
 ## Existing file interface and browser studio
@@ -127,8 +127,8 @@ Four further proteins test those settings without target combination fitting.
 Across those four, mean scaled Wasserstein distance is 1.116 and local Walsh distance is 0.500.
 The additive control gives 4.534 and 0.766, respectively.
 Mean sequence-aware C2ST AUC is 0.979, so the classifier readily detects mismatch.
-The optional extension reaches 0.667 with 192 separate pilot combinations per protein.
-It uses the same evaluation genotypes and excludes all spectral-test corners from its pilot.
+Combination-calibrated Mutascape reaches 0.667 with 192 separate calibration combinations per protein.
+It uses the same evaluation genotypes and excludes all spectral-test corners from its calibration set.
 
 With WT and singles already known, mean Kendall correlation across 12 methods reaches 0.207 at 48 queries and 0.582 at 96.
 The fixed ranking learned from development proteins gives 0.164 and 0.523.
@@ -136,7 +136,7 @@ Paired protein-bootstrap intervals do not establish consistent added value over 
 These results support controlled synthetic benchmarks, without replacing measured search benchmarks.
 
 The [singles study](docs/singles_only_research_results.md) reports the model comparisons.
-The [matched extension report](docs/singles_pilot_extension_results.md) gives the additional experiment and its limits.
+The [Combination-calibrated Mutascape report](docs/singles_pilot_extension_results.md) gives the additional experiment and its limits.
 Rebuild the current manuscript from saved results with `uv run python -m scripts.rebuild_preprint`.
 
 ## Archived empirical-range reference study

@@ -601,9 +601,9 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
         </p>
         <p>
           Mean sequence-aware C2ST AUC is 0.979, which exposes substantial distribution mismatch.
-          The optional extension reaches 0.667 using 192 measured combinations per protein. It fits
-          none of the 1,000 evaluation genotypes or spectral-test corners. All four confirmation
-          proteins improve, but classifiers still detect differences.
+          Combination-calibrated Mutascape reaches 0.667 using 192 measured combinations per
+          protein. It fits none of the 1,000 evaluation genotypes or spectral-test corners. All four
+          confirmation proteins improve, but classifiers still detect differences.
         </p>
         <p>
           With WT and singles known before search, mean Kendall correlation reaches 0.207 at 48 new
@@ -611,7 +611,7 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
           0.523. Paired protein-bootstrap intervals do not establish consistent added value over
           that control.
         </p>
-        <h2>Optional extension with measured combinations</h2>
+        <h2>Combination-calibrated Mutascape</h2>
         <p>
           QuantileCalibratedLandscape fits depth effects and an interaction scale from a random
           pilot. It maps generated score percentiles to the pilot's empirical fitness quantiles. WT
@@ -626,10 +626,10 @@ oracle = model.draw(seed=42)
 fitness = oracle["A102G+P20Y"]`}
         />
         <p>
-          The extension currently enumerates the supported library, with a default limit of one
-          million variants. Each table needs mutations and fitness columns. The singles table
-          includes measured WT as an empty dictionary. The matched test uses one pilot per protein,
-          shared across landscape samples.
+          Combination-calibrated Mutascape currently enumerates the supported library, with a
+          default limit of one million variants. Each table needs mutations and fitness columns. The
+          singles table includes measured WT as an empty dictionary. The matched test uses one pilot
+          per protein, shared across landscape samples.
         </p>
       </section>
 

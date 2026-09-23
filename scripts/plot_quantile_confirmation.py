@@ -78,7 +78,7 @@ def main():
                 plt.Line2D([], [], color="#167db5", marker="o"),
                 plt.Line2D([], [], color="#279d29", marker="o"),
             ],
-            ["Current pilot", "Distribution-calibrated pilot"],
+            ["Current pilot", "Combination-calibrated Mutascape"],
             loc="lower center",
             ncol=2,
             frameon=False,

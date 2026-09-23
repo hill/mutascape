@@ -2,10 +2,11 @@
 
 ## Result and recommendation
 
-The manuscript presents the distribution-calibrated pilot as Mutascape.
+This historical report evaluates Combination-calibrated Mutascape.
+The current manuscript presents it alongside the singles-only generator.
 The Python import remains in `mutascape.experimental`, while existing singles-only interfaces retain their behaviour.
 It improves both boosted classifiers on DHFR, eqFP611, and ParB-Noc with 192 measured combinations.
-All 18 matched comparisons improve across these proteins, three draws, and two classifier feature sets.
+All 18 matched comparisons improve across these proteins, three landscape samples, and two classifier feature sets.
 The model also reduces fitness-distribution distance on all five confirmation proteins.
 
 This is a useful improvement over the current pilot. It does not solve every aspect of landscape realism.
@@ -23,7 +24,7 @@ That could improve variant ranking while leaving the fitness distribution wrong.
 The retained model changes how generated ranks map to measured fitness values.
 
 First, it fits the existing pilot generator using same-assay singles and measured combinations.
-For each draw, it enumerates the supported combination library and records the generated fitness distribution.
+For each landscape sample, it enumerates the supported combination library and records the generated fitness distribution.
 It then maps each generated percentile to the corresponding measured pilot quantile.
 This retains the ordering among combinations, except where repeated measured values introduce ties.
 Wild type and singles retain their measured values exactly.
@@ -83,7 +84,7 @@ It tests whether better marginal agreement alone explains the apparent benefit.
 
 ## Classifier results
 
-The table shows medians across three draws with 192 calibration combinations.
+The table shows medians across three landscape samples with 192 calibration combinations.
 AUC 0.5 indicates chance discrimination and one indicates perfect discrimination.
 Both models receive exactly the same measurements.
 
@@ -107,14 +108,14 @@ The saved comparison table includes every logistic score and both calibration bu
 
 ![Five-protein confirmation](../results/quantile_confirmation_20260923/confirmation_comparison.png)
 
-Points show medians across three draws. Error bars span their observed minimum and maximum.
+Points show medians across three landscape samples. Error bars span their observed minimum and maximum.
 They are not confidence intervals. Each protein has one new calibration set.
 The spectrum panel uses a binary projection for CreiLOV and complete factorial decompositions for the other reported proteins.
 
 ## Fitness distribution and interaction structure
 
 Wasserstein distance below is divided by the measured evaluation-set standard deviation.
-Each entry compares the current pilot with the distribution-calibrated model at 192 combinations.
+Each entry compares the current pilot with Combination-calibrated Mutascape at 192 combinations.
 
 | Protein | Scaled distribution distance | Walsh distance |
 |---|---:|---:|
@@ -146,7 +147,7 @@ That result reinforces the need to assess genotype structure separately from adv
 ## Search checks
 
 The experiment completed 16,800 search trials across all 12 existing methods.
-It used ten search seeds, two query budgets, two calibration budgets, and three draws per generated model.
+It used ten search seeds, two query budgets, two calibration budgets, and three landscape samples per generated model.
 Measured controls ran once per protein, calibration budget, and search seed.
 Search spaces exclude the calibration combinations and all known singles.
 Methods receive the same searchable genotypes and random seeds under every model.
@@ -178,7 +179,7 @@ The generator is available as `mutascape.experimental.QuantileCalibratedLandscap
 The [API guide](quantile_generator.md) describes its inputs, saved parameters, and query behaviour.
 The documentation site includes the same public API.
 The singles-only API default remains unchanged for compatibility.
-The manuscript uses the quantile model and includes C2ST, spectra and search results.
+The earlier manuscript centred on Combination-calibrated Mutascape and included C2ST, spectra and search results.
 
 Development outputs are in `results/copula_development_20260923/` and `results/conditional_development_20260923/`.
 Confirmation outputs are in `results/quantile_confirmation_20260923/`.
@@ -202,10 +203,10 @@ Ruff, Biome, type checks, documentation assets, and the web build passed.
 
 A further comparison uses the same five proteins, candidate sets, query budgets and search seeds as the 192-combination model.
 Additive uses measured singles and one fixed landscape.
-Potts and RMF use measured singles and three draws.
+Potts and RMF use measured singles and three landscape samples.
 Their coupling and roughness remain 0.25 and 1.0, respectively.
 NK uses independent Gaussian lookup tables with one or two random neighbours per site and no target fitness.
-Every stochastic generator uses three draws.
+Every stochastic generator uses three landscape samples.
 These controls use fewer target measurements than Mutascape.
 
 | Generator | Mean Kendall correlation | Mean pair agreement |

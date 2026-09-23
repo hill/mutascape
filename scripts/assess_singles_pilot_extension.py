@@ -1,4 +1,4 @@
-"""Compare the optional pilot extension on the fixed singles-only evaluation genotypes."""
+"""Assess Combination-calibrated Mutascape on the fixed singles-only evaluation genotypes."""
 
 import argparse
 import json
@@ -108,7 +108,7 @@ def evaluate(name, seed):
         )
         result[f"auc_{suffix}"] = score.auc
     path.write_text(json.dumps(result, indent=2) + "\n")
-    print(f"Evaluated {name} pilot extension {seed}", flush=True)
+    print(f"Evaluated {name} Combination-calibrated Mutascape {seed}", flush=True)
 
 
 def freeze():

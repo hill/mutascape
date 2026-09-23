@@ -3,7 +3,7 @@
 ## Recommendation
 
 Restore singles-only generation as the core of Mutascape.
-Keep the combination-pilot model as an optional extension with a separate input requirement.
+Keep Combination-calibrated Mutascape as an optional model with a separate input requirement.
 The original idea remains useful for synthetic benchmark experiments.
 These experiments do not establish a reliable way to reconstruct a particular protein's unmeasured landscape.
 
@@ -20,7 +20,7 @@ The original technical note proposed DMS singles and a WT sequence as sufficient
 It added optional structure or sequence-derived interactions and a fitness transformation.
 That input requirement remains in the public `from_dms` API on main.
 
-The current manuscript instead presents `QuantileCalibratedLandscape` as the main generator.
+At the start of this investigation, the manuscript presented `QuantileCalibratedLandscape` as the main generator.
 That model needs measured combinations from the target assay.
 Its better distribution results therefore do not validate the original singles-only premise.
 The manuscript focus changed, although the code retained the earlier capability.
@@ -220,7 +220,7 @@ The new prototype recovers that scope and removes substantial fitting machinery.
 
 I would describe its purpose as controlled synthetic benchmarking with measured single-mutant constraints.
 I would report distribution checks and search transfer as evidence about where that approximation succeeds or fails.
-I would keep the pilot model separate and state its extra data cost.
+I would keep Combination-calibrated Mutascape separate and state its extra data cost.
 I would not claim biological indistinguishability, accurate combination prediction or dependable target-specific method selection.
 
 The next manuscript should retain an interaction-strength sensitivity analysis.

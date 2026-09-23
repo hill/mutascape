@@ -43,4 +43,4 @@ Use the import above to reproduce the manuscript model.
 
 These are synthetic interaction assumptions.
 Landscape samples do not represent calibrated uncertainty about true unmeasured fitness.
-The [pilot extension](quantile_generator.md) can improve distributional agreement if measured combinations are available.
+[Combination-calibrated Mutascape](quantile_generator.md) can improve distributional agreement if measured combinations are available.

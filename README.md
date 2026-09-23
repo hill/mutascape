@@ -20,30 +20,7 @@ uv sync              # core dependencies
 uv sync --extra dev  # + pytest/ruff
 ```
 
-## Construct the manuscript model
-
-```python
-from mutascape import SimpleLandscape
-
-landscape = SimpleLandscape.from_singles(sequence, singles, seed=42)
-fitness = landscape["A102G+P20Y"]
-```
-
-The table contains `mutations` and numeric `fitness` columns, with WT represented by `{}`.
-Include a same-assay measurement for every queried substitution.
-The example assumes that A102G and P20Y match the sequence and appear in the singles table.
-The default pair strength is 0.3 and the sigmoid extends 5% beyond the WT and singles range.
-Queries do not enumerate the library.
-See the [singles input guide](docs/singles_generator.md).
-
-[Combination-calibrated Mutascape](docs/quantile_generator.md) uses measured combinations to fit depth effects and a fitness-distribution map.
-It needs those additional measurements and currently enumerates the library.
-
-## Existing file interface and browser studio
-
-The `from_dms` interface below retains the empirical-range generator for existing workflows.
-Its donor prior and default interaction strength differ from `SimpleLandscape`.
-The browser studio also retains this implementation.
+## Build a landscape from DMS data
 
 ```python
 from mutascape import from_dms
@@ -59,6 +36,20 @@ oracle = generator.draw(seed=42)
 fitness = oracle["V39A+D40W+V54F"]
 ```
 
+The table holds WT and same-assay single mutants.
+Include a measurement for every queried substitution, or pass `complete="esm2"` to impute the rest.
+The default pair strength is 0.3 and the sigmoid extends 5% beyond the WT and singles range.
+Queries do not enumerate the library.
+`DMSLandscape.from_singles(sequence, singles, seed=42)` builds the same model from a DataFrame.
+See the [singles input guide](docs/singles_generator.md).
+
+[Combination-calibrated Mutascape](docs/quantile_generator.md) uses measured combinations to fit depth effects and a fitness-distribution map.
+Pass them as `from_dms(..., pilot="pilot.csv")`.
+It needs those additional measurements and currently enumerates the library.
+
+The browser studio still uses the earlier empirical-range generator.
+Its Python form is `mutascape.legacy.from_dms`.
+
 Mutation labels are case-insensitive. Use `+` or a colon between substitutions. Dictionaries and `Mutant` objects remain supported.
 
 ```python
@@ -67,7 +58,7 @@ oracle.score({39: "A", 40: "W"})
 oracle.score_many(["WT", "V39A", "V39A+D40W"])
 ```
 
-The oracle accepts a genotype only when every constituent substitution has a measured single effect. A supplied multi-mutant returns its measured value. `generator.domain` reports the supported positions, substitutions, and depth limit.
+The oracle accepts a genotype only when every constituent substitution has a single effect. Measured singles return their measured value. `generator.domain` reports the supported positions, substitutions, and depth limit.
 
 Save the fixed generator version, seed, source digest, and domain with the benchmark result.
 
@@ -172,7 +163,7 @@ Its median classifier AUCs remain 0.900 and 0.963, and its median spectral dista
 Search agreement does not imply matching landscape shape.
 
 The [review assessment](docs/review_response_2026-09-23.md) records controls, new experiments, and limits.
-The [experimental pilot generator](docs/pilot_generator.md) uses measured combinations to fit mutation-depth effects.
+The [pilot generator](docs/pilot_generator.md) uses measured combinations to fit mutation-depth effects.
 On CreiLOV, 48 calibration combinations reduce raw Wasserstein distance from 0.439 to 0.062 against a matched singles-only control.
 
 ## Reproduce the archived task-transfer result

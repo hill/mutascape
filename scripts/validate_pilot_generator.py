@@ -10,8 +10,8 @@ from scipy.stats import wasserstein_distance
 
 from mutascape.benchmarks.evaluation import classifier_two_sample_test, completion_fidelity_features
 from mutascape.benchmarks.validity import pairwise_winner_transfer
+from mutascape.calibrated import PilotCalibratedLandscape
 from mutascape.completion import LandscapePrior, PosteriorLandscape
-from mutascape.experimental import PilotCalibratedLandscape
 from scripts.run_creilov_combinatorial_validation import parse_mutant
 
 

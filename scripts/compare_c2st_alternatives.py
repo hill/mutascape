@@ -15,8 +15,8 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 from mutascape.benchmarks.evaluation import classifier_two_sample_test, completion_fidelity_features
+from mutascape.calibrated import PilotCalibratedLandscape
 from mutascape.completion import LandscapePrior, PosteriorLandscape, dms_pairwise_unit_coefficient
-from mutascape.experimental import PilotCalibratedLandscape
 from mutascape.validation.fourier import binary_cube_spectral_metrics
 from scripts.run_creilov_combinatorial_validation import parse_mutant
 

@@ -27,10 +27,10 @@ def singles():
 def test_completion_keeps_anchors_readout_and_existing_combinations(fake_esm):
     measured = from_dms(singles(), wt_sequence="AC")
     completed = from_dms(singles(), wt_sequence="AC", complete="esm2")
-    assert completed.nonlinearity == measured.nonlinearity
-    assert completed.preimage_scale == measured.preimage_scale
+    assert completed.template.readout == measured.template.readout
+    assert completed.template.scale == measured.template.scale
     assert completed.observations == measured.observations
-    assert len(completed.single_effects) == 38
+    assert len(completed.domain.substitutions) == 38
     oracle = completed.draw(42)
     assert oracle["A1C"] == 2.2
     assert oracle.provenance("A1C") == "measured"

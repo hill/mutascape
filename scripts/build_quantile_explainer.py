@@ -313,7 +313,7 @@ def main():
 
     text(right, 1281, "Use the model", 24, "Times-Bold")
     code = [
-        "from mutascape.experimental import (",
+        "from mutascape.calibrated import (",
         "    QuantileCalibratedLandscape,",
         ")",
         "model = QuantileCalibratedLandscape.fit(",
@@ -347,7 +347,7 @@ def main():
         margin,
         1617,
         "Sources. Lopez-Paz and Oquab, ICLR 2017, arxiv.org/abs/1610.06545. Model and "
-        "data in mutascape.experimental.quantile and "
+        "data in mutascape.calibrated and "
         "results/quantile_confirmation_20260923. These results compare two pilot models, "
         "not the earlier singles-only benchmark.",
         usable,

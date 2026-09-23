@@ -46,7 +46,7 @@ def main():
     assert confirmation.groupby("budget").eligible.nunique().eq(1).all()
     files = sorted(p for p in ROOT.rglob("*") if p.is_file() and p.name != "metadata.json")
     code = [
-        Path("src/mutascape/experimental/pilot.py"),
+        Path("src/mutascape/calibrated.py"),
         Path("src/mutascape/benchmarks/validity.py"),
         Path("scripts/run_search_transfer.py"),
     ]

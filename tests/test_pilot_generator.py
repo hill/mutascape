@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from mutascape.experimental import PilotCalibratedLandscape
+from mutascape.calibrated import PilotCalibratedLandscape
 
 
 def inputs():

@@ -256,7 +256,7 @@ def main():
         final_code_sha256={
             str(p): digest(p)
             for p in [
-                Path("src/mutascape/experimental/singles.py"),
+                Path("src/mutascape/model.py"),
                 *Path("scripts").glob("*singles*.py"),
                 Path("src/mutascape/completion.py"),
                 Path("src/mutascape/nonlinearity.py"),

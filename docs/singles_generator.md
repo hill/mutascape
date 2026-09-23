@@ -1,18 +1,18 @@
 # A generator from measured singles
 
-`SimpleLandscape` constructs a fixed synthetic landscape from a wild-type sequence and same-assay WT and single-mutant measurements.
+`DMSLandscape` constructs a fixed synthetic landscape from a wild-type sequence and same-assay WT and single-mutant measurements.
 It does not need measured combinations, a donor prior or a protein structure.
 
 ```python
 import pandas as pd
-from mutascape import SimpleLandscape
+from mutascape import DMSLandscape
 
 sequence = "AAA"
 singles = pd.DataFrame({
     "mutations": [{}, "A1C", "A2D", "A3E"],
     "fitness": [1.0, 1.2, 0.8, 1.5],
 })
-landscape = SimpleLandscape.from_singles(sequence, singles, seed=42)
+landscape = DMSLandscape.from_singles(sequence, singles, seed=42)
 fitness = landscape["A1C+A2D+A3E"]
 ```
 
@@ -37,9 +37,9 @@ The [research report](singles_only_research_results.md) also tests linear and po
 The optional `contacts` argument restricts site pairs for comparison experiments.
 The manuscript model uses all supported site pairs.
 
-`from_dms` and the browser studio retain the earlier empirical-range implementation.
-Their settings and numerical outputs differ from `SimpleLandscape`.
-Use the import above to reproduce the manuscript model.
+`mutascape.from_dms` builds the same model from a CSV file and a FASTA sequence.
+`SimpleLandscape` remains an alias of `DMSLandscape`.
+The browser studio retains the earlier empirical-range implementation, available as `mutascape.legacy`.
 
 These are synthetic interaction assumptions.
 Landscape samples do not represent calibrated uncertainty about true unmeasured fitness.

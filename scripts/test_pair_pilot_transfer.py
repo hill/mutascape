@@ -21,7 +21,7 @@ from mutascape.benchmarks.datasets import (
 )
 from mutascape.benchmarks.evaluation import classifier_two_sample_test, completion_fidelity_features
 from mutascape.benchmarks.topology import measured_tensor, supported_cube
-from mutascape.experimental import PilotCalibratedLandscape
+from mutascape.calibrated import PilotCalibratedLandscape
 from mutascape.validation.fourier import walsh_l1_distance
 from scripts.audit_preprint_results import _spectrum
 from scripts.compare_c2st_alternatives import basis, features, field
@@ -111,7 +111,7 @@ def freeze():
         Path(__file__),
         Path("scripts/compare_c2st_alternatives.py"),
         Path("scripts/run_pair_pilot_search.py"),
-        Path("src/mutascape/experimental/pilot.py"),
+        Path("src/mutascape/calibrated.py"),
         Path("src/mutascape/benchmarks/methods.py"),
         Path("src/mutascape/benchmarks/evaluation.py"),
         Path("src/mutascape/validation/fourier.py"),

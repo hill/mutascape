@@ -4,8 +4,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from mutascape import Campaign, PosteriorLandscape, run_campaign
+from mutascape import Campaign, run_campaign
 from mutascape.completion import LandscapePrior
+from mutascape.legacy import PosteriorLandscape
 
 WILD_TYPE = "VDGV"
 

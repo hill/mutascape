@@ -9,7 +9,7 @@ from joblib import Parallel, delayed
 from scipy.special import ndtr
 from sklearn.ensemble import RandomForestRegressor
 
-from mutascape.experimental.quantile import QuantileCalibratedLandscape, empirical_quantiles
+from mutascape.calibrated import QuantileCalibratedLandscape, empirical_quantiles
 from mutascape.validation.fourier import walsh_l1_distance
 from scripts.audit_preprint_results import _spectrum
 from scripts.compare_c2st_alternatives import basis, field

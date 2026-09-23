@@ -96,7 +96,7 @@ def main():
             str(p): digest(p)
             for p in (
                 Path(__file__),
-                Path("src/mutascape/experimental/singles.py"),
+                Path("src/mutascape/model.py"),
                 Path("src/mutascape/benchmarks/evaluation.py"),
             )
         },

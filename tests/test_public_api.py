@@ -6,7 +6,7 @@ import sys
 import pandas as pd
 import pytest
 
-from mutascape import LandscapeGenerator, Oracle, from_dms, load_oracle
+from mutascape import LandscapeGenerator, Oracle, from_dms, legacy, load_oracle
 
 SINGLES = pd.DataFrame(
     {
@@ -49,10 +49,13 @@ def test_oracle_reports_observation_provenance_and_manifest(generator):
     assert oracle.is_observed("A1G") is True
     assert oracle.is_observed("A1G+C2D") is False
     manifest = oracle.manifest()
-    assert manifest["generator"] == "dms-pairwise-v1"
-    assert manifest["prior"] == "combinatorial-v2"
+    assert manifest["generator"] == "dms-sigmoid-v1"
     assert manifest["seed"] == 17
-    assert manifest["coupling"] == 0.1
+    assert manifest["strength"] == 0.3
+    assert manifest["mode"] == "sigmoid"
+    assert manifest["margin"] == 0.05
+    assert manifest["lower"] < -0.4 < 0.5 < manifest["upper"]
+    assert manifest["contacts"] is None
     assert manifest["positions"] == [1, 2]
     assert manifest["substitutions"] == 4
     assert manifest["maximum_depth"] == 2
@@ -60,6 +63,17 @@ def test_oracle_reports_observation_provenance_and_manifest(generator):
     assert manifest["wild_type_fitness"] == 0.0
     assert len(str(manifest["source_digest"])) == 32
     assert "seed=17" in repr(oracle)
+    assert oracle.provenance("A1G") == "measured"
+    assert oracle.provenance("A1G+C2D") == "synthetic"
+
+
+def test_draw_strength_overrides_pair_scale(generator):
+    additive = generator.draw(seed=4, strength=0.0)
+    coupled = generator.draw(seed=4, strength=1.0)
+
+    assert additive["A1G"] == coupled["A1G"] == 0.5
+    assert additive["A1G+C2D"] != coupled["A1G+C2D"]
+    assert coupled.manifest()["strength"] == 1.0
 
 
 def test_domain_describes_counts_and_samples_distinct_variants(generator):
@@ -88,16 +102,54 @@ def test_variant_csv_and_fasta_paths_are_loaded(tmp_path):
     fasta_path = tmp_path / "wt.fasta"
     pd.DataFrame(
         {
-            "variant": ["WT", "A1G", "C2D", "A1G:C2D"],
-            "fitness": [1.0, 1.5, 0.5, 2.1],
+            "variant": ["WT", "A1G", "A1V", "C2D"],
+            "fitness": [1.0, 1.5, 0.2, 0.5],
         }
     ).to_csv(dms_path, index=False)
     fasta_path.write_text(">WT\nAC\n")
 
     oracle = from_dms(dms_path, fasta=fasta_path).draw(seed=5)
 
-    assert oracle["A1G:C2D"] == pytest.approx(2.1)
-    assert oracle.is_observed("A1G+C2D") is True
+    assert oracle["A1G"] == pytest.approx(1.5)
+    assert oracle.is_observed("A1G+C2D") is False
+
+
+def test_combinations_require_the_pilot_argument():
+    variants = pd.DataFrame(
+        {"variant": ["WT", "A1G", "C2D", "A1G+C2D"], "fitness": [1.0, 1.5, 0.5, 2.1]}
+    )
+
+    with pytest.raises(ValueError, match="pilot="):
+        from_dms(variants, wt_sequence="AC")
+
+
+def test_pilot_calibration_keeps_measured_singles():
+    singles = pd.DataFrame(
+        {
+            "variant": ["WT", "A1G", "A1V", "C2D", "C2E", "D3F", "D3G"],
+            "fitness": [1.0, 1.4, 0.3, 0.6, 1.1, 0.9, 0.2],
+        }
+    )
+    pilot = pd.DataFrame(
+        {
+            "variant": ["A1G+C2D", "A1V+C2E", "C2D+D3F", "A1G+D3G", "A1V+C2D+D3F"],
+            "fitness": [0.8, 0.1, 0.4, 0.3, 0.0],
+        }
+    )
+
+    oracle = from_dms(singles, wt_sequence="ACD", pilot=pilot).draw(seed=3)
+
+    assert oracle["A1G"] == pytest.approx(1.4)
+    assert oracle.is_observed("C2E") is True
+    assert oracle.score_many(["A1G+C2E"]).index.tolist() == ["A1G+C2E"]
+
+
+def test_legacy_manifest_still_loads():
+    legacy_oracle = legacy.from_dms(SINGLES, wt_sequence="AC").draw(seed=8)
+    restored = load_oracle(legacy_oracle.manifest(), dms=SINGLES, wt_sequence="AC")
+
+    assert restored.manifest()["generator"] == "dms-pairwise-v1"
+    assert restored["A1G+C2D"] == pytest.approx(legacy_oracle["A1G+C2D"])
 
 
 def test_saved_manifest_recreates_and_checks_an_oracle(tmp_path):
@@ -129,15 +181,18 @@ def test_loader_requires_one_sequence_source():
 
 
 def test_variant_input_requires_constituent_singles():
-    variants = pd.DataFrame(
-        {
-            "variant": ["WT", "A1G", "A1G+C2D"],
-            "fitness": [1.0, 1.5, 2.1],
-        }
-    )
+    variants = pd.DataFrame({"variant": ["WT", "A1G", "A1G+C2D"], "fitness": [1.0, 1.5, 2.1]})
 
     with pytest.raises(ValueError, match="constituent singles for C2D"):
         from_dms(variants, wt_sequence="AC")
+
+
+def test_saved_manifest_needs_matching_singles():
+    oracle = from_dms(SINGLES, wt_sequence="AC").draw(seed=1)
+    missing = SINGLES.iloc[:3]
+
+    with pytest.raises(ValueError, match="do not match"):
+        load_oracle(oracle.manifest(), dms=missing, wt_sequence="AC")
 
 
 def test_core_import_does_not_load_fastapi():

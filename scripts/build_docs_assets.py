@@ -16,9 +16,9 @@ from matplotlib.figure import Figure
 from mutascape import (
     Campaign,
     CampaignResult,
+    DMSLandscape,
     MutationDomain,
     Oracle,
-    SimpleLandscape,
     from_dms,
     load_oracle,
     run_campaign,
@@ -50,7 +50,7 @@ def _paragraphs(value: object) -> list[str]:
     return [block for block in blocks if block]
 
 
-# Annotations render as `mutascape.completion.PosteriorLandscape` and similar. The module
+# Annotations render as `mutascape.model.DMSLandscape` and similar. The module
 # path is noise in a reference where every name is already an export.
 _QUALIFIED = re.compile(r"\b(?:[A-Za-z_][A-Za-z0-9_]*\.)+([A-Za-z_][A-Za-z0-9_]*)\b")
 
@@ -142,12 +142,12 @@ def _entry(name: str, value: object) -> dict[str, object]:
 def _api_reference() -> list[dict[str, object]]:
     groups: list[tuple[str, list[tuple[str, object]]]] = [
         (
-            "Construct the manuscript model",
-            [("SimpleLandscape.from_singles", SimpleLandscape.from_singles)],
-        ),
-        (
             "Load data",
-            [("from_dms", from_dms), ("load_oracle", load_oracle)],
+            [
+                ("from_dms", from_dms),
+                ("load_oracle", load_oracle),
+                ("DMSLandscape.from_singles", DMSLandscape.from_singles),
+            ],
         ),
         (
             "Sample an oracle",
@@ -191,7 +191,7 @@ def _make_generator() -> LandscapeGenerator:
 
 def _profile_data(generator: LandscapeGenerator) -> dict[str, object]:
     oracle = generator.draw(seed=42)
-    baseline = generator.sample_dms_pairwise(seed=42, coupling=0.0)
+    baseline = generator.draw(seed=42, strength=0.0)
     depths: dict[str, dict[str, list[float]]] = {}
     for depth in range(1, 5):
         variants = generator.domain.sample(depth=depth, n=160, seed=depth)

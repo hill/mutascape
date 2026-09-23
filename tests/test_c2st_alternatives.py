@@ -1,4 +1,4 @@
-"""Checks for the three experimental pilot alternatives."""
+"""Checks for the three pilot alternatives compared against C2ST."""
 
 from itertools import combinations
 

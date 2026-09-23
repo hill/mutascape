@@ -36,9 +36,13 @@ Synthetic combinatorial protein fitness landscapes for benchmarking MLDE and ALD
 
 ## Current public generator
 
-`mutascape.from_dms` in `api.py` returns a `PosteriorLandscape`. Its `draw(seed)` method returns a fixed `DMSPairwiseLandscape` oracle.
+`mutascape.from_dms` in `api.py` returns a `DMSGenerator`. Its `draw(seed)` method returns a fixed `DMSLandscape` oracle with generator id `dms-sigmoid-v1`. `model.py` defines both.
 
-The current model uses measured singles, seeded pair interactions, and a saturating readout. The default pair coupling is 0.1. `completion.py` defines this model. `priors.py` loads its empirical prior.
+The model takes WT and singles only. It sums inverse-sigmoid single effects and a seeded pair field, then maps the total through a sigmoid bounded 5% beyond the singles range. The default pair strength is 0.3. WT and singles return their measurements exactly.
+
+`from_dms(..., pilot=...)` returns `QuantileCalibratedLandscape` from `calibrated.py`, which also fits measured combinations.
+
+`mutascape.legacy` keeps the earlier empirical-prior `PosteriorLandscape` and its `dms-pairwise-v1` manifests. The studio still uses it through `completion.py` and `priors.py`. `load_oracle` routes old manifests there.
 
 Unknown singles raise an error unless the user requests `complete="esm2"`. ESM completion fills missing substitutions, preserves measurements, and records query provenance. Saved manifests freeze imputed effects.
 

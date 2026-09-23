@@ -14,7 +14,7 @@ import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.lines import Line2D
 
-from mutascape import from_dms
+from mutascape.legacy import from_dms
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "results" / "landscape_figure_studies"

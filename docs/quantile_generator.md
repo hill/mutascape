@@ -6,15 +6,16 @@ It uses measured combinations from a uniform sample of the intended library.
 The wild type and singles must come from the same assay.
 
 ```python
-from mutascape.experimental import QuantileCalibratedLandscape
+from mutascape import from_dms
 
-model = QuantileCalibratedLandscape.fit(sequence, singles, pilot)
+model = from_dms("singles.csv", fasta="wt.fasta", pilot="pilot.csv")
 landscape = model.draw(seed=42)
 fitness = landscape["A102G+P20Y"]
 ```
 
-The `singles` and `pilot` tables contain `mutations` dictionaries and numeric `fitness` values.
-The singles table includes wild type as an empty mutation dictionary.
+The singles file follows the `from_dms` formats.
+The pilot file has `variant` and `fitness` columns.
+`QuantileCalibratedLandscape.fit(sequence, singles, pilot)` accepts DataFrames with `mutations` dictionaries instead.
 The pilot contains distinct combinations with at least two substitutions.
 Each substitution needs a measured single.
 
@@ -45,6 +46,6 @@ It uses 192 calibration combinations per protein and excludes every evaluation g
 Across four confirmation proteins, mean sequence-aware C2ST AUC is 0.667, compared with 0.979 for singles-only generation.
 These scores describe one calibration set per protein.
 
-The manuscript presents `SimpleLandscape` as the main generator and Combination-calibrated Mutascape as an optional model.
+The manuscript presents `DMSLandscape` as the main generator and Combination-calibrated Mutascape as an optional model.
 The [earlier combination-calibration study](quantile_calibration_2026-09-23.md) records a separate five-protein search experiment.
 A close fitness distribution does not establish correct interactions or better search-method rankings.

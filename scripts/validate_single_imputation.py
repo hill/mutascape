@@ -10,8 +10,8 @@ import pandas as pd
 from scipy.stats import spearmanr
 from sklearn.model_selection import GroupKFold, KFold
 
-from mutascape import from_dms
 from mutascape.imputation import DEFAULT_ESM_MODEL, fit_single_calibration
+from mutascape.legacy import from_dms
 from mutascape.scoring import ESM2Scorer
 
 

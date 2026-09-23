@@ -253,16 +253,16 @@ function OverviewPage({ onNavigate }: { onNavigate: (page: DocsPage) => void }) 
       <section className="docs-section">
         <h2>The manuscript model</h2>
         <p>
-          SimpleLandscape needs a WT sequence and measured WT and singles from the same assay. It
-          requires no combination pilot or protein structure. The table has mutations and fitness
-          columns, with WT represented by an empty dictionary. Each queried substitution needs a
-          measured single effect.
+          from_dms needs a WT sequence and measured WT and singles from the same assay. It requires
+          no combination pilot or protein structure. Each queried substitution needs a measured
+          single effect. DMSLandscape.from_singles builds the same model from a table with mutations
+          and fitness columns, with WT represented by an empty dictionary.
         </p>
         <CodeBlock
           label="Python"
-          code={`from mutascape import SimpleLandscape
+          code={`from mutascape import DMSLandscape
 
-landscape = SimpleLandscape.from_singles(sequence, singles, seed=42)
+landscape = DMSLandscape.from_singles(sequence, singles, seed=42)
 fitness = landscape["A102G+P20Y"]`}
         />
       </section>
@@ -273,8 +273,8 @@ fitness = landscape["A102G+P20Y"]`}
           <p>Load DMS data and query a fixed landscape.</p>
         </div>
         <p>
-          This file interface retains the empirical-range generator used by the studio. The
-          manuscript model uses SimpleLandscape and needs no donor prior.
+          The file interface returns the manuscript model. The studio still uses the earlier
+          empirical-range generator, available as mutascape.legacy.
         </p>
         <div className="docs-code-stack">
           <CodeBlock label="Python" code={quickStartCode} />
@@ -455,8 +455,8 @@ function ModelPage({ onNavigate }: { onNavigate: (page: DocsPage) => void }) {
         <p className="docs-breadcrumb">Documentation / The fitness model</p>
         <h1>The fitness model</h1>
         <p className="docs-lead">
-          SimpleLandscape combines measured single effects with fixed random pair interactions. A
-          sigmoid maps the combined latent score back to fitness.
+          Mutascape combines measured single effects with fixed random pair interactions. A sigmoid
+          maps the combined latent score back to fitness.
         </p>
       </header>
       <section className="docs-section" id="the-equation">
@@ -468,8 +468,7 @@ function ModelPage({ onNavigate }: { onNavigate: (page: DocsPage) => void }) {
           interaction strength is 0.3.
         </p>
         <p className="docs-note">
-          This page describes the manuscript model, SimpleLandscape. The from_dms interface and
-          studio retain the earlier empirical-range model.
+          from_dms returns this model. The studio retains the earlier empirical-range model.
         </p>
       </section>
       <section className="docs-section" id="singles">
@@ -548,7 +547,7 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
           <ProtocolItem
             number="01"
             title="Fix the oracle sample"
-            text="Save the generator version, source digest, coupling, and landscape seed."
+            text="Save the generator version, source digest, interaction strength, and landscape seed."
           />
           <ProtocolItem
             number="02"
@@ -619,17 +618,17 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
         </p>
         <CodeBlock
           label="Python"
-          code={`from mutascape.experimental import QuantileCalibratedLandscape
+          code={`from mutascape import from_dms
 
-model = QuantileCalibratedLandscape.fit(sequence, singles, pilot)
+model = from_dms("singles.csv", fasta="wt.fasta", pilot="pilot.csv")
 oracle = model.draw(seed=42)
 fitness = oracle["A102G+P20Y"]`}
         />
         <p>
           Combination-calibrated Mutascape currently enumerates the supported library, with a
-          default limit of one million variants. Each table needs mutations and fitness columns. The
-          singles table includes measured WT as an empty dictionary. The matched test uses one pilot
-          per protein, shared across landscape samples.
+          default limit of one million variants. The pilot table needs variant and fitness columns
+          and holds multi-mutants only. The matched test uses one pilot per protein, shared across
+          landscape samples.
         </p>
       </section>
 
@@ -673,8 +672,8 @@ fitness = oracle["A102G+P20Y"]`}
         <p>
           The original DMS and combinatorial assay disagree even on shared single mutants.
           Same-assay singles reduce the offset, but do not recover the negative trend from combining
-          mutations. Pilot-calibrated models remain experimental and need measured combinations.
-          They do not replace the singles-only generator described here.
+          mutations. Pilot-calibrated models need measured combinations. They do not replace the
+          singles-only generator described here.
         </p>
         <CodeBlock
           label="Paired classifier test"

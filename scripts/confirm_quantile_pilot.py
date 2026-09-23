@@ -10,7 +10,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 
 from mutascape.benchmarks.datasets import SSMULA_MANIFEST, load_landscape
-from mutascape.experimental.quantile import QuantileCalibratedLandscape, empirical_quantiles
+from mutascape.calibrated import QuantileCalibratedLandscape, empirical_quantiles
 from mutascape.validation.fourier import binary_cube_spectral_metrics, walsh_l1_distance
 from scripts.audit_preprint_results import _spectrum
 from scripts.compare_c2st_alternatives import load_data
@@ -151,8 +151,7 @@ def freeze():
         )
     for p in [
         Path(__file__),
-        Path("src/mutascape/experimental/quantile.py"),
-        Path("src/mutascape/experimental/pilot.py"),
+        Path("src/mutascape/calibrated.py"),
         Path("scripts/explore_copula_landscapes.py"),
         Path("scripts/run_quantile_search.py"),
         Path("src/mutascape/benchmarks/methods.py"),

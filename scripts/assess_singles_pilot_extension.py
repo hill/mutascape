@@ -9,7 +9,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 
 from mutascape.benchmarks.evaluation import classifier_two_sample_test, completion_fidelity_features
-from mutascape.experimental.quantile import QuantileCalibratedLandscape
+from mutascape.calibrated import QuantileCalibratedLandscape
 from mutascape.mutant import parse_variant
 from scripts.investigate_singles_only import (
     CONFIRMATION,
@@ -39,8 +39,7 @@ def prepare():
             str(p): digest(p)
             for p in (
                 Path(__file__),
-                Path("src/mutascape/experimental/quantile.py"),
-                Path("src/mutascape/experimental/pilot.py"),
+                Path("src/mutascape/calibrated.py"),
             )
         },
     )

@@ -20,7 +20,7 @@ from mutascape.benchmarks.library import SearchSpace
 from mutascape.benchmarks.methods import METHODS, make_features, run_method
 from mutascape.benchmarks.validity import pairwise_winner_transfer, reliable_method_pairs
 from mutascape.contacts import ContactMap
-from mutascape.experimental.singles import SimpleLandscape
+from mutascape.model import SimpleLandscape
 from scripts.confirm_quantile_pilot import load as load_panel
 
 OUT = Path("results/singles_only_restart_20260923")
@@ -157,7 +157,7 @@ def prepare():
             p: digest(p)
             for p in [
                 __file__,
-                "src/mutascape/experimental/singles.py",
+                "src/mutascape/model.py",
                 "docs/singles_only_research_protocol.md",
             ]
         },

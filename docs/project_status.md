@@ -15,8 +15,9 @@ Wild type and singles retain their measured values.
 Pilot combinations fit the model but need not retain their measured values.
 A seed fixes each generated landscape.
 
-The Python import remains `mutascape.experimental.QuantileCalibratedLandscape` for compatibility.
-The `from_dms` interface and browser studio retain their singles-only generator.
+`from_dms(..., pilot=...)` returns this model.
+Without a pilot, `from_dms` returns the singles-only `DMSLandscape` generator.
+The browser studio retains the earlier empirical-range generator.
 Exact enumeration limits the new model to one million declared variants by default.
 
 ## Five-protein evaluation

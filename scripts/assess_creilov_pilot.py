@@ -19,8 +19,8 @@ from mutascape.benchmarks.evaluation import classifier_two_sample_test, completi
 from mutascape.benchmarks.library import SearchSpace
 from mutascape.benchmarks.methods import METHODS, make_features, run_method
 from mutascape.benchmarks.validity import pairwise_winner_transfer
+from mutascape.calibrated import PilotCalibratedLandscape
 from mutascape.completion import LandscapePrior, PosteriorLandscape, dms_pairwise_unit_coefficient
-from mutascape.experimental import PilotCalibratedLandscape
 from mutascape.nonlinearity import GlobalEpistasisSigmoid
 from mutascape.validation.fourier import binary_cube_spectral_metrics
 

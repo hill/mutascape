@@ -1,18 +1,13 @@
 """Task-validated synthetic protein fitness oracles for search benchmarks."""
 
 from mutascape.api import LandscapeGenerator, Oracle, from_dms, load_oracle
+from mutascape.calibrated import QuantileCalibratedLandscape
 from mutascape.campaign import (
     DEFAULT_BATCH_SIZE,
     Campaign,
     CampaignResult,
     SearchMethod,
     run_campaign,
-)
-from mutascape.completion import (
-    CompletedLandscape,
-    DMSPairwiseLandscape,
-    LandscapePrior,
-    PosteriorLandscape,
 )
 from mutascape.contacts import ContactMap
 from mutascape.domain import MutationDomain
@@ -24,9 +19,9 @@ from mutascape.epistasis import (
     RandomEpistasis,
     SignConsistentEpistasis,
 )
-from mutascape.experimental.singles import SimpleLandscape
 from mutascape.interactive import morphing_landscape
 from mutascape.landscape import Landscape, Variant
+from mutascape.model import DMSLandscape, SimpleLandscape
 from mutascape.mutant import Mutant, VariantLike, parse_variant
 from mutascape.nonlinearity import GlobalEpistasisSigmoid, Identity, NonLinearity
 from mutascape.plotting import (
@@ -43,23 +38,21 @@ __all__ = [
     "Campaign",
     "CampaignResult",
     "ContactMap",
-    "CompletedLandscape",
-    "DMSPairwiseLandscape",
     "CouplingTensor",
+    "DMSLandscape",
     "ESM2Scorer",
     "EpistasisModel",
     "GlobalEpistasisSigmoid",
     "Identity",
     "Landscape",
     "LandscapeGenerator",
-    "LandscapePrior",
     "MutationDomain",
     "MSACouplingsEpistasis",
     "Mutant",
     "NonLinearity",
     "Oracle",
     "PLMScorer",
-    "PosteriorLandscape",
+    "QuantileCalibratedLandscape",
     "RandomEpistasis",
     "SearchMethod",
     "SignConsistentEpistasis",

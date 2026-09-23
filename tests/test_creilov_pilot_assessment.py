@@ -1,4 +1,4 @@
-"""Checks for the experimental pilot model, which has no public API."""
+"""Checks for the pilot-calibrated burden model used in the CreiLOV assessment."""
 
 import importlib
 from itertools import combinations

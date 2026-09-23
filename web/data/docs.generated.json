@@ -3,6 +3,67 @@
     {
       "entries": [
         {
+          "name": "SimpleLandscape.from_singles",
+          "notes": [
+            {
+              "kind": "text",
+              "text": "Strength scales unit-variance pair effects by the single-effect standard deviation. Contacts restrict which site pairs can interact."
+            }
+          ],
+          "parameters": [
+            {
+              "annotation": "str",
+              "default": "",
+              "keywordOnly": false,
+              "name": "sequence"
+            },
+            {
+              "annotation": "DataFrame",
+              "default": "",
+              "keywordOnly": false,
+              "name": "singles"
+            },
+            {
+              "annotation": "int",
+              "default": "0",
+              "keywordOnly": true,
+              "name": "seed"
+            },
+            {
+              "annotation": "float",
+              "default": "0.3",
+              "keywordOnly": true,
+              "name": "strength"
+            },
+            {
+              "annotation": "Literal['linear', 'sigmoid', 'pool']",
+              "default": "'sigmoid'",
+              "keywordOnly": true,
+              "name": "mode"
+            },
+            {
+              "annotation": "float",
+              "default": "0.05",
+              "keywordOnly": true,
+              "name": "margin"
+            },
+            {
+              "annotation": "set[tuple[int, int]] | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "contacts"
+            }
+          ],
+          "returns": "Self",
+          "signature": "SimpleLandscape.from_singles(sequence: str, singles: DataFrame, *, seed: int = 0, strength: float = 0.3, mode: Literal['linear', 'sigmoid', 'pool'] = 'sigmoid', margin: float = 0.05, contacts: set[tuple[int, int]] | None = None) -> Self",
+          "summary": "Construct a landscape from WT and singles without enumerating variants."
+        }
+      ],
+      "title": "Construct the manuscript model"
+    },
+    {
+      "entries": [
+        {
           "name": "from_dms",
           "notes": [
             {
@@ -178,7 +239,7 @@
           "summary": "Sample distinct supported variants at a fixed mutation depth."
         }
       ],
-      "title": "Draw an oracle"
+      "title": "Sample an oracle"
     },
     {
       "entries": [

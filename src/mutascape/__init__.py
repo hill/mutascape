@@ -24,6 +24,7 @@ from mutascape.epistasis import (
     RandomEpistasis,
     SignConsistentEpistasis,
 )
+from mutascape.experimental.singles import SimpleLandscape
 from mutascape.interactive import morphing_landscape
 from mutascape.landscape import Landscape, Variant
 from mutascape.mutant import Mutant, VariantLike, parse_variant
@@ -62,6 +63,7 @@ __all__ = [
     "RandomEpistasis",
     "SearchMethod",
     "SignConsistentEpistasis",
+    "SimpleLandscape",
     "Variant",
     "VariantLike",
     "from_dms",

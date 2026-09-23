@@ -18,6 +18,7 @@ from mutascape import (
     CampaignResult,
     MutationDomain,
     Oracle,
+    SimpleLandscape,
     from_dms,
     load_oracle,
     run_campaign,
@@ -141,11 +142,15 @@ def _entry(name: str, value: object) -> dict[str, object]:
 def _api_reference() -> list[dict[str, object]]:
     groups: list[tuple[str, list[tuple[str, object]]]] = [
         (
+            "Construct the manuscript model",
+            [("SimpleLandscape.from_singles", SimpleLandscape.from_singles)],
+        ),
+        (
             "Load data",
             [("from_dms", from_dms), ("load_oracle", load_oracle)],
         ),
         (
-            "Draw an oracle",
+            "Sample an oracle",
             [
                 ("LandscapeGenerator.draw", LandscapeGenerator.draw),
                 ("MutationDomain.count", MutationDomain.count),

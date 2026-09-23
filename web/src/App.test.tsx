@@ -60,7 +60,7 @@ describe("landscape builder", () => {
     expect(screen.queryByText(/Python 3\.14/)).toBeNull()
     expect(screen.getByText(/MutationDomain\(positions=118/)).toBeTruthy()
     expect(document.querySelector(".language-python .token-keyword")?.textContent).toBe("from")
-    expect(document.querySelector(".language-python .token-string")?.textContent).toBe(
+    expect(document.querySelector("#quick-start .language-python .token-string")?.textContent).toBe(
       '"data/creilov/creilov.csv"',
     )
     expect(screen.getByRole("img", { name: /Fitness distributions/ }).getAttribute("src")).toBe(

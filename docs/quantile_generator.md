@@ -1,4 +1,4 @@
-# Distribution-calibrated pilot landscapes
+# Optional extension with measured combinations
 
 `QuantileCalibratedLandscape` fits the existing pilot model, then calibrates the distribution of generated combination fitness.
 It uses measured combinations from a uniform sample of the intended library.
@@ -9,7 +9,7 @@ from mutascape.experimental import QuantileCalibratedLandscape
 
 model = QuantileCalibratedLandscape.fit(sequence, singles, pilot)
 landscape = model.draw(seed=42)
-fitness = landscape.evaluate_batch(variants)
+fitness = landscape["A102G+P20Y"]
 ```
 
 The `singles` and `pilot` tables contain `mutations` dictionaries and numeric `fitness` values.
@@ -18,7 +18,7 @@ The pilot contains distinct combinations with at least two substitutions.
 Each substitution needs a measured single.
 
 The model fits the mutation-depth terms and sigmoid used by `PilotCalibratedLandscape`.
-For each draw, it enumerates the supported combination library and records the generated fitness ranks.
+For each landscape sample, it enumerates the supported combination library and records the generated fitness ranks.
 It maps those ranks to quantiles of the measured pilot distribution.
 Repeated measured values retain their empirical probability mass.
 Linear interpolation handles other values, with linear extrapolation through the extreme intervals.
@@ -39,9 +39,11 @@ restored = QuantileCalibratedLandscape.from_dict(saved)
 landscape = restored.draw(seed=42)
 ```
 
-The [confirmation report](quantile_calibration_2026-09-23.md) compares this model across five proteins.
-The strongest evidence uses 192 calibration combinations.
-The manuscript presents this model as Mutascape.
-Its Python import remains in `mutascape.experimental` for compatibility.
-The `from_dms` interface and browser studio retain the singles-only generator.
-A close fitness distribution does not establish correct interaction structure or better search-method rankings.
+The [matched comparison](singles_pilot_extension_results.md) tests the extension on the same genotypes as the singles-only manuscript model.
+It uses 192 pilot combinations per protein and excludes every evaluation genotype and spectral-test corner.
+Across four confirmation proteins, mean sequence-aware C2ST AUC is 0.667, compared with 0.979 for singles-only generation.
+These scores describe one pilot per protein.
+
+The manuscript presents `SimpleLandscape` as the main generator and this model as an optional extension.
+The [earlier pilot study](quantile_calibration_2026-09-23.md) records a separate five-protein search experiment.
+A close fitness distribution does not establish correct interactions or better search-method rankings.

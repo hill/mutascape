@@ -1,0 +1,7508 @@
+{
+  "id": "singles-pilot-extension-v1",
+  "protocol": {
+    "model": "Existing QuantileCalibratedLandscape without parameter changes",
+    "pilot_size": 192,
+    "proteins": [
+      "DHFR",
+      "eqFP611",
+      "ParB-Noc",
+      "ParD2",
+      "CreiLOV",
+      "GB1",
+      "TrpB4",
+      "T7",
+      "TEV"
+    ],
+    "seeds": [
+      2026092311,
+      2026092312,
+      2026092313
+    ],
+    "selection_seed": 2026092327,
+    "evaluation": "The same 1000 genotypes and complete subcubes as the singles-only study",
+    "pilot_selection": "Uniform without replacement from eligible measured combinations",
+    "exclusions": "WT, singles, evaluation genotypes and every spectral subcube corner",
+    "source_sha256": {
+      "/Users/tomhill/Uni/research-project/mutascape/scripts/assess_singles_pilot_extension.py": "5678183e59fbf05b3f4c93f76aa7785806e21e7408db3876dca122ec3171181b",
+      "src/mutascape/experimental/quantile.py": "da62915ed71205b21a7c458fbfe11a92d0a6ceca840c1033fdc1fd27e9dfe251",
+      "src/mutascape/experimental/pilot.py": "44d4ece0cf294e610fe3f6a965366e8be9bf93706abb30edd4a23a7a6fd8204b"
+    }
+  },
+  "metrics": [
+    {
+      "protein": "DHFR",
+      "seed": 2026092311,
+      "pilot_size": 192,
+      "w1": 0.16670603797387729,
+      "shape_w1": 0.11304242909575055,
+      "local_walsh_l1": 0.2212702838938473,
+      "measured_local_additive": 0.8484800138529098,
+      "generated_local_additive": 0.7378448719059862,
+      "measured_sign_switch": 0.7513020833333333,
+      "generated_sign_switch": 0.421875,
+      "spearman": 0.29949821949821953,
+      "auc_base": 0.699845,
+      "auc_sequence": 0.7326650000000001
+    },
+    {
+      "protein": "DHFR",
+      "seed": 2026092312,
+      "pilot_size": 192,
+      "w1": 0.17008978915136466,
+      "shape_w1": 0.1100582896927386,
+      "local_walsh_l1": 0.30375962910758725,
+      "measured_local_additive": 0.8484800138529098,
+      "generated_local_additive": 0.6966001992991162,
+      "measured_sign_switch": 0.7513020833333333,
+      "generated_sign_switch": 0.3671875,
+      "spearman": 0.25635518835518833,
+      "auc_base": 0.7067475,
+      "auc_sequence": 0.74509
+    },
+    {
+      "protein": "DHFR",
+      "seed": 2026092313,
+      "pilot_size": 192,
+      "w1": 0.17825437499200733,
+      "shape_w1": 0.13673717153182868,
+      "local_walsh_l1": 0.2150019958651683,
+      "measured_local_additive": 0.8484800138529098,
+      "generated_local_additive": 0.7409790159203258,
+      "measured_sign_switch": 0.7513020833333333,
+      "generated_sign_switch": 0.34244791666666663,
+      "spearman": 0.350945270945271,
+      "auc_base": 0.7119449999999999,
+      "auc_sequence": 0.7211575
+    },
+    {
+      "protein": "eqFP611",
+      "seed": 2026092311,
+      "pilot_size": 192,
+      "w1": 0.10566085497107877,
+      "shape_w1": 0.10876445066167591,
+      "local_walsh_l1": 0.08536039324413165,
+      "measured_local_additive": 0.8252452413821112,
+      "generated_local_additive": 0.8679254380041771,
+      "measured_sign_switch": 0.7669270833333333,
+      "generated_sign_switch": 0.18229166666666666,
+      "spearman": 0.4370628856852631,
+      "auc_base": 0.6953699999999999,
+      "auc_sequence": 0.7980325
+    },
+    {
+      "protein": "eqFP611",
+      "seed": 2026092312,
+      "pilot_size": 192,
+      "w1": 0.12103367713305414,
+      "shape_w1": 0.12543807808310492,
+      "local_walsh_l1": 0.02015482207454098,
+      "measured_local_additive": 0.8252452413821112,
+      "generated_local_additive": 0.8151678303448407,
+      "measured_sign_switch": 0.7669270833333333,
+      "generated_sign_switch": 0.3177083333333333,
+      "spearman": 0.309680081538162,
+      "auc_base": 0.6991725,
+      "auc_sequence": 0.7714
+    },
+    {
+      "protein": "eqFP611",
+      "seed": 2026092313,
+      "pilot_size": 192,
+      "w1": 0.07983186777135712,
+      "shape_w1": 0.08326955460621122,
+      "local_walsh_l1": 0.05645432361487601,
+      "measured_local_additive": 0.8252452413821112,
+      "generated_local_additive": 0.8534724031895492,
+      "measured_sign_switch": 0.7669270833333333,
+      "generated_sign_switch": 0.28385416666666663,
+      "spearman": 0.22114557647244995,
+      "auc_base": 0.7123775,
+      "auc_sequence": 0.79844
+    },
+    {
+      "protein": "ParB-Noc",
+      "seed": 2026092311,
+      "pilot_size": 192,
+      "w1": 0.10625861017301864,
+      "shape_w1": 0.1321238105742498,
+      "local_walsh_l1": 0.37352951750677654,
+      "measured_local_additive": 0.6740971699019651,
+      "generated_local_additive": 0.8608619286553534,
+      "measured_sign_switch": 0.5625,
+      "generated_sign_switch": 0.18098958333333331,
+      "spearman": 0.21449374250043818,
+      "auc_base": 0.6340775,
+      "auc_sequence": 0.651115
+    },
+    {
+      "protein": "ParB-Noc",
+      "seed": 2026092312,
+      "pilot_size": 192,
+      "w1": 0.09880811409934899,
+      "shape_w1": 0.10952429255713726,
+      "local_walsh_l1": 0.433224412428181,
+      "measured_local_additive": 0.6740971699019651,
+      "generated_local_additive": 0.8907093761160555,
+      "measured_sign_switch": 0.5625,
+      "generated_sign_switch": 0.1484375,
+      "spearman": 0.3071799911744443,
+      "auc_base": 0.6257225,
+      "auc_sequence": 0.644385
+    },
+    {
+      "protein": "ParB-Noc",
+      "seed": 2026092313,
+      "pilot_size": 192,
+      "w1": 0.10660408163459158,
+      "shape_w1": 0.11382421269155976,
+      "local_walsh_l1": 0.36988567918510046,
+      "measured_local_additive": 0.6740971699019651,
+      "generated_local_additive": 0.8590400094945153,
+      "measured_sign_switch": 0.5625,
+      "generated_sign_switch": 0.1640625,
+      "spearman": 0.3034820104099806,
+      "auc_base": 0.6491225,
+      "auc_sequence": 0.65424
+    },
+    {
+      "protein": "ParD2",
+      "seed": 2026092311,
+      "pilot_size": 192,
+      "w1": 0.09275112188775984,
+      "shape_w1": 0.04619347352142392,
+      "local_walsh_l1": 0.008126984860785079,
+      "measured_local_additive": 0.9151083835114783,
+      "generated_local_additive": 0.9126958658906112,
+      "measured_sign_switch": 0.48828125,
+      "generated_sign_switch": 0.28645833333333337,
+      "spearman": 0.711945723945724,
+      "auc_base": 0.692095,
+      "auc_sequence": 0.71487
+    },
+    {
+      "protein": "ParD2",
+      "seed": 2026092312,
+      "pilot_size": 192,
+      "w1": 0.06709706726214335,
+      "shape_w1": 0.03852969900911884,
+      "local_walsh_l1": 0.008367430946020365,
+      "measured_local_additive": 0.9151083835114783,
+      "generated_local_additive": 0.9135350136204666,
+      "measured_sign_switch": 0.48828125,
+      "generated_sign_switch": 0.30078125,
+      "spearman": 0.6873216273216274,
+      "auc_base": 0.693995,
+      "auc_sequence": 0.730365
+    },
+    {
+      "protein": "ParD2",
+      "seed": 2026092313,
+      "pilot_size": 192,
+      "w1": 0.06808194510686714,
+      "shape_w1": 0.039234859952081855,
+      "local_walsh_l1": 0.010269559723915392,
+      "measured_local_additive": 0.9151083835114783,
+      "generated_local_additive": 0.9122260016198025,
+      "measured_sign_switch": 0.48828125,
+      "generated_sign_switch": 0.3411458333333333,
+      "spearman": 0.6681343521343521,
+      "auc_base": 0.7065100000000001,
+      "auc_sequence": 0.7346625
+    },
+    {
+      "protein": "CreiLOV",
+      "seed": 2026092311,
+      "pilot_size": 192,
+      "w1": 0.1874367009551112,
+      "shape_w1": 0.061910982666558555,
+      "local_walsh_l1": 0.0808906832731979,
+      "measured_local_additive": 0.916807460785375,
+      "generated_local_additive": 0.9572528024219739,
+      "measured_sign_switch": 0.47916666666666663,
+      "generated_sign_switch": 0.17578125,
+      "spearman": 0.6212906132906133,
+      "auc_base": 0.695425,
+      "auc_sequence": 0.7388049999999999
+    },
+    {
+      "protein": "CreiLOV",
+      "seed": 2026092312,
+      "pilot_size": 192,
+      "w1": 0.1569126276715524,
+      "shape_w1": 0.059872446012860445,
+      "local_walsh_l1": 0.09665870027613678,
+      "measured_local_additive": 0.916807460785375,
+      "generated_local_additive": 0.9651368109234433,
+      "measured_sign_switch": 0.47916666666666663,
+      "generated_sign_switch": 0.19791666666666666,
+      "spearman": 0.47046539046539054,
+      "auc_base": 0.65059,
+      "auc_sequence": 0.7532175
+    },
+    {
+      "protein": "CreiLOV",
+      "seed": 2026092313,
+      "pilot_size": 192,
+      "w1": 0.16552661087429338,
+      "shape_w1": 0.06888052792876481,
+      "local_walsh_l1": 0.08869365147029952,
+      "measured_local_additive": 0.916807460785375,
+      "generated_local_additive": 0.9611542865205248,
+      "measured_sign_switch": 0.47916666666666663,
+      "generated_sign_switch": 0.125,
+      "spearman": 0.43701163701163703,
+      "auc_base": 0.67351,
+      "auc_sequence": 0.77843
+    },
+    {
+      "protein": "GB1",
+      "seed": 2026092311,
+      "pilot_size": 192,
+      "w1": 0.07540898575581834,
+      "shape_w1": 0.11280130227678807,
+      "local_walsh_l1": 0.1255497738132354,
+      "measured_local_additive": 0.6790896598451966,
+      "generated_local_additive": 0.7418645467518145,
+      "measured_sign_switch": 0.6236979166666666,
+      "generated_sign_switch": 0.28255208333333337,
+      "spearman": 0.12570991581414295,
+      "auc_base": 0.6446000000000001,
+      "auc_sequence": 0.701015
+    },
+    {
+      "protein": "GB1",
+      "seed": 2026092312,
+      "pilot_size": 192,
+      "w1": 0.08084026868985664,
+      "shape_w1": 0.0901120211859257,
+      "local_walsh_l1": 0.0920500293208876,
+      "measured_local_additive": 0.6790896598451966,
+      "generated_local_additive": 0.723057914247128,
+      "measured_sign_switch": 0.6236979166666666,
+      "generated_sign_switch": 0.29427083333333337,
+      "spearman": 0.11948308079433394,
+      "auc_base": 0.6401675,
+      "auc_sequence": 0.7222875
+    },
+    {
+      "protein": "GB1",
+      "seed": 2026092313,
+      "pilot_size": 192,
+      "w1": 0.12841732398838163,
+      "shape_w1": 0.15205695869577585,
+      "local_walsh_l1": 0.07097297024588063,
+      "measured_local_additive": 0.6790896598451966,
+      "generated_local_additive": 0.7140729652239357,
+      "measured_sign_switch": 0.6236979166666666,
+      "generated_sign_switch": 0.29557291666666663,
+      "spearman": 0.18146580329523607,
+      "auc_base": 0.66461,
+      "auc_sequence": 0.7221299999999999
+    },
+    {
+      "protein": "TrpB4",
+      "seed": 2026092311,
+      "pilot_size": 192,
+      "w1": 0.10699317820741397,
+      "shape_w1": 0.13162331440717484,
+      "local_walsh_l1": 0.14318341698550235,
+      "measured_local_additive": 0.7018457345872753,
+      "generated_local_additive": 0.7734374430800265,
+      "measured_sign_switch": 0.8177083333333333,
+      "generated_sign_switch": 0.31640625,
+      "spearman": 0.14761145161145162,
+      "auc_base": 0.6667,
+      "auc_sequence": 0.6785875
+    },
+    {
+      "protein": "TrpB4",
+      "seed": 2026092312,
+      "pilot_size": 192,
+      "w1": 0.10131684678569426,
+      "shape_w1": 0.14823912964437946,
+      "local_walsh_l1": 0.06732828259283082,
+      "measured_local_additive": 0.7018457345872753,
+      "generated_local_additive": 0.7355098758836907,
+      "measured_sign_switch": 0.8177083333333333,
+      "generated_sign_switch": 0.38932291666666663,
+      "spearman": 0.120010884010884,
+      "auc_base": 0.6679424999999999,
+      "auc_sequence": 0.7069175
+    },
+    {
+      "protein": "TrpB4",
+      "seed": 2026092313,
+      "pilot_size": 192,
+      "w1": 0.10504064800264676,
+      "shape_w1": 0.1512413334491511,
+      "local_walsh_l1": 0.10563056038451075,
+      "measured_local_additive": 0.7018457345872753,
+      "generated_local_additive": 0.7546610147795306,
+      "measured_sign_switch": 0.8177083333333333,
+      "generated_sign_switch": 0.36848958333333326,
+      "spearman": 0.1015076575076575,
+      "auc_base": 0.67164,
+      "auc_sequence": 0.7059249999999999
+    },
+    {
+      "protein": "T7",
+      "seed": 2026092311,
+      "pilot_size": 192,
+      "w1": 0.14344335273233388,
+      "shape_w1": 0.19338797998649443,
+      "local_walsh_l1": 0.20389075489481426,
+      "measured_local_additive": 0.6140552863766052,
+      "generated_local_additive": 0.7160006638240124,
+      "measured_sign_switch": 0.0234375,
+      "generated_sign_switch": 0.018229166666666664,
+      "spearman": 0.15304039184414794,
+      "auc_base": 0.55281,
+      "auc_sequence": 0.5592050000000001
+    },
+    {
+      "protein": "T7",
+      "seed": 2026092312,
+      "pilot_size": 192,
+      "w1": 0.14224879842610008,
+      "shape_w1": 0.19269057165341702,
+      "local_walsh_l1": 0.2475074036789387,
+      "measured_local_additive": 0.6140552863766052,
+      "generated_local_additive": 0.7378089882160747,
+      "measured_sign_switch": 0.0234375,
+      "generated_sign_switch": 0.006510416666666666,
+      "spearman": 0.1830389315234218,
+      "auc_base": 0.5491374999999998,
+      "auc_sequence": 0.5517774999999999
+    },
+    {
+      "protein": "T7",
+      "seed": 2026092313,
+      "pilot_size": 192,
+      "w1": 0.15673754489865613,
+      "shape_w1": 0.20715642124709283,
+      "local_walsh_l1": 0.21083764429271815,
+      "measured_local_additive": 0.6140552863766052,
+      "generated_local_additive": 0.7194741085229643,
+      "measured_sign_switch": 0.0234375,
+      "generated_sign_switch": 0.01171875,
+      "spearman": 0.15826274018280176,
+      "auc_base": 0.56248,
+      "auc_sequence": 0.5667325
+    },
+    {
+      "protein": "TEV",
+      "seed": 2026092311,
+      "pilot_size": 192,
+      "w1": 0.051032435757860345,
+      "shape_w1": 0.053120613514223036,
+      "local_walsh_l1": 0.6218518011980477,
+      "measured_local_additive": 0.47304637704591124,
+      "generated_local_additive": 0.783972277644935,
+      "measured_sign_switch": 0.8294270833333333,
+      "generated_sign_switch": 0.37890625,
+      "spearman": 0.019779626373015172,
+      "auc_base": 0.645855,
+      "auc_sequence": 0.6880049999999999
+    },
+    {
+      "protein": "TEV",
+      "seed": 2026092312,
+      "pilot_size": 192,
+      "w1": 0.10756138550706339,
+      "shape_w1": 0.1426391196117806,
+      "local_walsh_l1": 0.5043581949391179,
+      "measured_local_additive": 0.47304637704591124,
+      "generated_local_additive": 0.7252254745154701,
+      "measured_sign_switch": 0.8294270833333333,
+      "generated_sign_switch": 0.3619791666666667,
+      "spearman": 0.0655396095057978,
+      "auc_base": 0.6556799999999999,
+      "auc_sequence": 0.6770299999999999
+    },
+    {
+      "protein": "TEV",
+      "seed": 2026092313,
+      "pilot_size": 192,
+      "w1": 0.07119166038795821,
+      "shape_w1": 0.08823520799314255,
+      "local_walsh_l1": 0.525857760816252,
+      "measured_local_additive": 0.47304637704591124,
+      "generated_local_additive": 0.7359752574540371,
+      "measured_sign_switch": 0.8294270833333333,
+      "generated_sign_switch": 0.31510416666666663,
+      "spearman": -0.01170236405343498,
+      "auc_base": 0.61159,
+      "auc_sequence": 0.6812324999999999
+    }
+  ],
+  "medians": [
+    {
+      "protein": "CreiLOV",
+      "seed": 2026092312.0,
+      "pilot_size": 192.0,
+      "w1": 0.1655266109,
+      "shape_w1": 0.0619109827,
+      "local_walsh_l1": 0.0886936515,
+      "measured_local_additive": 0.9168074608,
+      "generated_local_additive": 0.9611542865,
+      "measured_sign_switch": 0.4791666667,
+      "generated_sign_switch": 0.17578125,
+      "spearman": 0.4704653905,
+      "auc_base": 0.67351,
+      "auc_sequence": 0.7532175
+    },
+    {
+      "protein": "DHFR",
+      "seed": 2026092312.0,
+      "pilot_size": 192.0,
+      "w1": 0.1700897892,
+      "shape_w1": 0.1130424291,
+      "local_walsh_l1": 0.2212702839,
+      "measured_local_additive": 0.8484800139,
+      "generated_local_additive": 0.7378448719,
+      "measured_sign_switch": 0.7513020833,
+      "generated_sign_switch": 0.3671875,
+      "spearman": 0.2994982195,
+      "auc_base": 0.7067475,
+      "auc_sequence": 0.732665
+    },
+    {
+      "protein": "GB1",
+      "seed": 2026092312.0,
+      "pilot_size": 192.0,
+      "w1": 0.0808402687,
+      "shape_w1": 0.1128013023,
+      "local_walsh_l1": 0.0920500293,
+      "measured_local_additive": 0.6790896598,
+      "generated_local_additive": 0.7230579142,
+      "measured_sign_switch": 0.6236979167,
+      "generated_sign_switch": 0.2942708333,
+      "spearman": 0.1257099158,
+      "auc_base": 0.6446,
+      "auc_sequence": 0.72213
+    },
+    {
+      "protein": "ParB-Noc",
+      "seed": 2026092312.0,
+      "pilot_size": 192.0,
+      "w1": 0.1062586102,
+      "shape_w1": 0.1138242127,
+      "local_walsh_l1": 0.3735295175,
+      "measured_local_additive": 0.6740971699,
+      "generated_local_additive": 0.8608619287,
+      "measured_sign_switch": 0.5625,
+      "generated_sign_switch": 0.1640625,
+      "spearman": 0.3034820104,
+      "auc_base": 0.6340775,
+      "auc_sequence": 0.651115
+    },
+    {
+      "protein": "ParD2",
+      "seed": 2026092312.0,
+      "pilot_size": 192.0,
+      "w1": 0.0680819451,
+      "shape_w1": 0.03923486,
+      "local_walsh_l1": 0.0083674309,
+      "measured_local_additive": 0.9151083835,
+      "generated_local_additive": 0.9126958659,
+      "measured_sign_switch": 0.48828125,
+      "generated_sign_switch": 0.30078125,
+      "spearman": 0.6873216273,
+      "auc_base": 0.693995,
+      "auc_sequence": 0.730365
+    },
+    {
+      "protein": "T7",
+      "seed": 2026092312.0,
+      "pilot_size": 192.0,
+      "w1": 0.1434433527,
+      "shape_w1": 0.19338798,
+      "local_walsh_l1": 0.2108376443,
+      "measured_local_additive": 0.6140552864,
+      "generated_local_additive": 0.7194741085,
+      "measured_sign_switch": 0.0234375,
+      "generated_sign_switch": 0.01171875,
+      "spearman": 0.1582627402,
+      "auc_base": 0.55281,
+      "auc_sequence": 0.559205
+    },
+    {
+      "protein": "TEV",
+      "seed": 2026092312.0,
+      "pilot_size": 192.0,
+      "w1": 0.0711916604,
+      "shape_w1": 0.088235208,
+      "local_walsh_l1": 0.5258577608,
+      "measured_local_additive": 0.473046377,
+      "generated_local_additive": 0.7359752575,
+      "measured_sign_switch": 0.8294270833,
+      "generated_sign_switch": 0.3619791667,
+      "spearman": 0.0197796264,
+      "auc_base": 0.645855,
+      "auc_sequence": 0.6812325
+    },
+    {
+      "protein": "TrpB4",
+      "seed": 2026092312.0,
+      "pilot_size": 192.0,
+      "w1": 0.105040648,
+      "shape_w1": 0.1482391296,
+      "local_walsh_l1": 0.1056305604,
+      "measured_local_additive": 0.7018457346,
+      "generated_local_additive": 0.7546610148,
+      "measured_sign_switch": 0.8177083333,
+      "generated_sign_switch": 0.3684895833,
+      "spearman": 0.120010884,
+      "auc_base": 0.6679425,
+      "auc_sequence": 0.705925
+    },
+    {
+      "protein": "eqFP611",
+      "seed": 2026092312.0,
+      "pilot_size": 192.0,
+      "w1": 0.105660855,
+      "shape_w1": 0.1087644507,
+      "local_walsh_l1": 0.0564543236,
+      "measured_local_additive": 0.8252452414,
+      "generated_local_additive": 0.8534724032,
+      "measured_sign_switch": 0.7669270833,
+      "generated_sign_switch": 0.2838541667,
+      "spearman": 0.3096800815,
+      "auc_base": 0.6991725,
+      "auc_sequence": 0.7980325
+    }
+  ],
+  "pilots": {
+    "DHFR": [
+      {
+        "row": 1976,
+        "variant": "A1F+D2W+L3T"
+      },
+      {
+        "row": 1632,
+        "variant": "A1F+D2C+L3P"
+      },
+      {
+        "row": 3397,
+        "variant": "A1K+D2L+L3V"
+      },
+      {
+        "row": 1557,
+        "variant": "A1E+D2V+L3V"
+      },
+      {
+        "row": 7443,
+        "variant": "A1W+D2P+L3E"
+      },
+      {
+        "row": 140,
+        "variant": "D2I+L3A"
+      },
+      {
+        "row": 6728,
+        "variant": "A1T+D2T+L3K"
+      },
+      {
+        "row": 818,
+        "variant": "A1D+D2A+L3W"
+      },
+      {
+        "row": 6550,
+        "variant": "A1T+D2I+L3M"
+      },
+      {
+        "row": 7713,
+        "variant": "A1Y+D2G+L3Q"
+      },
+      {
+        "row": 143,
+        "variant": "D2I+L3E"
+      },
+      {
+        "row": 2834,
+        "variant": "A1I+D2C+L3R"
+      },
+      {
+        "row": 4064,
+        "variant": "A1M+D2E+L3F"
+      },
+      {
+        "row": 7385,
+        "variant": "A1W+D2L+L3G"
+      },
+      {
+        "row": 5664,
+        "variant": "A1R+D2E+L3F"
+      },
+      {
+        "row": 6643,
+        "variant": "A1T+D2P+L3E"
+      },
+      {
+        "row": 7243,
+        "variant": "A1W+L3E"
+      },
+      {
+        "row": 7023,
+        "variant": "A1V+D2N+L3E"
+      },
+      {
+        "row": 1325,
+        "variant": "A1E+D2H+L3G"
+      },
+      {
+        "row": 3069,
+        "variant": "A1I+D2Q"
+      },
+      {
+        "row": 127,
+        "variant": "D2H+L3I"
+      },
+      {
+        "row": 3242,
+        "variant": "A1K+L3D"
+      },
+      {
+        "row": 4293,
+        "variant": "A1M+D2R+L3Q"
+      },
+      {
+        "row": 7679,
+        "variant": "A1Y+D2E+L3Y"
+      },
+      {
+        "row": 4725,
+        "variant": "A1N+D2T+L3G"
+      },
+      {
+        "row": 6829,
+        "variant": "A1V+D2C"
+      },
+      {
+        "row": 7509,
+        "variant": "A1W+D2S"
+      },
+      {
+        "row": 3664,
+        "variant": "A1L+D2E+L3F"
+      },
+      {
+        "row": 6168,
+        "variant": "A1S+D2K+L3K"
+      },
+      {
+        "row": 6968,
+        "variant": "A1V+D2K+L3K"
+      },
+      {
+        "row": 813,
+        "variant": "A1D+D2A+L3Q"
+      },
+      {
+        "row": 5497,
+        "variant": "A1Q+D2R+L3V"
+      },
+      {
+        "row": 4319,
+        "variant": "A1M+D2S+L3Y"
+      },
+      {
+        "row": 5784,
+        "variant": "A1R+D2L+L3F"
+      },
+      {
+        "row": 4051,
+        "variant": "A1M+L3N"
+      },
+      {
+        "row": 3819,
+        "variant": "A1L+D2M+L3Y"
+      },
+      {
+        "row": 5205,
+        "variant": "A1Q+D2A+L3G"
+      },
+      {
+        "row": 4780,
+        "variant": "A1N+D2Y+L3A"
+      },
+      {
+        "row": 7093,
+        "variant": "A1V+D2R+L3Q"
+      },
+      {
+        "row": 2096,
+        "variant": "A1G+D2F+L3T"
+      },
+      {
+        "row": 1853,
+        "variant": "A1F+D2P+L3Q"
+      },
+      {
+        "row": 3587,
+        "variant": "A1K+D2Y+L3I"
+      },
+      {
+        "row": 857,
+        "variant": "A1D+L3V"
+      },
+      {
+        "row": 7172,
+        "variant": "A1V+D2W+L3P"
+      },
+      {
+        "row": 1763,
+        "variant": "A1F+D2K+L3E"
+      },
+      {
+        "row": 7458,
+        "variant": "A1W+D2P+L3W"
+      },
+      {
+        "row": 582,
+        "variant": "A1C+D2L+L3D"
+      },
+      {
+        "row": 123,
+        "variant": "D2H+L3E"
+      },
+      {
+        "row": 679,
+        "variant": "A1C+D2Q+L3Y"
+      },
+      {
+        "row": 6466,
+        "variant": "A1T+D2E+L3H"
+      },
+      {
+        "row": 5975,
+        "variant": "A1R+D2W+L3S"
+      },
+      {
+        "row": 1562,
+        "variant": "A1E+D2W+L3D"
+      },
+      {
+        "row": 5438,
+        "variant": "A1Q+D2N+L3W"
+      },
+      {
+        "row": 6300,
+        "variant": "A1S+D2S+L3A"
+      },
+      {
+        "row": 5884,
+        "variant": "A1R+D2R+L3F"
+      },
+      {
+        "row": 7336,
+        "variant": "A1W+D2H+L3T"
+      },
+      {
+        "row": 7315,
+        "variant": "A1W+D2G+L3S"
+      },
+      {
+        "row": 6774,
+        "variant": "A1T+D2W+L3R"
+      },
+      {
+        "row": 3241,
+        "variant": "A1K+L3C"
+      },
+      {
+        "row": 4461,
+        "variant": "A1N+D2E+L3C"
+      },
+      {
+        "row": 3924,
+        "variant": "A1L+D2T+L3F"
+      },
+      {
+        "row": 3478,
+        "variant": "A1K+D2Q+L3W"
+      },
+      {
+        "row": 1616,
+        "variant": "A1F+D2A+L3T"
+      },
+      {
+        "row": 6641,
+        "variant": "A1T+D2P+L3C"
+      },
+      {
+        "row": 1604,
+        "variant": "A1F+D2A+L3F"
+      },
+      {
+        "row": 1119,
+        "variant": "A1D+D2S+L3Y"
+      },
+      {
+        "row": 4969,
+        "variant": "A1P+D2K"
+      },
+      {
+        "row": 1544,
+        "variant": "A1E+D2V+L3F"
+      },
+      {
+        "row": 3849,
+        "variant": "A1L+D2P"
+      },
+      {
+        "row": 7416,
+        "variant": "A1W+D2M+L3T"
+      },
+      {
+        "row": 4972,
+        "variant": "A1P+D2K+L3P"
+      },
+      {
+        "row": 2241,
+        "variant": "A1G+D2P+L3C"
+      },
+      {
+        "row": 1086,
+        "variant": "A1D+D2R+L3H"
+      },
+      {
+        "row": 2252,
+        "variant": "A1G+D2P+L3P"
+      },
+      {
+        "row": 6529,
+        "variant": "A1T+D2H"
+      },
+      {
+        "row": 3612,
+        "variant": "A1L+D2A+L3P"
+      },
+      {
+        "row": 5803,
+        "variant": "A1R+D2M+L3E"
+      },
+      {
+        "row": 6754,
+        "variant": "A1T+D2V+L3R"
+      },
+      {
+        "row": 5987,
+        "variant": "A1R+D2Y+L3I"
+      },
+      {
+        "row": 2112,
+        "variant": "A1G+D2G+L3P"
+      },
+      {
+        "row": 3470,
+        "variant": "A1K+D2Q+L3M"
+      },
+      {
+        "row": 5586,
+        "variant": "A1Q+D2Y+L3H"
+      },
+      {
+        "row": 64,
+        "variant": "D2E+L3F"
+      },
+      {
+        "row": 7974,
+        "variant": "A1Y+D2W+L3R"
+      },
+      {
+        "row": 4080,
+        "variant": "A1M+D2F+L3A"
+      },
+      {
+        "row": 425,
+        "variant": "A1C+D2C+L3G"
+      },
+      {
+        "row": 3960,
+        "variant": "A1L+D2W+L3A"
+      },
+      {
+        "row": 1663,
+        "variant": "A1F+D2E+L3E"
+      },
+      {
+        "row": 4343,
+        "variant": "A1M+D2V+L3E"
+      },
+      {
+        "row": 1221,
+        "variant": "A1E+D2C+L3C"
+      },
+      {
+        "row": 4154,
+        "variant": "A1M+D2I+L3R"
+      },
+      {
+        "row": 333,
+        "variant": "D2T+L3Q"
+      },
+      {
+        "row": 6822,
+        "variant": "A1V+D2C+L3D"
+      },
+      {
+        "row": 666,
+        "variant": "A1C+D2Q+L3H"
+      },
+      {
+        "row": 4397,
+        "variant": "A1M+D2Y+L3V"
+      },
+      {
+        "row": 5075,
+        "variant": "A1P+D2Q+L3S"
+      },
+      {
+        "row": 612,
+        "variant": "A1C+D2M+L3P"
+      },
+      {
+        "row": 2310,
+        "variant": "A1G+D2S+L3M"
+      },
+      {
+        "row": 2900,
+        "variant": "A1I+D2G+L3A"
+      },
+      {
+        "row": 7955,
+        "variant": "A1Y+D2V+L3S"
+      },
+      {
+        "row": 2982,
+        "variant": "A1I+D2L+L3D"
+      },
+      {
+        "row": 2822,
+        "variant": "A1I+D2C+L3D"
+      },
+      {
+        "row": 7870,
+        "variant": "A1Y+D2Q+L3M"
+      },
+      {
+        "row": 788,
+        "variant": "A1C+D2Y+L3K"
+      },
+      {
+        "row": 1949,
+        "variant": "A1F+D2V"
+      },
+      {
+        "row": 1375,
+        "variant": "A1E+D2K+L3S"
+      },
+      {
+        "row": 4470,
+        "variant": "A1N+D2E+L3M"
+      },
+      {
+        "row": 7875,
+        "variant": "A1Y+D2Q+L3S"
+      },
+      {
+        "row": 3472,
+        "variant": "A1K+D2Q+L3P"
+      },
+      {
+        "row": 2542,
+        "variant": "A1H+D2I+L3D"
+      },
+      {
+        "row": 5097,
+        "variant": "A1P+D2R+L3V"
+      },
+      {
+        "row": 4096,
+        "variant": "A1M+D2F+L3T"
+      },
+      {
+        "row": 2843,
+        "variant": "A1I+L3E"
+      },
+      {
+        "row": 2227,
+        "variant": "A1G+D2N+L3I"
+      },
+      {
+        "row": 6682,
+        "variant": "A1T+D2R+L3D"
+      },
+      {
+        "row": 1184,
+        "variant": "A1D+D2Y+L3F"
+      },
+      {
+        "row": 6851,
+        "variant": "A1V+L3N"
+      },
+      {
+        "row": 1597,
+        "variant": "A1E+D2Y+L3V"
+      },
+      {
+        "row": 2431,
+        "variant": "A1H+D2C+L3N"
+      },
+      {
+        "row": 6650,
+        "variant": "A1T+D2P+L3M"
+      },
+      {
+        "row": 7739,
+        "variant": "A1Y+D2H+L3Y"
+      },
+      {
+        "row": 5983,
+        "variant": "A1R+D2Y+L3E"
+      },
+      {
+        "row": 7444,
+        "variant": "A1W+D2P+L3F"
+      },
+      {
+        "row": 2134,
+        "variant": "A1G+D2H+L3R"
+      },
+      {
+        "row": 3314,
+        "variant": "A1K+D2G+L3R"
+      },
+      {
+        "row": 4012,
+        "variant": "A1M+D2A+L3P"
+      },
+      {
+        "row": 5266,
+        "variant": "A1Q+D2E+L3H"
+      },
+      {
+        "row": 1214,
+        "variant": "A1E+D2A+L3R"
+      },
+      {
+        "row": 1644,
+        "variant": "A1F+L3F"
+      },
+      {
+        "row": 2186,
+        "variant": "A1G+D2L+L3H"
+      },
+      {
+        "row": 7812,
+        "variant": "A1Y+D2M+L3P"
+      },
+      {
+        "row": 5402,
+        "variant": "A1Q+D2M+L3D"
+      },
+      {
+        "row": 6578,
+        "variant": "A1T+D2K+L3W"
+      },
+      {
+        "row": 7182,
+        "variant": "A1V+D2Y+L3D"
+      },
+      {
+        "row": 4717,
+        "variant": "A1N+D2S+L3V"
+      },
+      {
+        "row": 3354,
+        "variant": "A1K+D2I+L3R"
+      },
+      {
+        "row": 7932,
+        "variant": "A1Y+D2T+L3P"
+      },
+      {
+        "row": 2213,
+        "variant": "A1G+D2M+L3Q"
+      },
+      {
+        "row": 6474,
+        "variant": "A1T+D2E+L3R"
+      },
+      {
+        "row": 3665,
+        "variant": "A1L+D2E+L3G"
+      },
+      {
+        "row": 4332,
+        "variant": "A1M+D2T+L3P"
+      },
+      {
+        "row": 5016,
+        "variant": "A1P+D2M+L3T"
+      },
+      {
+        "row": 3160,
+        "variant": "A1I+D2W+L3A"
+      },
+      {
+        "row": 22,
+        "variant": "D2C+L3D"
+      },
+      {
+        "row": 2269,
+        "variant": "A1G+D2Q"
+      },
+      {
+        "row": 6394,
+        "variant": "A1S+D2Y+L3R"
+      },
+      {
+        "row": 1368,
+        "variant": "A1E+D2K+L3K"
+      },
+      {
+        "row": 522,
+        "variant": "A1C+D2H+L3D"
+      },
+      {
+        "row": 4480,
+        "variant": "A1N+D2F+L3A"
+      },
+      {
+        "row": 1773,
+        "variant": "A1F+D2K+L3Q"
+      },
+      {
+        "row": 7767,
+        "variant": "A1Y+D2K+L3I"
+      },
+      {
+        "row": 6699,
+        "variant": "A1T+D2R+L3Y"
+      },
+      {
+        "row": 7595,
+        "variant": "A1W+D2Y+L3S"
+      },
+      {
+        "row": 2528,
+        "variant": "A1H+D2H+L3K"
+      },
+      {
+        "row": 3590,
+        "variant": "A1K+D2Y+L3M"
+      },
+      {
+        "row": 5374,
+        "variant": "A1Q+D2K+L3R"
+      },
+      {
+        "row": 3278,
+        "variant": "A1K+D2E+L3W"
+      },
+      {
+        "row": 2149,
+        "variant": "A1G+D2I"
+      },
+      {
+        "row": 4100,
+        "variant": "A1M+D2G+L3A"
+      },
+      {
+        "row": 6453,
+        "variant": "A1T+L3Q"
+      },
+      {
+        "row": 7113,
+        "variant": "A1V+D2S+L3Q"
+      },
+      {
+        "row": 4700,
+        "variant": "A1N+D2S+L3A"
+      },
+      {
+        "row": 6151,
+        "variant": "A1S+D2I+L3N"
+      },
+      {
+        "row": 1061,
+        "variant": "A1D+D2Q+L3C"
+      },
+      {
+        "row": 603,
+        "variant": "A1C+D2M+L3E"
+      },
+      {
+        "row": 2436,
+        "variant": "A1H+D2C+L3T"
+      },
+      {
+        "row": 7937,
+        "variant": "A1Y+D2T+L3V"
+      },
+      {
+        "row": 7910,
+        "variant": "A1Y+D2S+L3M"
+      },
+      {
+        "row": 4922,
+        "variant": "A1P+D2H+L3D"
+      },
+      {
+        "row": 7946,
+        "variant": "A1Y+D2V+L3H"
+      },
+      {
+        "row": 646,
+        "variant": "A1C+D2P+L3H"
+      },
+      {
+        "row": 7923,
+        "variant": "A1Y+D2T+L3E"
+      },
+      {
+        "row": 5466,
+        "variant": "A1Q+D2Q+L3H"
+      },
+      {
+        "row": 521,
+        "variant": "A1C+D2H+L3C"
+      },
+      {
+        "row": 6007,
+        "variant": "A1S+D2A+L3I"
+      },
+      {
+        "row": 3179,
+        "variant": "A1I+D2W+L3Y"
+      },
+      {
+        "row": 5740,
+        "variant": "A1R+D2I+L3A"
+      },
+      {
+        "row": 3246,
+        "variant": "A1K+L3H"
+      },
+      {
+        "row": 1672,
+        "variant": "A1F+D2E+L3P"
+      },
+      {
+        "row": 1888,
+        "variant": "A1F+D2R+L3K"
+      },
+      {
+        "row": 5496,
+        "variant": "A1Q+D2R+L3T"
+      },
+      {
+        "row": 6406,
+        "variant": "A1T+D2A+L3H"
+      },
+      {
+        "row": 7337,
+        "variant": "A1W+D2H+L3V"
+      },
+      {
+        "row": 3762,
+        "variant": "A1L+D2K+L3D"
+      },
+      {
+        "row": 5589,
+        "variant": "A1Q+D2Y"
+      },
+      {
+        "row": 2286,
+        "variant": "A1G+D2R+L3H"
+      },
+      {
+        "row": 3958,
+        "variant": "A1L+D2V+L3W"
+      },
+      {
+        "row": 5019,
+        "variant": "A1P+D2M+L3Y"
+      },
+      {
+        "row": 3344,
+        "variant": "A1K+D2I+L3F"
+      },
+      {
+        "row": 2998,
+        "variant": "A1I+D2L+L3W"
+      },
+      {
+        "row": 2093,
+        "variant": "A1G+D2F+L3Q"
+      },
+      {
+        "row": 1629,
+        "variant": "A1F+D2C"
+      }
+    ],
+    "eqFP611": [
+      {
+        "row": 6198,
+        "variant": "V45A+L63M+T127P+S168G+A172C+A174L+N206D+N207K"
+      },
+      {
+        "row": 999,
+        "variant": "D20N+L63M+A174L+K231R"
+      },
+      {
+        "row": 5559,
+        "variant": "D20N+V45A+T127P+F143S+A172C+Y197R+K231R"
+      },
+      {
+        "row": 6114,
+        "variant": "V45A+L63M+N158A+S168G+A174L+Y197R+N206D+N207K"
+      },
+      {
+        "row": 7802,
+        "variant": "D20N+V45A+L63M+T127P+F143S+N158A+S168G+Y197R+K231R"
+      },
+      {
+        "row": 2495,
+        "variant": "T127P+N158A+A172C+A174L+N206D+K231R"
+      },
+      {
+        "row": 5016,
+        "variant": "D20N+T127P+N158A+S168G+A174L+Y197R+N207K"
+      },
+      {
+        "row": 1757,
+        "variant": "V45A+T127P+F143S+S168G+A172C"
+      },
+      {
+        "row": 4887,
+        "variant": "V45A+L63M+T127P+F143S+N158A+S168G+A172C"
+      },
+      {
+        "row": 1351,
+        "variant": "L63M+A172C+Y197R+N207K+K231R"
+      },
+      {
+        "row": 7921,
+        "variant": "D20N+L63M+T127P+F143S+N158A+S168G+A174L+N206D+N207K+K231R"
+      },
+      {
+        "row": 3215,
+        "variant": "V45A+L63M+F143S+N158A+S168G+N207K"
+      },
+      {
+        "row": 3897,
+        "variant": "D20N+V45A+T127P+A174L+N206D+K231R"
+      },
+      {
+        "row": 2225,
+        "variant": "D20N+V45A+A172C+N207K+K231R"
+      },
+      {
+        "row": 1322,
+        "variant": "T127P+F143S+S168G+A172C+Y197R"
+      },
+      {
+        "row": 6084,
+        "variant": "V45A+T127P+F143S+N158A+S168G+A174L+Y197R+K231R"
+      },
+      {
+        "row": 6971,
+        "variant": "D20N+V45A+L63M+F143S+N158A+S168G+A172C+Y197R"
+      },
+      {
+        "row": 6109,
+        "variant": "V45A+L63M+N158A+A172C+A174L+Y197R+N206D+N207K"
+      },
+      {
+        "row": 3960,
+        "variant": "D20N+V45A+T127P+F143S+A172C+N206D"
+      },
+      {
+        "row": 3103,
+        "variant": "V45A+L63M+A172C+A174L+N207K+K231R"
+      },
+      {
+        "row": 4225,
+        "variant": "L63M+N158A+A172C+A174L+N206D+N207K+K231R"
+      },
+      {
+        "row": 6967,
+        "variant": "D20N+V45A+L63M+F143S+N158A+S168G+A174L+Y197R"
+      },
+      {
+        "row": 7785,
+        "variant": "D20N+V45A+L63M+T127P+F143S+N158A+A174L+N206D+N207K"
+      },
+      {
+        "row": 5945,
+        "variant": "L63M+T127P+F143S+N158A+A174L+Y197R+N206D+K231R"
+      },
+      {
+        "row": 7177,
+        "variant": "V45A+T127P+F143S+S168G+A172C+A174L+Y197R+N206D+N207K"
+      },
+      {
+        "row": 7020,
+        "variant": "D20N+V45A+L63M+T127P+N158A+A172C+N206D+N207K"
+      },
+      {
+        "row": 4328,
+        "variant": "L63M+T127P+N158A+A172C+Y197R+N206D+K231R"
+      },
+      {
+        "row": 2397,
+        "variant": "N158A+S168G+A174L+Y197R+N206D+N207K"
+      },
+      {
+        "row": 3602,
+        "variant": "D20N+L63M+N158A+A172C+N206D+K231R"
+      },
+      {
+        "row": 2136,
+        "variant": "D20N+L63M+N158A+A174L+K231R"
+      },
+      {
+        "row": 6269,
+        "variant": "V45A+L63M+T127P+F143S+S168G+A172C+A174L+N207K"
+      },
+      {
+        "row": 1766,
+        "variant": "V45A+L63M+Y197R+N207K+K231R"
+      },
+      {
+        "row": 4272,
+        "variant": "L63M+F143S+N158A+A172C+Y197R+N206D+K231R"
+      },
+      {
+        "row": 617,
+        "variant": "L63M+S168G+A174L+Y197R"
+      },
+      {
+        "row": 6664,
+        "variant": "D20N+V45A+N158A+S168G+A172C+A174L+Y197R+N206D"
+      },
+      {
+        "row": 185,
+        "variant": "T127P+A174L+Y197R"
+      },
+      {
+        "row": 2206,
+        "variant": "D20N+L63M+T127P+N158A+S168G"
+      },
+      {
+        "row": 6357,
+        "variant": "D20N+T127P+N158A+S168G+A174L+N206D+N207K+K231R"
+      },
+      {
+        "row": 5182,
+        "variant": "D20N+L63M+F143S+S168G+A172C+Y197R+K231R"
+      },
+      {
+        "row": 2622,
+        "variant": "L63M+N158A+A172C+A174L+N206D+N207K"
+      },
+      {
+        "row": 1074,
+        "variant": "D20N+V45A+T127P+K231R"
+      },
+      {
+        "row": 1897,
+        "variant": "D20N+A172C+A174L+Y197R+K231R"
+      },
+      {
+        "row": 381,
+        "variant": "A174L+Y197R+N206D+K231R"
+      },
+      {
+        "row": 7829,
+        "variant": "V45A+T127P+F143S+N158A+S168G+A174L+Y197R+N206D+N207K+K231R"
+      },
+      {
+        "row": 6470,
+        "variant": "D20N+L63M+F143S+S168G+A172C+A174L+N207K+K231R"
+      },
+      {
+        "row": 4163,
+        "variant": "T127P+F143S+A172C+A174L+Y197R+N207K+K231R"
+      },
+      {
+        "row": 3899,
+        "variant": "D20N+V45A+T127P+A174L+Y197R+K231R"
+      },
+      {
+        "row": 4672,
+        "variant": "V45A+L63M+N158A+S168G+N206D+N207K+K231R"
+      },
+      {
+        "row": 3144,
+        "variant": "V45A+L63M+N158A+A172C+Y197R+N206D"
+      },
+      {
+        "row": 5943,
+        "variant": "L63M+T127P+F143S+N158A+A174L+N206D+N207K+K231R"
+      },
+      {
+        "row": 3655,
+        "variant": "D20N+L63M+F143S+S168G+A174L+Y197R"
+      },
+      {
+        "row": 5475,
+        "variant": "D20N+V45A+F143S+N158A+S168G+A172C+A174L"
+      },
+      {
+        "row": 8108,
+        "variant": "V45A+L63M+T127P+F143S+N158A+S168G+A172C+A174L+N206D+N207K+K231R"
+      },
+      {
+        "row": 5433,
+        "variant": "D20N+V45A+F143S+S168G+A172C+N206D+N207K"
+      },
+      {
+        "row": 4176,
+        "variant": "T127P+F143S+S168G+A172C+A174L+N206D+K231R"
+      },
+      {
+        "row": 3980,
+        "variant": "D20N+V45A+L63M+A174L+N207K+K231R"
+      },
+      {
+        "row": 2869,
+        "variant": "V45A+N158A+A172C+Y197R+N207K+K231R"
+      },
+      {
+        "row": 3457,
+        "variant": "D20N+T127P+S168G+A172C+N206D+N207K"
+      },
+      {
+        "row": 3493,
+        "variant": "D20N+T127P+N158A+S168G+A174L+N206D"
+      },
+      {
+        "row": 2283,
+        "variant": "D20N+V45A+F143S+A172C+N206D"
+      },
+      {
+        "row": 6684,
+        "variant": "D20N+V45A+F143S+S168G+A172C+A174L+Y197R+N207K"
+      },
+      {
+        "row": 2373,
+        "variant": "D20N+V45A+L63M+T127P+N206D"
+      },
+      {
+        "row": 3223,
+        "variant": "V45A+L63M+T127P+Y197R+N206D+N207K"
+      },
+      {
+        "row": 4275,
+        "variant": "L63M+F143S+N158A+A172C+A174L+N206D+K231R"
+      },
+      {
+        "row": 1728,
+        "variant": "V45A+T127P+N158A+A172C+N206D"
+      },
+      {
+        "row": 355,
+        "variant": "D20N+T127P+N158A"
+      },
+      {
+        "row": 4229,
+        "variant": "L63M+N158A+S168G+Y197R+N206D+N207K+K231R"
+      },
+      {
+        "row": 6530,
+        "variant": "D20N+L63M+T127P+S168G+A172C+A174L+Y197R+N207K"
+      },
+      {
+        "row": 3439,
+        "variant": "D20N+T127P+A172C+A174L+N207K+K231R"
+      },
+      {
+        "row": 89,
+        "variant": "D20N+T127P"
+      },
+      {
+        "row": 7915,
+        "variant": "D20N+L63M+T127P+F143S+N158A+A172C+Y197R+N206D+N207K+K231R"
+      },
+      {
+        "row": 5158,
+        "variant": "D20N+L63M+F143S+A174L+Y197R+N206D+N207K"
+      },
+      {
+        "row": 1640,
+        "variant": "V45A+F143S+A172C+Y197R+N206D"
+      },
+      {
+        "row": 2245,
+        "variant": "D20N+V45A+S168G+A172C+K231R"
+      },
+      {
+        "row": 589,
+        "variant": "L63M+Y197R+N207K+K231R"
+      },
+      {
+        "row": 6044,
+        "variant": "V45A+T127P+F143S+A172C+A174L+Y197R+N207K+K231R"
+      },
+      {
+        "row": 2210,
+        "variant": "D20N+L63M+T127P+F143S+Y197R"
+      },
+      {
+        "row": 754,
+        "variant": "V45A+N158A+A172C+N207K"
+      },
+      {
+        "row": 7013,
+        "variant": "D20N+V45A+L63M+T127P+N158A+A174L+N206D+K231R"
+      },
+      {
+        "row": 3027,
+        "variant": "V45A+T127P+N158A+S168G+Y197R+N207K"
+      },
+      {
+        "row": 337,
+        "variant": "D20N+N158A+A174L"
+      },
+      {
+        "row": 6572,
+        "variant": "D20N+L63M+T127P+F143S+A172C+N206D+N207K+K231R"
+      },
+      {
+        "row": 6568,
+        "variant": "D20N+L63M+T127P+F143S+A174L+N206D+N207K+K231R"
+      },
+      {
+        "row": 5416,
+        "variant": "D20N+V45A+F143S+A172C+A174L+N206D+K231R"
+      },
+      {
+        "row": 347,
+        "variant": "D20N+F143S+N158A"
+      },
+      {
+        "row": 1240,
+        "variant": "T127P+S168G+A174L+N206D+N207K"
+      },
+      {
+        "row": 5570,
+        "variant": "D20N+V45A+T127P+F143S+S168G+Y197R+N207K"
+      },
+      {
+        "row": 6554,
+        "variant": "D20N+L63M+T127P+N158A+S168G+A174L+Y197R+K231R"
+      },
+      {
+        "row": 3839,
+        "variant": "D20N+V45A+F143S+Y197R+N206D+N207K"
+      },
+      {
+        "row": 5952,
+        "variant": "L63M+T127P+F143S+N158A+A172C+A174L+N206D+K231R"
+      },
+      {
+        "row": 5195,
+        "variant": "D20N+L63M+F143S+N158A+A174L+N206D+N207K"
+      },
+      {
+        "row": 1896,
+        "variant": "D20N+A172C+A174L+N206D+N207K"
+      },
+      {
+        "row": 6955,
+        "variant": "D20N+V45A+L63M+F143S+N158A+A172C+A174L+N207K"
+      },
+      {
+        "row": 345,
+        "variant": "D20N+F143S+A172C"
+      },
+      {
+        "row": 8063,
+        "variant": "D20N+V45A+L63M+T127P+F143S+S168G+A172C+A174L+Y197R+N207K"
+      },
+      {
+        "row": 3945,
+        "variant": "D20N+V45A+T127P+N158A+S168G+Y197R"
+      },
+      {
+        "row": 6887,
+        "variant": "D20N+V45A+L63M+N158A+S168G+A174L+N207K+K231R"
+      },
+      {
+        "row": 1948,
+        "variant": "D20N+N158A+S168G+A174L+N206D"
+      },
+      {
+        "row": 8083,
+        "variant": "D20N+V45A+L63M+T127P+F143S+N158A+S168G+Y197R+N206D+N207K"
+      },
+      {
+        "row": 7642,
+        "variant": "D20N+V45A+L63M+F143S+S168G+A174L+Y197R+N206D+N207K"
+      },
+      {
+        "row": 6516,
+        "variant": "D20N+L63M+T127P+A172C+A174L+Y197R+N206D+N207K"
+      },
+      {
+        "row": 400,
+        "variant": "S168G+A174L+Y197R+K231R"
+      },
+      {
+        "row": 2047,
+        "variant": "D20N+T127P+N158A+N206D+K231R"
+      },
+      {
+        "row": 2209,
+        "variant": "D20N+L63M+T127P+F143S+N206D"
+      },
+      {
+        "row": 6616,
+        "variant": "D20N+L63M+T127P+F143S+N158A+A172C+Y197R+N207K"
+      },
+      {
+        "row": 4789,
+        "variant": "V45A+L63M+T127P+S168G+A172C+N206D+N207K"
+      },
+      {
+        "row": 3585,
+        "variant": "D20N+L63M+S168G+A172C+Y197R+N207K"
+      },
+      {
+        "row": 190,
+        "variant": "T127P+A172C+A174L"
+      },
+      {
+        "row": 570,
+        "variant": "T127P+F143S+A172C+K231R"
+      },
+      {
+        "row": 8078,
+        "variant": "D20N+V45A+L63M+T127P+F143S+N158A+A172C+A174L+Y197R+N207K"
+      },
+      {
+        "row": 3902,
+        "variant": "D20N+V45A+T127P+A172C+N207K+K231R"
+      },
+      {
+        "row": 1826,
+        "variant": "V45A+L63M+F143S+Y197R+N206D"
+      },
+      {
+        "row": 3374,
+        "variant": "D20N+F143S+A172C+A174L+Y197R+N206D"
+      },
+      {
+        "row": 3761,
+        "variant": "D20N+L63M+T127P+F143S+N158A+N206D"
+      },
+      {
+        "row": 4971,
+        "variant": "D20N+F143S+N158A+S168G+A172C+A174L+Y197R"
+      },
+      {
+        "row": 5796,
+        "variant": "D20N+V45A+L63M+T127P+F143S+A172C+N206D"
+      },
+      {
+        "row": 2670,
+        "variant": "L63M+F143S+S168G+A174L+Y197R+N206D"
+      },
+      {
+        "row": 1507,
+        "variant": "L63M+T127P+N158A+N206D+K231R"
+      },
+      {
+        "row": 3670,
+        "variant": "D20N+L63M+F143S+N158A+A174L+Y197R"
+      },
+      {
+        "row": 213,
+        "variant": "L63M+N206D+K231R"
+      },
+      {
+        "row": 6191,
+        "variant": "V45A+L63M+T127P+S168G+A174L+Y197R+N206D+N207K"
+      },
+      {
+        "row": 2991,
+        "variant": "V45A+T127P+S168G+A174L+Y197R+N207K"
+      },
+      {
+        "row": 5668,
+        "variant": "D20N+V45A+L63M+N158A+S168G+A172C+N207K"
+      },
+      {
+        "row": 6475,
+        "variant": "D20N+L63M+F143S+S168G+A172C+A174L+Y197R+N206D"
+      },
+      {
+        "row": 2781,
+        "variant": "L63M+T127P+N158A+S168G+A172C+K231R"
+      },
+      {
+        "row": 4339,
+        "variant": "L63M+T127P+N158A+S168G+Y197R+N206D+N207K"
+      },
+      {
+        "row": 4904,
+        "variant": "D20N+N158A+S168G+A174L+Y197R+N206D+K231R"
+      },
+      {
+        "row": 4761,
+        "variant": "V45A+L63M+F143S+N158A+S168G+A172C+A174L"
+      },
+      {
+        "row": 2720,
+        "variant": "L63M+T127P+A174L+Y197R+N206D+N207K"
+      },
+      {
+        "row": 6921,
+        "variant": "D20N+V45A+L63M+F143S+S168G+Y197R+N206D+N207K"
+      },
+      {
+        "row": 2812,
+        "variant": "L63M+T127P+F143S+S168G+A174L+K231R"
+      },
+      {
+        "row": 2091,
+        "variant": "D20N+T127P+F143S+N158A+Y197R"
+      },
+      {
+        "row": 1476,
+        "variant": "L63M+T127P+A174L+N206D+K231R"
+      },
+      {
+        "row": 2898,
+        "variant": "V45A+F143S+Y197R+N206D+N207K+K231R"
+      },
+      {
+        "row": 3853,
+        "variant": "D20N+V45A+F143S+A172C+A174L+N207K"
+      },
+      {
+        "row": 4096,
+        "variant": "S168G+A172C+A174L+Y197R+N206D+N207K+K231R"
+      },
+      {
+        "row": 7976,
+        "variant": "D20N+V45A+T127P+F143S+N158A+S168G+A172C+A174L+N206D+N207K"
+      },
+      {
+        "row": 4622,
+        "variant": "V45A+T127P+F143S+N158A+S168G+N206D+K231R"
+      },
+      {
+        "row": 5362,
+        "variant": "D20N+V45A+S168G+A172C+Y197R+N207K+K231R"
+      },
+      {
+        "row": 2251,
+        "variant": "D20N+V45A+N158A+N206D+K231R"
+      },
+      {
+        "row": 53,
+        "variant": "T127P+Y197R"
+      },
+      {
+        "row": 7134,
+        "variant": "L63M+T127P+F143S+N158A+A172C+Y197R+N206D+N207K+K231R"
+      },
+      {
+        "row": 6310,
+        "variant": "D20N+N158A+S168G+A172C+Y197R+N206D+N207K+K231R"
+      },
+      {
+        "row": 5000,
+        "variant": "D20N+T127P+N158A+A172C+Y197R+N206D+K231R"
+      },
+      {
+        "row": 6291,
+        "variant": "V45A+L63M+T127P+F143S+N158A+A172C+A174L+Y197R"
+      },
+      {
+        "row": 8001,
+        "variant": "D20N+V45A+L63M+F143S+N158A+S168G+Y197R+N206D+N207K+K231R"
+      },
+      {
+        "row": 1119,
+        "variant": "N158A+A172C+N206D+N207K+K231R"
+      },
+      {
+        "row": 7162,
+        "variant": "V45A+F143S+N158A+S168G+A172C+A174L+Y197R+N206D+N207K"
+      },
+      {
+        "row": 4033,
+        "variant": "D20N+V45A+L63M+F143S+N206D+K231R"
+      },
+      {
+        "row": 3548,
+        "variant": "D20N+T127P+F143S+N158A+A172C+Y197R"
+      },
+      {
+        "row": 2920,
+        "variant": "V45A+F143S+S168G+A174L+Y197R+K231R"
+      },
+      {
+        "row": 5594,
+        "variant": "D20N+V45A+T127P+F143S+N158A+A172C+Y197R"
+      },
+      {
+        "row": 4078,
+        "variant": "D20N+V45A+L63M+T127P+S168G+Y197R"
+      },
+      {
+        "row": 3399,
+        "variant": "D20N+F143S+N158A+A174L+N207K+K231R"
+      },
+      {
+        "row": 2395,
+        "variant": "N158A+S168G+A174L+Y197R+N207K+K231R"
+      },
+      {
+        "row": 4901,
+        "variant": "D20N+N158A+S168G+Y197R+N206D+N207K+K231R"
+      },
+      {
+        "row": 3955,
+        "variant": "D20N+V45A+T127P+F143S+A174L+N207K"
+      },
+      {
+        "row": 3100,
+        "variant": "V45A+L63M+A172C+Y197R+N207K+K231R"
+      },
+      {
+        "row": 6897,
+        "variant": "D20N+V45A+L63M+N158A+S168G+A172C+Y197R+N207K"
+      },
+      {
+        "row": 3547,
+        "variant": "D20N+T127P+F143S+N158A+A172C+N206D"
+      },
+      {
+        "row": 5913,
+        "variant": "L63M+T127P+N158A+S168G+A172C+Y197R+N206D+K231R"
+      },
+      {
+        "row": 6165,
+        "variant": "V45A+L63M+F143S+N158A+S168G+A174L+N207K+K231R"
+      },
+      {
+        "row": 1653,
+        "variant": "V45A+F143S+S168G+A174L+N206D"
+      },
+      {
+        "row": 776,
+        "variant": "V45A+F143S+A172C+N206D"
+      },
+      {
+        "row": 5685,
+        "variant": "D20N+V45A+L63M+F143S+A172C+Y197R+K231R"
+      },
+      {
+        "row": 7846,
+        "variant": "V45A+L63M+T127P+N158A+S168G+A174L+Y197R+N206D+N207K+K231R"
+      },
+      {
+        "row": 4342,
+        "variant": "L63M+T127P+N158A+S168G+A174L+N206D+N207K"
+      },
+      {
+        "row": 5032,
+        "variant": "D20N+T127P+F143S+A174L+Y197R+N206D+N207K"
+      },
+      {
+        "row": 6275,
+        "variant": "V45A+L63M+T127P+F143S+N158A+Y197R+N206D+N207K"
+      },
+      {
+        "row": 3264,
+        "variant": "V45A+L63M+T127P+N158A+A174L+Y197R"
+      },
+      {
+        "row": 7894,
+        "variant": "D20N+L63M+F143S+N158A+S168G+A172C+Y197R+N206D+N207K+K231R"
+      },
+      {
+        "row": 5391,
+        "variant": "D20N+V45A+N158A+S168G+A174L+N206D+K231R"
+      },
+      {
+        "row": 7456,
+        "variant": "D20N+L63M+T127P+F143S+N158A+A172C+Y197R+N206D+K231R"
+      },
+      {
+        "row": 3801,
+        "variant": "D20N+V45A+N158A+N206D+N207K+K231R"
+      },
+      {
+        "row": 3234,
+        "variant": "V45A+L63M+T127P+A172C+Y197R+N207K"
+      },
+      {
+        "row": 6780,
+        "variant": "D20N+V45A+T127P+F143S+A174L+Y197R+N206D+K231R"
+      },
+      {
+        "row": 3900,
+        "variant": "D20N+V45A+T127P+A174L+Y197R+N207K"
+      },
+      {
+        "row": 3656,
+        "variant": "D20N+L63M+F143S+S168G+A172C+K231R"
+      },
+      {
+        "row": 2564,
+        "variant": "T127P+F143S+N158A+A174L+Y197R+N206D"
+      },
+      {
+        "row": 3861,
+        "variant": "D20N+V45A+F143S+S168G+Y197R+N206D"
+      },
+      {
+        "row": 641,
+        "variant": "L63M+N158A+S168G+Y197R"
+      },
+      {
+        "row": 5389,
+        "variant": "D20N+V45A+N158A+S168G+Y197R+N206D+N207K"
+      },
+      {
+        "row": 7288,
+        "variant": "V45A+L63M+T127P+F143S+N158A+A174L+Y197R+N206D+N207K"
+      },
+      {
+        "row": 6388,
+        "variant": "D20N+T127P+F143S+S168G+A172C+A174L+N206D+N207K"
+      },
+      {
+        "row": 1533,
+        "variant": "L63M+T127P+F143S+A174L+K231R"
+      },
+      {
+        "row": 4501,
+        "variant": "V45A+F143S+N158A+S168G+A172C+N206D+K231R"
+      },
+      {
+        "row": 704,
+        "variant": "L63M+T127P+F143S+A174L"
+      },
+      {
+        "row": 5188,
+        "variant": "D20N+L63M+F143S+S168G+A172C+A174L+Y197R"
+      },
+      {
+        "row": 4568,
+        "variant": "V45A+T127P+F143S+A174L+Y197R+N207K+K231R"
+      },
+      {
+        "row": 2212,
+        "variant": "D20N+L63M+T127P+F143S+A172C"
+      },
+      {
+        "row": 1695,
+        "variant": "V45A+T127P+A172C+Y197R+N207K"
+      },
+      {
+        "row": 4844,
+        "variant": "V45A+L63M+T127P+F143S+A172C+N206D+N207K"
+      }
+    ],
+    "ParB-Noc": [
+      {
+        "row": 75664,
+        "variant": "A1M+A2M+A3E+A4G"
+      },
+      {
+        "row": 151139,
+        "variant": "A1W+A2V+A3T+A4Y"
+      },
+      {
+        "row": 88683,
+        "variant": "A1P+A2D+A3R+A4F"
+      },
+      {
+        "row": 20274,
+        "variant": "A1E+A2N+A3Q+A4R"
+      },
+      {
+        "row": 101359,
+        "variant": "A1Q+A2R+A3I+A4Y"
+      },
+      {
+        "row": 134164,
+        "variant": "A1T+A2T+A3K+A4G"
+      },
+      {
+        "row": 17570,
+        "variant": "A1E+A2F+A3W+A4M"
+      },
+      {
+        "row": 142508,
+        "variant": "A1V+A3G+A4K"
+      },
+      {
+        "row": 128426,
+        "variant": "A1T+A2D+A3C+A4H"
+      },
+      {
+        "row": 81645,
+        "variant": "A1N+A2G+A3D"
+      },
+      {
+        "row": 19759,
+        "variant": "A1E+A2M+A3I+A4Y"
+      },
+      {
+        "row": 127375,
+        "variant": "A1S+A2W+A3K+A4S"
+      },
+      {
+        "row": 124851,
+        "variant": "A1S+A2Q+A3D+A4N"
+      },
+      {
+        "row": 46783,
+        "variant": "A1H+A3Y+A4F"
+      },
+      {
+        "row": 156546,
+        "variant": "A1Y+A2P+A3I+A4H"
+      },
+      {
+        "row": 60703,
+        "variant": "A1K+A2P+A3S+A4F"
+      },
+      {
+        "row": 142493,
+        "variant": "A1V+A3F+A4Q"
+      },
+      {
+        "row": 43314,
+        "variant": "A1H+A2L+A3G+A4R"
+      },
+      {
+        "row": 68912,
+        "variant": "A1L+A2Q+A3G+A4P"
+      },
+      {
+        "row": 145582,
+        "variant": "A1W+A2F+A3Y+A4E"
+      },
+      {
+        "row": 30831,
+        "variant": "A1F+A2V+A3C+A4N"
+      },
+      {
+        "row": 144825,
+        "variant": "A1W+A2E+A3C"
+      },
+      {
+        "row": 89906,
+        "variant": "A1P+A2G+A3S+A4H"
+      },
+      {
+        "row": 119034,
+        "variant": "A2V+A3N+A4R"
+      },
+      {
+        "row": 83641,
+        "variant": "A1N+A2M+A3D+A4D"
+      },
+      {
+        "row": 45989,
+        "variant": "A1H+A2S+A3Y+A4L"
+      },
+      {
+        "row": 110806,
+        "variant": "A1R+A2V+A4H"
+      },
+      {
+        "row": 37975,
+        "variant": "A1G+A2S+A3W+A4S"
+      },
+      {
+        "row": 112309,
+        "variant": "A2C+A3S+A4L"
+      },
+      {
+        "row": 131063,
+        "variant": "A1T+A2K+A3Q+A4F"
+      },
+      {
+        "row": 23710,
+        "variant": "A1E+A2Y+A3G+A4M"
+      },
+      {
+        "row": 93126,
+        "variant": "A1P+A2Q+A3T+A4H"
+      },
+      {
+        "row": 114721,
+        "variant": "A2I+A3T+A4D"
+      },
+      {
+        "row": 134200,
+        "variant": "A1T+A2T+A3M+A4C"
+      },
+      {
+        "row": 85962,
+        "variant": "A1N+A2S+A3W+A4E"
+      },
+      {
+        "row": 70260,
+        "variant": "A1L+A2T+A3Q+A4C"
+      },
+      {
+        "row": 40963,
+        "variant": "A1H+A2E+A3K+A4F"
+      },
+      {
+        "row": 80753,
+        "variant": "A1N+A2D+A3V+A4Q"
+      },
+      {
+        "row": 28303,
+        "variant": "A1F+A2N+A3S+A4F"
+      },
+      {
+        "row": 146428,
+        "variant": "A1W+A2I+A3C+A4K"
+      },
+      {
+        "row": 152973,
+        "variant": "A1Y+A2E+A3K+A4Q"
+      },
+      {
+        "row": 143276,
+        "variant": "A1V+A2W+A3E+A4T"
+      },
+      {
+        "row": 5771,
+        "variant": "A1C+A2S+A3K+A4N"
+      },
+      {
+        "row": 104063,
+        "variant": "A1R+A2C+A3E+A4F"
+      },
+      {
+        "row": 54888,
+        "variant": "A1I+A2V+A3F+A4K"
+      },
+      {
+        "row": 126886,
+        "variant": "A1S+A2V+A3F+A4H"
+      },
+      {
+        "row": 133921,
+        "variant": "A1T+A2S+A3T+A4D"
+      },
+      {
+        "row": 63896,
+        "variant": "A1K+A2Y+A3R+A4T"
+      },
+      {
+        "row": 95996,
+        "variant": "A1P+A2Y+A3Y+A4T"
+      },
+      {
+        "row": 30637,
+        "variant": "A1F+A3N+A4V"
+      },
+      {
+        "row": 94703,
+        "variant": "A1P+A3S+A4F"
+      },
+      {
+        "row": 53181,
+        "variant": "A1I+A2Q+A3Y+A4D"
+      },
+      {
+        "row": 104224,
+        "variant": "A1R+A2C+A3N+A4G"
+      },
+      {
+        "row": 154412,
+        "variant": "A1Y+A2I+A4P"
+      },
+      {
+        "row": 114409,
+        "variant": "A2I+A4L"
+      },
+      {
+        "row": 55259,
+        "variant": "A1I+A2W+A3D+A4Y"
+      },
+      {
+        "row": 92317,
+        "variant": "A1P+A2N+A3S+A4V"
+      },
+      {
+        "row": 83661,
+        "variant": "A1N+A2M+A3E+A4D"
+      },
+      {
+        "row": 84558,
+        "variant": "A1N+A2P+A3I+A4W"
+      },
+      {
+        "row": 118396,
+        "variant": "A2T+A3Y+A4T"
+      },
+      {
+        "row": 157752,
+        "variant": "A1Y+A2S+A3I+A4P"
+      },
+      {
+        "row": 132734,
+        "variant": "A1T+A2P+A3T+A4R"
+      },
+      {
+        "row": 6168,
+        "variant": "A1C+A2T+A3K+A4K"
+      },
+      {
+        "row": 72364,
+        "variant": "A1M+A2C+A3W+A4G"
+      },
+      {
+        "row": 92208,
+        "variant": "A1P+A2N+A3M+A4K"
+      },
+      {
+        "row": 127528,
+        "variant": "A1S+A2W+A3T+A4K"
+      },
+      {
+        "row": 155002,
+        "variant": "A1Y+A2K+A3M+A4E"
+      },
+      {
+        "row": 118356,
+        "variant": "A2T+A3V+A4T"
+      },
+      {
+        "row": 50308,
+        "variant": "A1I+A2H+A3S+A4K"
+      },
+      {
+        "row": 82965,
+        "variant": "A1N+A2K+A3K"
+      },
+      {
+        "row": 16283,
+        "variant": "A1E+A2C+A3R+A4F"
+      },
+      {
+        "row": 43085,
+        "variant": "A1H+A2K+A3R"
+      },
+      {
+        "row": 99098,
+        "variant": "A1Q+A2K+A3R+A4W"
+      },
+      {
+        "row": 61373,
+        "variant": "A1K+A2R+A3K+A4Q"
+      },
+      {
+        "row": 95244,
+        "variant": "A1P+A2W+A3D+A4G"
+      },
+      {
+        "row": 76788,
+        "variant": "A1M+A2P+A3Y+A4K"
+      },
+      {
+        "row": 18510,
+        "variant": "A1E+A2I+A3G+A4M"
+      },
+      {
+        "row": 154490,
+        "variant": "A1Y+A2I+A3F+A4M"
+      },
+      {
+        "row": 131330,
+        "variant": "A1T+A2L+A3H+A4M"
+      },
+      {
+        "row": 52851,
+        "variant": "A1I+A2Q+A3D+A4N"
+      },
+      {
+        "row": 15292,
+        "variant": "A1D+A2W+A3F+A4P"
+      },
+      {
+        "row": 89170,
+        "variant": "A1P+A2E+A3W+A4M"
+      },
+      {
+        "row": 56859,
+        "variant": "A1K+A2E+A3D+A4Y"
+      },
+      {
+        "row": 157548,
+        "variant": "A1Y+A2R+A3V+A4K"
+      },
+      {
+        "row": 159374,
+        "variant": "A1Y+A2W+A3K+A4R"
+      },
+      {
+        "row": 115769,
+        "variant": "A2M+A3K+A4L"
+      },
+      {
+        "row": 111283,
+        "variant": "A1R+A2W+A3F+A4F"
+      },
+      {
+        "row": 140621,
+        "variant": "A1V+A2P+A3N+A4D"
+      },
+      {
+        "row": 33766,
+        "variant": "A1G+A2G+A3K+A4H"
+      },
+      {
+        "row": 158792,
+        "variant": "A1Y+A3Y+A4P"
+      },
+      {
+        "row": 110013,
+        "variant": "A1R+A2T+A4Q"
+      },
+      {
+        "row": 144362,
+        "variant": "A1W+A2C+A3W+A4E"
+      },
+      {
+        "row": 41294,
+        "variant": "A1H+A2F+A3F+A4R"
+      },
+      {
+        "row": 36655,
+        "variant": "A1G+A2P+A3P+A4S"
+      },
+      {
+        "row": 41024,
+        "variant": "A1H+A2E+A3N+A4G"
+      },
+      {
+        "row": 109299,
+        "variant": "A1R+A2R+A3F+A4Y"
+      },
+      {
+        "row": 60366,
+        "variant": "A1K+A2N+A3W+A4H"
+      },
+      {
+        "row": 76628,
+        "variant": "A1M+A2P+A3N+A4K"
+      },
+      {
+        "row": 44407,
+        "variant": "A1H+A2P+A4I"
+      },
+      {
+        "row": 520,
+        "variant": "A1C+A2D+A3H+A4C"
+      },
+      {
+        "row": 86130,
+        "variant": "A1N+A2T+A3H+A4M"
+      },
+      {
+        "row": 113458,
+        "variant": "A2F+A3P+A4W"
+      },
+      {
+        "row": 75938,
+        "variant": "A1M+A2M+A3T+A4W"
+      },
+      {
+        "row": 158437,
+        "variant": "A1Y+A3C+A4V"
+      },
+      {
+        "row": 66103,
+        "variant": "A1L+A2H+A3G+A4F"
+      },
+      {
+        "row": 84357,
+        "variant": "A1N+A2N+A3V+A4V"
+      },
+      {
+        "row": 41195,
+        "variant": "A1H+A2E+A3Y+A4S"
+      },
+      {
+        "row": 22363,
+        "variant": "A1E+A2T+A3W+A4F"
+      },
+      {
+        "row": 86003,
+        "variant": "A1N+A2T+A4F"
+      },
+      {
+        "row": 107263,
+        "variant": "A1R+A2L+A3E+A4F"
+      },
+      {
+        "row": 113781,
+        "variant": "A2G+A3L+A4D"
+      },
+      {
+        "row": 28135,
+        "variant": "A1F+A2N+A3H+A4S"
+      },
+      {
+        "row": 70075,
+        "variant": "A1L+A2T+A3E+A4S"
+      },
+      {
+        "row": 133071,
+        "variant": "A1T+A2Q+A3Q+A4N"
+      },
+      {
+        "row": 87846,
+        "variant": "A1N+A2Y+A3P+A4H"
+      },
+      {
+        "row": 1929,
+        "variant": "A1C+A2G+A3T+A4L"
+      },
+      {
+        "row": 30359,
+        "variant": "A1F+A2T+A3V+A4Y"
+      },
+      {
+        "row": 106550,
+        "variant": "A1R+A2I+A3I+A4M"
+      },
+      {
+        "row": 84816,
+        "variant": "A1N+A2Q+A4T"
+      },
+      {
+        "row": 56665,
+        "variant": "A1K+A2D+A3Q"
+      },
+      {
+        "row": 136421,
+        "variant": "A1V+A2D+A3C+A4D"
+      },
+      {
+        "row": 146939,
+        "variant": "A1W+A2K+A3H+A4Y"
+      },
+      {
+        "row": 73687,
+        "variant": "A1M+A2G+A3F+A4I"
+      },
+      {
+        "row": 91009,
+        "variant": "A1P+A2K+A3M+A4L"
+      },
+      {
+        "row": 128729,
+        "variant": "A1T+A2D+A3T+A4L"
+      },
+      {
+        "row": 48149,
+        "variant": "A1I+A2C+A3I+A4L"
+      },
+      {
+        "row": 42679,
+        "variant": "A1H+A2I+A3Q+A4Y"
+      },
+      {
+        "row": 75846,
+        "variant": "A1M+A2M+A3P+A4H"
+      },
+      {
+        "row": 67584,
+        "variant": "A1L+A2L+A3Y+A4G"
+      },
+      {
+        "row": 93645,
+        "variant": "A1P+A2S+A3D"
+      },
+      {
+        "row": 123558,
+        "variant": "A1S+A2L+A3V+A4W"
+      },
+      {
+        "row": 147879,
+        "variant": "A1W+A2M+A3Q+A4Y"
+      },
+      {
+        "row": 18374,
+        "variant": "A1E+A2H+A3W+A4R"
+      },
+      {
+        "row": 92848,
+        "variant": "A1P+A2Q+A3D+A4K"
+      },
+      {
+        "row": 95094,
+        "variant": "A1P+A2V+A3R+A4R"
+      },
+      {
+        "row": 2847,
+        "variant": "A1C+A2K+A3D+A4I"
+      },
+      {
+        "row": 121301,
+        "variant": "A1S+A2F+A3G+A4D"
+      },
+      {
+        "row": 35522,
+        "variant": "A1G+A2L+A3T+A4E"
+      },
+      {
+        "row": 30180,
+        "variant": "A1F+A2T+A3L+A4C"
+      },
+      {
+        "row": 79020,
+        "variant": "A1M+A2V+A3N+A4C"
+      },
+      {
+        "row": 156134,
+        "variant": "A1Y+A2N+A3H+A4R"
+      },
+      {
+        "row": 71181,
+        "variant": "A1L+A2V+A3Y+A4D"
+      },
+      {
+        "row": 33523,
+        "variant": "A1G+A2F+A3T+A4F"
+      },
+      {
+        "row": 105151,
+        "variant": "A1R+A2E+A3V+A4N"
+      },
+      {
+        "row": 76890,
+        "variant": "A1M+A2Q+A3F+A4M"
+      },
+      {
+        "row": 2190,
+        "variant": "A1C+A2H+A3L+A4M"
+      },
+      {
+        "row": 119466,
+        "variant": "A2W+A3Q+A4H"
+      },
+      {
+        "row": 146890,
+        "variant": "A1W+A2K+A3F+A4M"
+      },
+      {
+        "row": 135654,
+        "variant": "A1T+A2Y+A3D+A4R"
+      },
+      {
+        "row": 51316,
+        "variant": "A1I+A2L+A3G+A4T"
+      },
+      {
+        "row": 152591,
+        "variant": "A1Y+A2D+A3L+A4N"
+      },
+      {
+        "row": 15478,
+        "variant": "A1D+A2W+A3Q+A4W"
+      },
+      {
+        "row": 5126,
+        "variant": "A1C+A2Q+A3T+A4H"
+      },
+      {
+        "row": 44583,
+        "variant": "A1H+A2P+A3L+A4F"
+      },
+      {
+        "row": 111278,
+        "variant": "A1R+A2W+A3E+A4W"
+      },
+      {
+        "row": 61854,
+        "variant": "A1K+A2S+A3P+A4R"
+      },
+      {
+        "row": 155760,
+        "variant": "A1Y+A2M+A3K+A4C"
+      },
+      {
+        "row": 93457,
+        "variant": "A1P+A2R+A3P+A4V"
+      },
+      {
+        "row": 146289,
+        "variant": "A1W+A2H+A3R+A4L"
+      },
+      {
+        "row": 84137,
+        "variant": "A1N+A2N+A3H+A4V"
+      },
+      {
+        "row": 152576,
+        "variant": "A1Y+A2D+A3K+A4T"
+      },
+      {
+        "row": 127988,
+        "variant": "A1S+A2Y+A3Y+A4K"
+      },
+      {
+        "row": 35550,
+        "variant": "A1G+A2L+A3V+A4M"
+      },
+      {
+        "row": 18470,
+        "variant": "A1E+A2I+A3E+A4M"
+      },
+      {
+        "row": 39772,
+        "variant": "A1G+A2Y+A3K+A4P"
+      },
+      {
+        "row": 3260,
+        "variant": "A1C+A2L+A3E+A4C"
+      },
+      {
+        "row": 71343,
+        "variant": "A1L+A2W+A3I+A4F"
+      },
+      {
+        "row": 80372,
+        "variant": "A1N+A2C+A3W+A4P"
+      },
+      {
+        "row": 99044,
+        "variant": "A1Q+A2K+A3P+A4G"
+      },
+      {
+        "row": 152390,
+        "variant": "A1Y+A2C+A3Y+A4M"
+      },
+      {
+        "row": 102705,
+        "variant": "A1Q+A3S"
+      },
+      {
+        "row": 124977,
+        "variant": "A1S+A2Q+A3K+A4V"
+      },
+      {
+        "row": 97498,
+        "variant": "A1Q+A2F+A3R+A4W"
+      },
+      {
+        "row": 14879,
+        "variant": "A1D+A2V+A3E+A4Y"
+      },
+      {
+        "row": 159812,
+        "variant": "A1Y+A2Y+A3M+A4P"
+      },
+      {
+        "row": 68772,
+        "variant": "A1L+A2P+A3W+A4P"
+      },
+      {
+        "row": 142377,
+        "variant": "A1V+A2T+A3W+A4V"
+      },
+      {
+        "row": 16767,
+        "variant": "A1E+A2D+A3W+A4I"
+      },
+      {
+        "row": 129082,
+        "variant": "A1T+A2E+A3R+A4E"
+      },
+      {
+        "row": 71005,
+        "variant": "A1L+A2V+A3M"
+      },
+      {
+        "row": 104144,
+        "variant": "A1R+A2C+A3I+A4G"
+      },
+      {
+        "row": 4941,
+        "variant": "A1C+A2Q+A3I+A4D"
+      },
+      {
+        "row": 140510,
+        "variant": "A1V+A2P+A3G+A4M"
+      },
+      {
+        "row": 12575,
+        "variant": "A1D+A2P+A3K+A4S"
+      },
+      {
+        "row": 126322,
+        "variant": "A1S+A2T+A3T+A4E"
+      },
+      {
+        "row": 57812,
+        "variant": "A1K+A2G+A3M+A4P"
+      },
+      {
+        "row": 114285,
+        "variant": "A2H+A3R"
+      },
+      {
+        "row": 10391,
+        "variant": "A1D+A2H+A3Y+A4N"
+      },
+      {
+        "row": 132895,
+        "variant": "A1T+A2Q+A3F+A4S"
+      },
+      {
+        "row": 67033,
+        "variant": "A1L+A2K+A3N+A4Q"
+      },
+      {
+        "row": 112814,
+        "variant": "A2E+A4R"
+      },
+      {
+        "row": 18743,
+        "variant": "A1E+A2I+A3V+A4F"
+      }
+    ],
+    "ParD2": [
+      {
+        "row": 5529,
+        "variant": "I1R+L2C+K3Q"
+      },
+      {
+        "row": 1734,
+        "variant": "I1F+L2I+K3S"
+      },
+      {
+        "row": 3362,
+        "variant": "I1K+K3Y"
+      },
+      {
+        "row": 7414,
+        "variant": "I1W+L2T+K3H"
+      },
+      {
+        "row": 7684,
+        "variant": "I1Y+L2M+K3A"
+      },
+      {
+        "row": 7555,
+        "variant": "I1Y+L2E+K3L"
+      },
+      {
+        "row": 3781,
+        "variant": "I1L+L2N+K3C"
+      },
+      {
+        "row": 5055,
+        "variant": "I1P+L2T+K3S"
+      },
+      {
+        "row": 5805,
+        "variant": "I1R+L2S+K3L"
+      },
+      {
+        "row": 1076,
+        "variant": "I1D+L2R+K3I"
+      },
+      {
+        "row": 1442,
+        "variant": "I1E+L2P+K3S"
+      },
+      {
+        "row": 5949,
+        "variant": "I1S+L2D+K3Q"
+      },
+      {
+        "row": 6365,
+        "variant": "I1T+L2E+K3L"
+      },
+      {
+        "row": 3555,
+        "variant": "I1K+L2Y+K3S"
+      },
+      {
+        "row": 2709,
+        "variant": "I1H+L2V+K3D"
+      },
+      {
+        "row": 3371,
+        "variant": "I1K+L2M"
+      },
+      {
+        "row": 3338,
+        "variant": "I1K+L2K+K3S"
+      },
+      {
+        "row": 3654,
+        "variant": "I1L+L2F+K3R"
+      },
+      {
+        "row": 5500,
+        "variant": "I1R+L2A+K3F"
+      },
+      {
+        "row": 513,
+        "variant": "I1C+L2G+K3Y"
+      },
+      {
+        "row": 4881,
+        "variant": "I1P+L2I+K3H"
+      },
+      {
+        "row": 300,
+        "variant": "I1A+L2S+K3C"
+      },
+      {
+        "row": 1045,
+        "variant": "I1D+L2P+K3T"
+      },
+      {
+        "row": 2489,
+        "variant": "I1H+L2G+K3W"
+      },
+      {
+        "row": 6343,
+        "variant": "I1T+L2D+K3I"
+      },
+      {
+        "row": 6163,
+        "variant": "I1S+L2Q+K3I"
+      },
+      {
+        "row": 4110,
+        "variant": "I1M+L2I+K3N"
+      },
+      {
+        "row": 2210,
+        "variant": "I1G+L2N+K3Q"
+      },
+      {
+        "row": 7832,
+        "variant": "I1Y+L2V+K3L"
+      },
+      {
+        "row": 246,
+        "variant": "I1A+L2P+K3H"
+      },
+      {
+        "row": 1679,
+        "variant": "I1F+L2G+K3A"
+      },
+      {
+        "row": 182,
+        "variant": "I1A+K3D"
+      },
+      {
+        "row": 1581,
+        "variant": "I1E+L2Y+K3S"
+      },
+      {
+        "row": 6186,
+        "variant": "I1S+L2R+K3M"
+      },
+      {
+        "row": 2496,
+        "variant": "I1H+L2H+K3G"
+      },
+      {
+        "row": 1150,
+        "variant": "I1D+L2W+K3C"
+      },
+      {
+        "row": 173,
+        "variant": "I1A+L2K+K3Q"
+      },
+      {
+        "row": 1157,
+        "variant": "I1D+L2W"
+      },
+      {
+        "row": 371,
+        "variant": "I1A+L2W+K3Q"
+      },
+      {
+        "row": 1055,
+        "variant": "I1D+L2Q+K3H"
+      },
+      {
+        "row": 3816,
+        "variant": "I1L+L2P+K3T"
+      },
+      {
+        "row": 5088,
+        "variant": "I1P+L2W+K3P"
+      },
+      {
+        "row": 7644,
+        "variant": "I1Y+L2K+K3A"
+      },
+      {
+        "row": 1278,
+        "variant": "I1E+L2F+K3M"
+      },
+      {
+        "row": 2386,
+        "variant": "I1H+L2A+K3M"
+      },
+      {
+        "row": 3003,
+        "variant": "L2N+K3Y"
+      },
+      {
+        "row": 1702,
+        "variant": "I1F+L2H+K3E"
+      },
+      {
+        "row": 687,
+        "variant": "I1C+L2R+K3R"
+      },
+      {
+        "row": 7593,
+        "variant": "I1Y+L2G+K3L"
+      },
+      {
+        "row": 3332,
+        "variant": "I1K+L2K+K3L"
+      },
+      {
+        "row": 1306,
+        "variant": "I1E+L2G+K3W"
+      },
+      {
+        "row": 7054,
+        "variant": "I1V+L2V+K3W"
+      },
+      {
+        "row": 5947,
+        "variant": "I1S+L2D+K3N"
+      },
+      {
+        "row": 1962,
+        "variant": "I1F+L2Y+K3G"
+      },
+      {
+        "row": 5280,
+        "variant": "I1Q+L2K+K3S"
+      },
+      {
+        "row": 5435,
+        "variant": "I1Q+L2T+K3V"
+      },
+      {
+        "row": 3360,
+        "variant": "I1K+K3V"
+      },
+      {
+        "row": 4527,
+        "variant": "I1N+L2K+K3M"
+      },
+      {
+        "row": 7157,
+        "variant": "I1W+L2E+K3C"
+      },
+      {
+        "row": 4090,
+        "variant": "I1M+L2H+K3N"
+      },
+      {
+        "row": 6389,
+        "variant": "I1T+L2F+K3Q"
+      },
+      {
+        "row": 7142,
+        "variant": "I1W+L2D+K3H"
+      },
+      {
+        "row": 6844,
+        "variant": "I1V+L2I"
+      },
+      {
+        "row": 3025,
+        "variant": "L2Q+K3C"
+      },
+      {
+        "row": 2022,
+        "variant": "I1G+L2D+K3G"
+      },
+      {
+        "row": 3017,
+        "variant": "L2P+K3Q"
+      },
+      {
+        "row": 2511,
+        "variant": "I1H+L2I+K3C"
+      },
+      {
+        "row": 1686,
+        "variant": "I1F+L2G+K3I"
+      },
+      {
+        "row": 3349,
+        "variant": "I1K+K3H"
+      },
+      {
+        "row": 688,
+        "variant": "I1C+L2R+K3S"
+      },
+      {
+        "row": 1136,
+        "variant": "I1D+L2V+K3I"
+      },
+      {
+        "row": 3121,
+        "variant": "L2V+K3V"
+      },
+      {
+        "row": 831,
+        "variant": "I1D+L2D+K3C"
+      },
+      {
+        "row": 1691,
+        "variant": "I1F+L2G+K3P"
+      },
+      {
+        "row": 3886,
+        "variant": "I1L+L2T+K3H"
+      },
+      {
+        "row": 1618,
+        "variant": "I1F+L2C+K3Q"
+      },
+      {
+        "row": 649,
+        "variant": "I1C+L2P+K3T"
+      },
+      {
+        "row": 3885,
+        "variant": "I1L+L2T+K3G"
+      },
+      {
+        "row": 1182,
+        "variant": "I1D+L2Y+K3Q"
+      },
+      {
+        "row": 6342,
+        "variant": "I1T+L2D+K3H"
+      },
+      {
+        "row": 4192,
+        "variant": "I1M+L2N+K3Q"
+      },
+      {
+        "row": 7557,
+        "variant": "I1Y+L2E+K3N"
+      },
+      {
+        "row": 3006,
+        "variant": "L2P+K3D"
+      },
+      {
+        "row": 4672,
+        "variant": "I1N+L2S+K3S"
+      },
+      {
+        "row": 3228,
+        "variant": "I1K+L2E+K3F"
+      },
+      {
+        "row": 7808,
+        "variant": "I1Y+L2T+K3G"
+      },
+      {
+        "row": 6251,
+        "variant": "I1S+L2V+K3S"
+      },
+      {
+        "row": 735,
+        "variant": "I1C+L2V+K3D"
+      },
+      {
+        "row": 970,
+        "variant": "I1D+K3A"
+      },
+      {
+        "row": 6460,
+        "variant": "I1T+L2K+K3F"
+      },
+      {
+        "row": 1506,
+        "variant": "I1E+L2S+K3Y"
+      },
+      {
+        "row": 7297,
+        "variant": "I1W+L2M+K3H"
+      },
+      {
+        "row": 54,
+        "variant": "I1A+L2D+K3R"
+      },
+      {
+        "row": 167,
+        "variant": "I1A+L2K+K3I"
+      },
+      {
+        "row": 2249,
+        "variant": "I1G+L2Q+K3Q"
+      },
+      {
+        "row": 3909,
+        "variant": "I1L+L2V+K3L"
+      },
+      {
+        "row": 102,
+        "variant": "I1A+L2G+K3D"
+      },
+      {
+        "row": 600,
+        "variant": "I1C+L2M+K3H"
+      },
+      {
+        "row": 7692,
+        "variant": "I1Y+L2M"
+      },
+      {
+        "row": 4783,
+        "variant": "I1P+L2C+K3N"
+      },
+      {
+        "row": 4877,
+        "variant": "I1P+L2I+K3A"
+      },
+      {
+        "row": 7601,
+        "variant": "I1Y+L2G+K3V"
+      },
+      {
+        "row": 5232,
+        "variant": "I1Q+L2H+K3I"
+      },
+      {
+        "row": 2053,
+        "variant": "I1G+L2E+K3T"
+      },
+      {
+        "row": 6923,
+        "variant": "I1V+L2N+K3I"
+      },
+      {
+        "row": 6587,
+        "variant": "I1T+L2R+K3N"
+      },
+      {
+        "row": 3826,
+        "variant": "I1L+L2Q+K3H"
+      },
+      {
+        "row": 6348,
+        "variant": "I1T+L2D+K3P"
+      },
+      {
+        "row": 3043,
+        "variant": "L2Q+K3Y"
+      },
+      {
+        "row": 6601,
+        "variant": "I1T+L2S+K3G"
+      },
+      {
+        "row": 3407,
+        "variant": "I1K+L2P+K3F"
+      },
+      {
+        "row": 4901,
+        "variant": "I1P+L2K+K3M"
+      },
+      {
+        "row": 7880,
+        "variant": "I1Y+L2Y+K3W"
+      },
+      {
+        "row": 352,
+        "variant": "I1A+L2V+K3Q"
+      },
+      {
+        "row": 6451,
+        "variant": "I1T+L2I+K3S"
+      },
+      {
+        "row": 2228,
+        "variant": "I1G+L2P+K3N"
+      },
+      {
+        "row": 2678,
+        "variant": "I1H+L2S+K3N"
+      },
+      {
+        "row": 3817,
+        "variant": "I1L+L2P+K3V"
+      },
+      {
+        "row": 411,
+        "variant": "I1C+L2A+K3R"
+      },
+      {
+        "row": 6544,
+        "variant": "I1T+L2P"
+      },
+      {
+        "row": 3057,
+        "variant": "L2R+K3Q"
+      },
+      {
+        "row": 5612,
+        "variant": "I1R+L2G+K3T"
+      },
+      {
+        "row": 7073,
+        "variant": "I1V+L2W+K3V"
+      },
+      {
+        "row": 2066,
+        "variant": "I1G+L2F+K3L"
+      },
+      {
+        "row": 349,
+        "variant": "I1A+L2V+K3M"
+      },
+      {
+        "row": 2040,
+        "variant": "I1G+L2E+K3E"
+      },
+      {
+        "row": 960,
+        "variant": "I1D+L2K+K3M"
+      },
+      {
+        "row": 4165,
+        "variant": "I1M+L2M+K3H"
+      },
+      {
+        "row": 4838,
+        "variant": "I1P+L2F+K3S"
+      },
+      {
+        "row": 177,
+        "variant": "I1A+L2K+K3V"
+      },
+      {
+        "row": 4716,
+        "variant": "I1N+L2V+K3Y"
+      },
+      {
+        "row": 24,
+        "variant": "I1A+L2C+K3F"
+      },
+      {
+        "row": 7221,
+        "variant": "I1W+L2H+K3M"
+      },
+      {
+        "row": 2848,
+        "variant": "L2F+K3F"
+      },
+      {
+        "row": 4236,
+        "variant": "I1M+L2Q+K3V"
+      },
+      {
+        "row": 6619,
+        "variant": "I1T+L2T+K3E"
+      },
+      {
+        "row": 4839,
+        "variant": "I1P+L2F+K3T"
+      },
+      {
+        "row": 871,
+        "variant": "I1D+L2F+K3C"
+      },
+      {
+        "row": 3296,
+        "variant": "I1K+L2H+K3Q"
+      },
+      {
+        "row": 6983,
+        "variant": "I1V+L2R+K3I"
+      },
+      {
+        "row": 656,
+        "variant": "I1C+L2Q+K3E"
+      },
+      {
+        "row": 3218,
+        "variant": "I1K+L2D+K3R"
+      },
+      {
+        "row": 2160,
+        "variant": "I1G+K3E"
+      },
+      {
+        "row": 6268,
+        "variant": "I1S+L2W+K3P"
+      },
+      {
+        "row": 902,
+        "variant": "I1D+L2G+K3P"
+      },
+      {
+        "row": 7487,
+        "variant": "I1Y+L2A+K3C"
+      },
+      {
+        "row": 6254,
+        "variant": "I1S+L2V+K3W"
+      },
+      {
+        "row": 1179,
+        "variant": "I1D+L2Y+K3M"
+      },
+      {
+        "row": 6986,
+        "variant": "I1V+L2R+K3M"
+      },
+      {
+        "row": 2925,
+        "variant": "L2K+K3C"
+      },
+      {
+        "row": 292,
+        "variant": "I1A+L2R+K3Q"
+      },
+      {
+        "row": 1667,
+        "variant": "I1F+L2F"
+      },
+      {
+        "row": 5386,
+        "variant": "I1Q+L2R"
+      },
+      {
+        "row": 1534,
+        "variant": "I1E+L2V+K3I"
+      },
+      {
+        "row": 7394,
+        "variant": "I1W+L2S+K3H"
+      },
+      {
+        "row": 3588,
+        "variant": "I1L+L2C"
+      },
+      {
+        "row": 2819,
+        "variant": "L2D+K3R"
+      },
+      {
+        "row": 2234,
+        "variant": "I1G+L2P+K3V"
+      },
+      {
+        "row": 3226,
+        "variant": "I1K+L2E+K3D"
+      },
+      {
+        "row": 5454,
+        "variant": "I1Q+L2V+K3T"
+      },
+      {
+        "row": 4443,
+        "variant": "I1N+L2F+K3H"
+      },
+      {
+        "row": 1674,
+        "variant": "I1F+L2F+K3S"
+      },
+      {
+        "row": 5551,
+        "variant": "I1R+L2D+K3S"
+      },
+      {
+        "row": 1748,
+        "variant": "I1F+L2K+K3L"
+      },
+      {
+        "row": 1072,
+        "variant": "I1D+L2R+K3E"
+      },
+      {
+        "row": 5843,
+        "variant": "I1R+L2V+K3I"
+      },
+      {
+        "row": 5142,
+        "variant": "I1Q+L2C+K3Q"
+      },
+      {
+        "row": 7022,
+        "variant": "I1V+L2T+K3H"
+      },
+      {
+        "row": 3981,
+        "variant": "I1M+L2C+K3C"
+      },
+      {
+        "row": 3758,
+        "variant": "I1L+K3W"
+      },
+      {
+        "row": 5498,
+        "variant": "I1R+L2A+K3D"
+      },
+      {
+        "row": 3081,
+        "variant": "L2S+K3V"
+      },
+      {
+        "row": 7341,
+        "variant": "I1W+L2P+K3Q"
+      },
+      {
+        "row": 6063,
+        "variant": "I1S+L2K+K3I"
+      },
+      {
+        "row": 1582,
+        "variant": "I1E+L2Y+K3T"
+      },
+      {
+        "row": 7362,
+        "variant": "I1W+L2Q+K3R"
+      },
+      {
+        "row": 4349,
+        "variant": "I1M+L2Y+K3M"
+      },
+      {
+        "row": 2314,
+        "variant": "I1G+L2T+K3W"
+      },
+      {
+        "row": 787,
+        "variant": "I1C+L2Y+K3V"
+      },
+      {
+        "row": 799,
+        "variant": "I1D+L2A+K3L"
+      },
+      {
+        "row": 53,
+        "variant": "I1A+L2D+K3Q"
+      },
+      {
+        "row": 7035,
+        "variant": "I1V+L2T+K3Y"
+      },
+      {
+        "row": 2109,
+        "variant": "I1G+L2H+K3P"
+      },
+      {
+        "row": 3102,
+        "variant": "L2T+K3W"
+      },
+      {
+        "row": 7851,
+        "variant": "I1Y+L2W"
+      },
+      {
+        "row": 6023,
+        "variant": "I1S+L2H+K3I"
+      },
+      {
+        "row": 109,
+        "variant": "I1A+L2G+K3L"
+      },
+      {
+        "row": 4320,
+        "variant": "I1M+L2W+K3C"
+      },
+      {
+        "row": 5315,
+        "variant": "I1Q+L2M+K3M"
+      },
+      {
+        "row": 7234,
+        "variant": "I1W+L2I+K3E"
+      },
+      {
+        "row": 6412,
+        "variant": "I1T+L2G+K3T"
+      },
+      {
+        "row": 5385,
+        "variant": "I1Q+L2R+K3I"
+      }
+    ],
+    "CreiLOV": [
+      {
+        "row": 156914,
+        "variant": "G3E+L4N+T7S+G34T+Q47R+R60N+D61Q+I92C+V107M+V109Q+T113E"
+      },
+      {
+        "row": 160951,
+        "variant": "G3E+R5D+T7S+A29K+G34T+Q47C+R60N+D61Q+I92C+D96Q+R98D+V107M"
+      },
+      {
+        "row": 99741,
+        "variant": "G3E+L4N+R5D+T7S+Q47C+R60N+I92C+D96Q+V107M"
+      },
+      {
+        "row": 97362,
+        "variant": "G3E+L4N+R5D+T7H+Q47C+D61Q+I92C+D96Q+R98D"
+      },
+      {
+        "row": 6206,
+        "variant": "L4N+T7H+G34T+I92C+D96Q"
+      },
+      {
+        "row": 155602,
+        "variant": "G3E+L4N+T7H+A29H+Q47R+R60N+D61Q+D96Q+R98D+V107M+V109Q"
+      },
+      {
+        "row": 57259,
+        "variant": "T7S+Q47R+I92C+D96Q+R98D+V107M+T113E"
+      },
+      {
+        "row": 131599,
+        "variant": "L4N+R5D+T7S+A29K+G34T+Q47I+R60N+D61Q+D96Q+T113E"
+      },
+      {
+        "row": 129062,
+        "variant": "G3E+L4N+R5D+T7H+A29K+Q47V+I92C+D96Q+R98D+V107M"
+      },
+      {
+        "row": 151644,
+        "variant": "G3E+L4N+R5D+T7S+A29K+G34T+Q47C+R60N+R98D+V107M+V109Q"
+      },
+      {
+        "row": 78421,
+        "variant": "R5D+T7H+A29K+Q47C+D61Q+I92C+R98D+T113E"
+      },
+      {
+        "row": 9764,
+        "variant": "G3E+A29K+G34T+D61Q+V107M"
+      },
+      {
+        "row": 4684,
+        "variant": "Q47V+I92C+V109Q+T113E"
+      },
+      {
+        "row": 72529,
+        "variant": "R5D+T7S+A29H+Q47R+D61Q+D96Q+R98D+T113E"
+      },
+      {
+        "row": 93228,
+        "variant": "T7S+A29H+G34T+Q47V+R60N+R98D+V109Q+T113E"
+      },
+      {
+        "row": 69618,
+        "variant": "G3E+L4N+T7H+A29K+Q47I+D61Q+I92C+T113E"
+      },
+      {
+        "row": 91154,
+        "variant": "G3E+A29H+D61Q+I92C+D96Q+R98D+V107M+V109Q"
+      },
+      {
+        "row": 32762,
+        "variant": "R5D+Q47C+D61Q+V107M+V109Q+T113E"
+      },
+      {
+        "row": 94164,
+        "variant": "T7H+A29H+Q47R+D61Q+I92C+D96Q+V107M+V109Q"
+      },
+      {
+        "row": 107307,
+        "variant": "G3E+R5D+T7H+A29K+G34T+I92C+D96Q+V109Q+T113E"
+      },
+      {
+        "row": 142721,
+        "variant": "G3E+L4N+T7H+A29K+G34T+Q47I+D61Q+V107M+V109Q+T113E"
+      },
+      {
+        "row": 22178,
+        "variant": "G3E+R5D+G34T+Q47I+R60N+V109Q"
+      },
+      {
+        "row": 72420,
+        "variant": "G3E+R5D+A29H+G34T+R60N+I92C+R98D+V107M"
+      },
+      {
+        "row": 77809,
+        "variant": "L4N+R5D+T7H+A29H+Q47I+I92C+V109Q+T113E"
+      },
+      {
+        "row": 103745,
+        "variant": "G3E+L4N+R5D+T7H+Q47C+D61Q+D96Q+V107M+T113E"
+      },
+      {
+        "row": 52207,
+        "variant": "G3E+A29H+G34T+Q47V+D96Q+R98D+V107M"
+      },
+      {
+        "row": 161590,
+        "variant": "G3E+L4N+R5D+T7S+A29H+G34T+R60N+I92C+D96Q+V107M+V109Q+T113E"
+      },
+      {
+        "row": 12799,
+        "variant": "G3E+A29H+R60N+V107M+T113E"
+      },
+      {
+        "row": 85029,
+        "variant": "L4N+T7S+Q47C+I92C+D96Q+R98D+V109Q+T113E"
+      },
+      {
+        "row": 46724,
+        "variant": "L4N+T7H+A29H+G34T+R60N+D96Q+V109Q"
+      },
+      {
+        "row": 77125,
+        "variant": "L4N+R5D+T7S+A29K+R60N+D96Q+V107M+V109Q"
+      },
+      {
+        "row": 69893,
+        "variant": "G3E+T7H+A29H+G34T+Q47V+D61Q+I92C+R98D"
+      },
+      {
+        "row": 103391,
+        "variant": "L4N+R5D+T7H+A29K+R60N+D61Q+D96Q+R98D+V109Q"
+      },
+      {
+        "row": 28867,
+        "variant": "L4N+Q47R+R60N+I92C+R98D+T113E"
+      },
+      {
+        "row": 163242,
+        "variant": "G3E+T7S+A29K+G34T+Q47C+R60N+D61Q+I92C+D96Q+R98D+V107M+V109Q"
+      },
+      {
+        "row": 64103,
+        "variant": "G3E+L4N+R5D+T7S+Q47V+D61Q+I92C+T113E"
+      },
+      {
+        "row": 117185,
+        "variant": "L4N+T7H+G34T+D61Q+I92C+D96Q+R98D+V109Q+T113E"
+      },
+      {
+        "row": 39183,
+        "variant": "G3E+T7H+A29K+G34T+Q47V+I92C+R98D"
+      },
+      {
+        "row": 46662,
+        "variant": "G3E+R5D+G34T+Q47V+R60N+D61Q+V107M"
+      },
+      {
+        "row": 52302,
+        "variant": "G3E+T7S+Q47C+D61Q+R98D+V107M+V109Q"
+      },
+      {
+        "row": 105098,
+        "variant": "G3E+L4N+R5D+T7S+Q47C+R60N+I92C+V107M+T113E"
+      },
+      {
+        "row": 10505,
+        "variant": "G3E+G34T+R60N+R98D+V107M"
+      },
+      {
+        "row": 28737,
+        "variant": "R5D+Q47I+R60N+D61Q+I92C+V107M"
+      },
+      {
+        "row": 53563,
+        "variant": "R5D+A29K+Q47I+R60N+D96Q+R98D+V107M"
+      },
+      {
+        "row": 95019,
+        "variant": "L4N+Q47C+R60N+D61Q+I92C+R98D+V107M+V109Q"
+      },
+      {
+        "row": 88309,
+        "variant": "T7H+A29H+G34T+Q47R+R60N+D96Q+R98D+V107M"
+      },
+      {
+        "row": 146071,
+        "variant": "R5D+T7S+A29K+G34T+R60N+I92C+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 98654,
+        "variant": "G3E+L4N+R5D+T7H+G34T+Q47R+I92C+D96Q+V107M"
+      },
+      {
+        "row": 42748,
+        "variant": "L4N+R5D+A29K+G34T+D96Q+R98D+V107M"
+      },
+      {
+        "row": 41263,
+        "variant": "T7S+A29H+R60N+D61Q+I92C+D96Q+R98D"
+      },
+      {
+        "row": 91119,
+        "variant": "L4N+R5D+A29H+G34T+D96Q+V107M+V109Q+T113E"
+      },
+      {
+        "row": 109132,
+        "variant": "G3E+L4N+T7S+G34T+Q47V+D61Q+D96Q+V109Q+T113E"
+      },
+      {
+        "row": 127047,
+        "variant": "T7H+A29H+G34T+Q47R+D61Q+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 152725,
+        "variant": "G3E+L4N+T7S+A29H+G34T+Q47I+D61Q+D96Q+R98D+V107M+T113E"
+      },
+      {
+        "row": 145028,
+        "variant": "L4N+T7H+A29H+G34T+Q47R+R60N+I92C+D96Q+V107M+T113E"
+      },
+      {
+        "row": 57148,
+        "variant": "T7S+A29K+D61Q+I92C+R98D+V109Q+T113E"
+      },
+      {
+        "row": 64280,
+        "variant": "G3E+L4N+T7S+A29H+G34T+Q47C+D61Q+D96Q"
+      },
+      {
+        "row": 82879,
+        "variant": "L4N+R5D+G34T+D61Q+I92C+R98D+V107M+V109Q"
+      },
+      {
+        "row": 15310,
+        "variant": "G3E+R5D+T7H+Q47C+D61Q+I92C"
+      },
+      {
+        "row": 62293,
+        "variant": "A29K+G34T+Q47V+R60N+R98D+V107M+T113E"
+      },
+      {
+        "row": 120614,
+        "variant": "R5D+T7H+A29H+Q47I+D61Q+I92C+R98D+V109Q+T113E"
+      },
+      {
+        "row": 18021,
+        "variant": "L4N+R5D+T7S+Q47C+R60N+V109Q"
+      },
+      {
+        "row": 51112,
+        "variant": "R5D+T7H+G34T+Q47R+D96Q+V107M+T113E"
+      },
+      {
+        "row": 51353,
+        "variant": "G3E+T7H+A29H+D61Q+D96Q+V107M+V109Q"
+      },
+      {
+        "row": 133891,
+        "variant": "G3E+L4N+T7H+A29K+Q47V+R60N+D61Q+I92C+D96Q+T113E"
+      },
+      {
+        "row": 52926,
+        "variant": "L4N+R5D+A29H+Q47C+D61Q+V109Q+T113E"
+      },
+      {
+        "row": 121884,
+        "variant": "R5D+T7H+Q47V+R60N+I92C+D96Q+R98D+V107M+T113E"
+      },
+      {
+        "row": 146689,
+        "variant": "G3E+R5D+A29H+G34T+Q47I+R60N+D61Q+V107M+V109Q+T113E"
+      },
+      {
+        "row": 83728,
+        "variant": "G3E+R5D+A29K+G34T+Q47C+D61Q+V107M+T113E"
+      },
+      {
+        "row": 155086,
+        "variant": "G3E+L4N+R5D+T7H+A29K+Q47V+R60N+I92C+V107M+V109Q+T113E"
+      },
+      {
+        "row": 94819,
+        "variant": "T7S+Q47C+R60N+D61Q+I92C+D96Q+V107M+T113E"
+      },
+      {
+        "row": 62084,
+        "variant": "T7H+A29K+Q47C+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 11336,
+        "variant": "R5D+Q47R+R60N+D96Q+T113E"
+      },
+      {
+        "row": 11100,
+        "variant": "R5D+A29H+Q47C+D96Q+V107M"
+      },
+      {
+        "row": 16960,
+        "variant": "L4N+R5D+T7S+Q47C+D61Q+V109Q"
+      },
+      {
+        "row": 159959,
+        "variant": "R5D+A29H+G34T+Q47R+R60N+D61Q+I92C+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 13818,
+        "variant": "T7S+I92C+V107M+V109Q+T113E"
+      },
+      {
+        "row": 101657,
+        "variant": "G3E+L4N+R5D+T7H+A29K+R60N+I92C+V107M+T113E"
+      },
+      {
+        "row": 120914,
+        "variant": "G3E+R5D+T7H+Q47R+R60N+I92C+V107M+V109Q+T113E"
+      },
+      {
+        "row": 137052,
+        "variant": "G3E+L4N+R5D+T7H+A29H+Q47V+D61Q+V107M+V109Q+T113E"
+      },
+      {
+        "row": 9502,
+        "variant": "T7S+A29H+G34T+D61Q+V107M"
+      },
+      {
+        "row": 135654,
+        "variant": "G3E+L4N+T7S+A29K+G34T+Q47C+D96Q+R98D+V107M+T113E"
+      },
+      {
+        "row": 146727,
+        "variant": "G3E+R5D+A29K+G34T+Q47V+I92C+D96Q+V107M+V109Q+T113E"
+      },
+      {
+        "row": 150279,
+        "variant": "G3E+L4N+R5D+T7S+A29K+G34T+I92C+D96Q+R98D+V109Q+T113E"
+      },
+      {
+        "row": 24207,
+        "variant": "L4N+G34T+Q47C+R60N+I92C+R98D"
+      },
+      {
+        "row": 13429,
+        "variant": "A29H+Q47V+D61Q+D96Q+T113E"
+      },
+      {
+        "row": 601,
+        "variant": "T7H+Q47V+R98D"
+      },
+      {
+        "row": 157921,
+        "variant": "L4N+T7S+A29K+G34T+Q47V+R60N+D61Q+I92C+R98D+V107M+V109Q"
+      },
+      {
+        "row": 103242,
+        "variant": "G3E+R5D+T7H+A29K+Q47C+I92C+D96Q+R98D+T113E"
+      },
+      {
+        "row": 56151,
+        "variant": "T7H+G34T+Q47V+R60N+D96Q+R98D+V107M"
+      },
+      {
+        "row": 8979,
+        "variant": "L4N+T7S+Q47C+D96Q+V109Q"
+      },
+      {
+        "row": 45820,
+        "variant": "L4N+R5D+A29K+Q47V+D96Q+R98D+V107M"
+      },
+      {
+        "row": 50200,
+        "variant": "G3E+T7S+A29H+Q47R+I92C+V109Q+T113E"
+      },
+      {
+        "row": 102879,
+        "variant": "G3E+L4N+T7S+A29K+Q47R+R60N+D61Q+D96Q+T113E"
+      },
+      {
+        "row": 130993,
+        "variant": "G3E+L4N+T7S+A29H+G34T+Q47R+D61Q+I92C+R98D+V109Q"
+      },
+      {
+        "row": 2116,
+        "variant": "G3E+A29K+D61Q+D96Q"
+      },
+      {
+        "row": 163865,
+        "variant": "G3E+L4N+A29H+G34T+Q47R+D61Q+I92C+D96Q+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 124918,
+        "variant": "T7H+A29H+G34T+Q47R+R60N+D96Q+R98D+V107M+T113E"
+      },
+      {
+        "row": 132772,
+        "variant": "G3E+L4N+R5D+T7H+G34T+Q47R+R60N+I92C+V109Q+T113E"
+      },
+      {
+        "row": 101684,
+        "variant": "G3E+R5D+T7H+A29H+G34T+Q47V+D61Q+I92C+T113E"
+      },
+      {
+        "row": 120112,
+        "variant": "T7H+A29K+G34T+Q47V+R60N+D61Q+D96Q+R98D+T113E"
+      },
+      {
+        "row": 47717,
+        "variant": "L4N+T7H+A29K+Q47C+D61Q+R98D+V109Q"
+      },
+      {
+        "row": 55696,
+        "variant": "T7S+G34T+Q47V+R60N+D61Q+D96Q+V109Q"
+      },
+      {
+        "row": 151961,
+        "variant": "G3E+L4N+R5D+T7H+A29H+Q47V+R60N+D61Q+R98D+V107M+V109Q"
+      },
+      {
+        "row": 123308,
+        "variant": "G3E+L4N+A29H+D61Q+D96Q+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 118730,
+        "variant": "G3E+T7S+A29H+Q47R+R60N+D96Q+R98D+V107M+T113E"
+      },
+      {
+        "row": 87565,
+        "variant": "G3E+A29H+G34T+Q47R+R60N+D61Q+I92C+T113E"
+      },
+      {
+        "row": 22799,
+        "variant": "G3E+A29K+Q47R+D61Q+I92C+D96Q"
+      },
+      {
+        "row": 2328,
+        "variant": "G3E+A29H+G34T+Q47R"
+      },
+      {
+        "row": 139098,
+        "variant": "L4N+R5D+T7S+A29H+G34T+Q47C+R60N+D96Q+V107M+V109Q"
+      },
+      {
+        "row": 148393,
+        "variant": "T7S+A29K+G34T+Q47R+D61Q+D96Q+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 141680,
+        "variant": "L4N+R5D+T7S+G34T+Q47R+R60N+I92C+V107M+V109Q+T113E"
+      },
+      {
+        "row": 52593,
+        "variant": "G3E+L4N+A29H+R60N+R98D+V107M+V109Q"
+      },
+      {
+        "row": 138778,
+        "variant": "G3E+R5D+T7H+A29K+Q47I+R60N+D61Q+D96Q+V107M+T113E"
+      },
+      {
+        "row": 115774,
+        "variant": "G3E+T7S+A29H+G34T+D61Q+I92C+D96Q+V109Q+T113E"
+      },
+      {
+        "row": 129028,
+        "variant": "L4N+R5D+T7S+A29K+Q47R+R60N+D61Q+I92C+D96Q+R98D"
+      },
+      {
+        "row": 6383,
+        "variant": "G3E+T7H+G34T+Q47R+D96Q"
+      },
+      {
+        "row": 95422,
+        "variant": "T7H+A29K+G34T+D61Q+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 140829,
+        "variant": "G3E+R5D+T7S+A29K+Q47I+D61Q+D96Q+V107M+V109Q+T113E"
+      },
+      {
+        "row": 112216,
+        "variant": "R5D+T7H+A29K+Q47V+D61Q+I92C+D96Q+R98D+V109Q"
+      },
+      {
+        "row": 4652,
+        "variant": "R60N+D96Q+V107M+T113E"
+      },
+      {
+        "row": 115894,
+        "variant": "L4N+T7S+G34T+Q47I+I92C+D96Q+R98D+V107M+T113E"
+      },
+      {
+        "row": 63789,
+        "variant": "G3E+L4N+R5D+A29H+G34T+D61Q+I92C+D96Q"
+      },
+      {
+        "row": 155709,
+        "variant": "L4N+R5D+T7H+A29H+G34T+Q47V+R60N+D96Q+R98D+V107M+V109Q"
+      },
+      {
+        "row": 43861,
+        "variant": "L4N+R5D+A29H+G34T+Q47I+I92C+T113E"
+      },
+      {
+        "row": 14388,
+        "variant": "G3E+L4N+R5D+T7H+D61Q+R98D"
+      },
+      {
+        "row": 86476,
+        "variant": "G3E+R5D+T7H+Q47C+I92C+V107M+V109Q+T113E"
+      },
+      {
+        "row": 118906,
+        "variant": "G3E+T7H+A29K+G34T+Q47C+D61Q+D96Q+V109Q+T113E"
+      },
+      {
+        "row": 127487,
+        "variant": "L4N+A29K+Q47R+R60N+I92C+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 99311,
+        "variant": "G3E+L4N+T7H+A29K+G34T+Q47I+R60N+D61Q+I92C"
+      },
+      {
+        "row": 75368,
+        "variant": "G3E+R5D+T7H+A29K+Q47R+R98D+V107M+V109Q"
+      },
+      {
+        "row": 135534,
+        "variant": "G3E+R5D+T7S+G34T+Q47V+D61Q+I92C+R98D+V107M+V109Q"
+      },
+      {
+        "row": 48830,
+        "variant": "L4N+T7H+A29H+G34T+Q47I+R60N+V109Q"
+      },
+      {
+        "row": 38705,
+        "variant": "G3E+L4N+A29H+G34T+Q47V+D61Q+I92C"
+      },
+      {
+        "row": 128194,
+        "variant": "G3E+L4N+R5D+T7H+G34T+Q47I+R60N+D61Q+I92C+D96Q"
+      },
+      {
+        "row": 43735,
+        "variant": "R5D+T7S+A29K+R60N+I92C+D96Q+V109Q"
+      },
+      {
+        "row": 22194,
+        "variant": "G3E+R5D+Q47R+I92C+R98D+V109Q"
+      },
+      {
+        "row": 25134,
+        "variant": "G3E+T7S+A29K+D96Q+V107M+T113E"
+      },
+      {
+        "row": 126818,
+        "variant": "G3E+G34T+R60N+D61Q+I92C+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 76838,
+        "variant": "L4N+R5D+A29K+G34T+Q47I+R60N+R98D+T113E"
+      },
+      {
+        "row": 113527,
+        "variant": "G3E+L4N+A29K+Q47I+R60N+D61Q+D96Q+R98D+V107M"
+      },
+      {
+        "row": 8094,
+        "variant": "T7S+G34T+Q47V+R60N+D61Q"
+      },
+      {
+        "row": 46656,
+        "variant": "G3E+L4N+A29H+Q47I+D61Q+I92C+T113E"
+      },
+      {
+        "row": 46560,
+        "variant": "G3E+L4N+A29K+G34T+Q47C+D96Q+T113E"
+      },
+      {
+        "row": 123114,
+        "variant": "G3E+R5D+Q47R+D61Q+D96Q+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 2324,
+        "variant": "L4N+A29H+R60N+D61Q"
+      },
+      {
+        "row": 37682,
+        "variant": "G3E+L4N+R5D+G34T+Q47R+D96Q+V107M"
+      },
+      {
+        "row": 116545,
+        "variant": "G3E+T7H+G34T+D61Q+I92C+D96Q+R98D+V109Q+T113E"
+      },
+      {
+        "row": 84363,
+        "variant": "G3E+T7S+A29H+Q47R+I92C+D96Q+V109Q+T113E"
+      },
+      {
+        "row": 150410,
+        "variant": "G3E+L4N+T7S+A29H+G34T+R60N+D61Q+I92C+D96Q+R98D+T113E"
+      },
+      {
+        "row": 90532,
+        "variant": "R5D+T7S+Q47C+D61Q+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 115495,
+        "variant": "R5D+T7S+A29K+Q47V+I92C+D96Q+R98D+V107M+T113E"
+      },
+      {
+        "row": 89922,
+        "variant": "L4N+G34T+Q47C+R60N+D61Q+D96Q+R98D+V109Q"
+      },
+      {
+        "row": 42079,
+        "variant": "G3E+R5D+T7S+A29K+Q47V+V107M+V109Q"
+      },
+      {
+        "row": 41909,
+        "variant": "G3E+R5D+A29K+R60N+D96Q+R98D+V107M"
+      },
+      {
+        "row": 129224,
+        "variant": "G3E+R5D+T7H+A29K+G34T+Q47R+R60N+D61Q+D96Q+R98D"
+      },
+      {
+        "row": 145076,
+        "variant": "R5D+T7H+A29K+G34T+Q47C+R60N+D61Q+R98D+V107M+V109Q"
+      },
+      {
+        "row": 27405,
+        "variant": "G3E+A29H+Q47C+D61Q+D96Q+V107M"
+      },
+      {
+        "row": 105584,
+        "variant": "L4N+R5D+T7H+Q47R+R60N+D61Q+D96Q+R98D+V109Q"
+      },
+      {
+        "row": 67404,
+        "variant": "G3E+L4N+T7S+A29H+G34T+Q47R+D96Q+T113E"
+      },
+      {
+        "row": 112317,
+        "variant": "G3E+T7H+A29H+G34T+Q47R+R60N+D61Q+I92C+V109Q"
+      },
+      {
+        "row": 146733,
+        "variant": "L4N+T7H+A29K+G34T+Q47V+D61Q+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 119516,
+        "variant": "L4N+T7S+G34T+Q47V+R60N+D61Q+R98D+V109Q+T113E"
+      },
+      {
+        "row": 67565,
+        "variant": "G3E+L4N+T7H+A29K+G34T+Q47R+I92C+V107M"
+      },
+      {
+        "row": 63260,
+        "variant": "G3E+R5D+T7S+A29H+G34T+R60N+D96Q+R98D"
+      },
+      {
+        "row": 101698,
+        "variant": "G3E+R5D+T7S+A29K+G34T+Q47I+R60N+D61Q+V107M"
+      },
+      {
+        "row": 53056,
+        "variant": "G3E+T7H+Q47C+D61Q+R98D+V107M+T113E"
+      },
+      {
+        "row": 74942,
+        "variant": "G3E+L4N+T7H+A29H+D61Q+R98D+V107M+V109Q"
+      },
+      {
+        "row": 126358,
+        "variant": "T7H+A29K+Q47C+R60N+D61Q+I92C+D96Q+V109Q+T113E"
+      },
+      {
+        "row": 16459,
+        "variant": "L4N+T7H+A29H+D61Q+I92C+R98D"
+      },
+      {
+        "row": 149309,
+        "variant": "G3E+L4N+R5D+T7S+A29K+G34T+Q47V+D61Q+D96Q+R98D+V107M"
+      },
+      {
+        "row": 150816,
+        "variant": "G3E+L4N+R5D+T7H+A29H+Q47I+D61Q+D96Q+R98D+V107M+T113E"
+      },
+      {
+        "row": 25698,
+        "variant": "G3E+T7S+A29H+Q47V+V109Q+T113E"
+      },
+      {
+        "row": 31538,
+        "variant": "A29K+G34T+Q47C+I92C+D96Q+V109Q"
+      },
+      {
+        "row": 3402,
+        "variant": "T7H+A29H+Q47R+T113E"
+      },
+      {
+        "row": 112314,
+        "variant": "G3E+R5D+T7S+A29K+Q47V+R60N+I92C+V107M+T113E"
+      },
+      {
+        "row": 28445,
+        "variant": "T7H+A29K+G34T+Q47V+R98D+V109Q"
+      },
+      {
+        "row": 147182,
+        "variant": "L4N+T7H+G34T+Q47I+D61Q+D96Q+R98D+V107M+V109Q+T113E"
+      },
+      {
+        "row": 42712,
+        "variant": "L4N+R5D+A29H+R60N+D61Q+I92C+T113E"
+      },
+      {
+        "row": 139553,
+        "variant": "G3E+R5D+T7H+A29H+G34T+Q47V+R60N+I92C+V107M+T113E"
+      },
+      {
+        "row": 50179,
+        "variant": "R5D+T7S+Q47R+I92C+R98D+V107M+V109Q"
+      },
+      {
+        "row": 120000,
+        "variant": "G3E+T7H+A29H+G34T+Q47V+I92C+D96Q+V109Q+T113E"
+      },
+      {
+        "row": 115902,
+        "variant": "R5D+T7H+A29K+G34T+I92C+D96Q+R98D+V107M+V109Q"
+      },
+      {
+        "row": 31128,
+        "variant": "L4N+G34T+Q47V+D61Q+V109Q+T113E"
+      },
+      {
+        "row": 16033,
+        "variant": "G3E+L4N+T7S+G34T+D61Q+T113E"
+      },
+      {
+        "row": 101325,
+        "variant": "L4N+R5D+T7S+A29H+G34T+Q47C+I92C+R98D+T113E"
+      },
+      {
+        "row": 79062,
+        "variant": "L4N+A29K+G34T+Q47R+R60N+D61Q+D96Q+R98D"
+      },
+      {
+        "row": 97344,
+        "variant": "G3E+L4N+R5D+T7H+A29K+G34T+Q47C+D61Q+D96Q"
+      },
+      {
+        "row": 86844,
+        "variant": "L4N+T7H+A29K+Q47V+D61Q+I92C+V107M+T113E"
+      },
+      {
+        "row": 100511,
+        "variant": "L4N+R5D+T7S+A29K+D61Q+I92C+D96Q+R98D+V107M"
+      },
+      {
+        "row": 37551,
+        "variant": "L4N+R5D+T7S+A29K+Q47C+D61Q+V109Q"
+      },
+      {
+        "row": 38688,
+        "variant": "G3E+R5D+T7S+Q47V+R60N+D96Q+T113E"
+      }
+    ],
+    "GB1": [
+      {
+        "row": 21054,
+        "variant": "D2G+G3K+V4W"
+      },
+      {
+        "row": 13937,
+        "variant": "V1N+D2L+V4Y"
+      },
+      {
+        "row": 106719,
+        "variant": "V1P+D2M+G3F+V4P"
+      },
+      {
+        "row": 138264,
+        "variant": "V1W+D2I+G3H+V4G"
+      },
+      {
+        "row": 68456,
+        "variant": "V1H+D2Q+G3N+V4H"
+      },
+      {
+        "row": 11705,
+        "variant": "V1L+D2H+V4M"
+      },
+      {
+        "row": 99108,
+        "variant": "V1N+D2I+G3A+V4F"
+      },
+      {
+        "row": 10445,
+        "variant": "V1K+G3T+V4D"
+      },
+      {
+        "row": 122741,
+        "variant": "V1R+D2W+G3C+V4Y"
+      },
+      {
+        "row": 9227,
+        "variant": "V1I+G3I+V4K"
+      },
+      {
+        "row": 63410,
+        "variant": "V1G+D2V+G3T+V4G"
+      },
+      {
+        "row": 68259,
+        "variant": "V1H+D2P+G3Y+V4I"
+      },
+      {
+        "row": 46262,
+        "variant": "V1E+D2G+G3E+V4F"
+      },
+      {
+        "row": 129106,
+        "variant": "V1S+D2V+G3K+V4N"
+      },
+      {
+        "row": 12891,
+        "variant": "V1M+D2L+G3P"
+      },
+      {
+        "row": 102934,
+        "variant": "V1N+D2W+G3D+V4T"
+      },
+      {
+        "row": 99600,
+        "variant": "V1N+D2K+G3L+V4M"
+      },
+      {
+        "row": 79358,
+        "variant": "V1K+D2I+G3A+V4L"
+      },
+      {
+        "row": 89245,
+        "variant": "V1L+D2T+G3K+V4K"
+      },
+      {
+        "row": 47407,
+        "variant": "V1E+D2K+G3M+V4W"
+      },
+      {
+        "row": 83084,
+        "variant": "V1K+D2V+G3R+V4S"
+      },
+      {
+        "row": 49399,
+        "variant": "V1E+D2R+G3I+V4N"
+      },
+      {
+        "row": 149181,
+        "variant": "V1Y+D2Y+G3M+V4A"
+      },
+      {
+        "row": 6098,
+        "variant": "V1F+G3K+V4R"
+      },
+      {
+        "row": 46663,
+        "variant": "V1E+D2H+G3I+V4I"
+      },
+      {
+        "row": 2251,
+        "variant": "V1A+G3F+V4T"
+      },
+      {
+        "row": 131863,
+        "variant": "V1T+D2I+G3D+V4H"
+      },
+      {
+        "row": 10343,
+        "variant": "V1K+G3M+V4N"
+      },
+      {
+        "row": 42653,
+        "variant": "V1D+D2P+G3S+V4M"
+      },
+      {
+        "row": 57738,
+        "variant": "V1G+D2A+G3F+V4S"
+      },
+      {
+        "row": 83581,
+        "variant": "V1K+D2Y+G3E+V4E"
+      },
+      {
+        "row": 86467,
+        "variant": "V1L+D2K+G3M+V4E"
+      },
+      {
+        "row": 135335,
+        "variant": "V1T+D2V+G3Q+V4F"
+      },
+      {
+        "row": 27944,
+        "variant": "V1Y+D2Q+V4T"
+      },
+      {
+        "row": 90368,
+        "variant": "V1L+D2Y+G3P+V4G"
+      },
+      {
+        "row": 139224,
+        "variant": "V1W+D2L+G3Y+V4L"
+      },
+      {
+        "row": 47885,
+        "variant": "V1E+D2L+G3W+V4K"
+      },
+      {
+        "row": 32286,
+        "variant": "V1A+D2Y+G3D+V4R"
+      },
+      {
+        "row": 86840,
+        "variant": "V1L+D2L+G3N+V4D"
+      },
+      {
+        "row": 75172,
+        "variant": "V1I+D2R+G3A+V4G"
+      },
+      {
+        "row": 130750,
+        "variant": "V1T+D2E+G3M+V4K"
+      },
+      {
+        "row": 111010,
+        "variant": "V1Q+D2E+G3R+V4N"
+      },
+      {
+        "row": 65768,
+        "variant": "V1H+D2G+G3R+V4Y"
+      },
+      {
+        "row": 11168,
+        "variant": "V1L+D2A+V4I"
+      },
+      {
+        "row": 5101,
+        "variant": "V1E+G3N+V4M"
+      },
+      {
+        "row": 112651,
+        "variant": "V1Q+D2K+G3L+V4H"
+      },
+      {
+        "row": 60961,
+        "variant": "V1G+D2M+G3Q+V4W"
+      },
+      {
+        "row": 91486,
+        "variant": "V1M+D2E+G3V+V4E"
+      },
+      {
+        "row": 29534,
+        "variant": "V1A+D2K+G3D+V4I"
+      },
+      {
+        "row": 52933,
+        "variant": "V1F+D2H+G3A+V4N"
+      },
+      {
+        "row": 137440,
+        "variant": "V1W+D2F+G3Y+V4E"
+      },
+      {
+        "row": 140170,
+        "variant": "V1W+D2P+G3Q+V4K"
+      },
+      {
+        "row": 142345,
+        "variant": "V1W+D2W+G3S+V4G"
+      },
+      {
+        "row": 114832,
+        "variant": "V1Q+D2R+G3R+V4N"
+      },
+      {
+        "row": 58885,
+        "variant": "V1G+D2F+G3P+V4Y"
+      },
+      {
+        "row": 112556,
+        "variant": "V1Q+D2K+G3E+V4C"
+      },
+      {
+        "row": 19331,
+        "variant": "V1T+D2R+G3D"
+      },
+      {
+        "row": 120418,
+        "variant": "V1R+D2N+G3N+V4Y"
+      },
+      {
+        "row": 55223,
+        "variant": "V1F+D2P+G3R+V4R"
+      },
+      {
+        "row": 101570,
+        "variant": "V1N+D2R+G3E+V4P"
+      },
+      {
+        "row": 82152,
+        "variant": "V1K+D2S+G3C+V4K"
+      },
+      {
+        "row": 23849,
+        "variant": "D2Q+G3N+V4Q"
+      },
+      {
+        "row": 91122,
+        "variant": "V1M+D2C+G3T+V4A"
+      },
+      {
+        "row": 115352,
+        "variant": "V1Q+D2T+G3E+V4T"
+      },
+      {
+        "row": 22636,
+        "variant": "D2M+G3A+V4I"
+      },
+      {
+        "row": 88234,
+        "variant": "V1L+D2Q+G3N+V4A"
+      },
+      {
+        "row": 110500,
+        "variant": "V1Q+D2C+G3F+V4N"
+      },
+      {
+        "row": 130054,
+        "variant": "V1T+D2A+G3D+V4P"
+      },
+      {
+        "row": 22424,
+        "variant": "D2L+G3L+V4A"
+      },
+      {
+        "row": 64067,
+        "variant": "V1G+D2Y+G3S+V4R"
+      },
+      {
+        "row": 50960,
+        "variant": "V1E+D2W+G3Y+V4S"
+      },
+      {
+        "row": 1913,
+        "variant": "D2T+V4C"
+      },
+      {
+        "row": 34402,
+        "variant": "V1C+D2H+G3S+V4S"
+      },
+      {
+        "row": 72498,
+        "variant": "V1I+D2H+G3H+V4G"
+      },
+      {
+        "row": 103991,
+        "variant": "V1P+D2C+G3H+V4C"
+      },
+      {
+        "row": 30964,
+        "variant": "V1A+D2R+G3A+V4N"
+      },
+      {
+        "row": 134728,
+        "variant": "V1T+D2S+G3V+V4G"
+      },
+      {
+        "row": 30166,
+        "variant": "V1A+D2M+G3F+V4H"
+      },
+      {
+        "row": 91806,
+        "variant": "V1M+D2F+G3S+V4N"
+      },
+      {
+        "row": 72131,
+        "variant": "V1I+D2G+G3E+V4T"
+      },
+      {
+        "row": 71985,
+        "variant": "V1I+D2F+G3S+V4T"
+      },
+      {
+        "row": 596,
+        "variant": "V1L+G3L"
+      },
+      {
+        "row": 37339,
+        "variant": "V1C+D2S+G3H+V4K"
+      },
+      {
+        "row": 61526,
+        "variant": "V1G+D2P+G3I+V4G"
+      },
+      {
+        "row": 58517,
+        "variant": "V1G+D2E+G3N+V4N"
+      },
+      {
+        "row": 75442,
+        "variant": "V1I+D2R+G3S+V4T"
+      },
+      {
+        "row": 47276,
+        "variant": "V1E+D2K+G3D+V4P"
+      },
+      {
+        "row": 58111,
+        "variant": "V1G+D2C+G3I+V4S"
+      },
+      {
+        "row": 52672,
+        "variant": "V1F+D2G+G3H+V4C"
+      },
+      {
+        "row": 53683,
+        "variant": "V1F+D2K+G3F+V4K"
+      },
+      {
+        "row": 84115,
+        "variant": "V1L+D2A+G3R+V4M"
+      },
+      {
+        "row": 51879,
+        "variant": "V1F+D2C+G3W+V4G"
+      },
+      {
+        "row": 138932,
+        "variant": "V1W+D2L+G3E+V4D"
+      },
+      {
+        "row": 139631,
+        "variant": "V1W+D2N+G3D+V4I"
+      },
+      {
+        "row": 17330,
+        "variant": "V1R+D2S+G3F"
+      },
+      {
+        "row": 11569,
+        "variant": "V1L+G3Y+V4P"
+      },
+      {
+        "row": 96554,
+        "variant": "V1M+D2W+G3M+V4W"
+      },
+      {
+        "row": 58567,
+        "variant": "V1G+D2E+G3R+V4I"
+      },
+      {
+        "row": 108327,
+        "variant": "V1P+D2R+G3W+V4T"
+      },
+      {
+        "row": 26750,
+        "variant": "V1W+D2L+G3W"
+      },
+      {
+        "row": 140863,
+        "variant": "V1W+D2R+G3P+V4P"
+      },
+      {
+        "row": 69802,
+        "variant": "V1H+D2V+G3L+V4F"
+      },
+      {
+        "row": 145487,
+        "variant": "V1Y+D2K+G3V+V4F"
+      },
+      {
+        "row": 35634,
+        "variant": "V1C+D2M+G3I+V4P"
+      },
+      {
+        "row": 47474,
+        "variant": "V1E+D2K+G3R+V4P"
+      },
+      {
+        "row": 130377,
+        "variant": "V1T+D2C+G3D+V4P"
+      },
+      {
+        "row": 26433,
+        "variant": "V1W+G3V+V4E"
+      },
+      {
+        "row": 81869,
+        "variant": "V1K+D2R+G3H+V4F"
+      },
+      {
+        "row": 94064,
+        "variant": "V1M+D2N+G3H+V4T"
+      },
+      {
+        "row": 66465,
+        "variant": "V1H+D2I+G3S+V4P"
+      },
+      {
+        "row": 108555,
+        "variant": "V1P+D2S+G3P+V4L"
+      },
+      {
+        "row": 5789,
+        "variant": "V1E+D2V+V4M"
+      },
+      {
+        "row": 86224,
+        "variant": "V1L+D2I+G3S+V4Y"
+      },
+      {
+        "row": 44324,
+        "variant": "V1D+D2V+G3Y+V4F"
+      },
+      {
+        "row": 99346,
+        "variant": "V1N+D2I+G3R+V4K"
+      },
+      {
+        "row": 61207,
+        "variant": "V1G+D2N+G3K+V4M"
+      },
+      {
+        "row": 146004,
+        "variant": "V1Y+D2M+G3I+V4H"
+      },
+      {
+        "row": 59894,
+        "variant": "V1G+D2I+G3P+V4A"
+      },
+      {
+        "row": 107372,
+        "variant": "V1P+D2P+G3D+V4W"
+      },
+      {
+        "row": 84793,
+        "variant": "V1L+D2E+G3Q+V4Y"
+      },
+      {
+        "row": 106946,
+        "variant": "V1P+D2M+G3W+V4G"
+      },
+      {
+        "row": 15591,
+        "variant": "V1Q+G3L+V4A"
+      },
+      {
+        "row": 141749,
+        "variant": "V1W+D2V+G3C+V4I"
+      },
+      {
+        "row": 126389,
+        "variant": "V1S+D2L+G3Q+V4E"
+      },
+      {
+        "row": 44762,
+        "variant": "V1D+D2Y+G3L+V4R"
+      },
+      {
+        "row": 62226,
+        "variant": "V1G+D2R+G3K+V4E"
+      },
+      {
+        "row": 147497,
+        "variant": "V1Y+D2R+G3Q+V4A"
+      },
+      {
+        "row": 115106,
+        "variant": "V1Q+D2S+G3M+V4M"
+      },
+      {
+        "row": 141133,
+        "variant": "V1W+D2S+G3I+V4T"
+      },
+      {
+        "row": 116592,
+        "variant": "V1Q+D2Y+G3S+V4L"
+      },
+      {
+        "row": 73091,
+        "variant": "V1I+D2K+G3A+V4E"
+      },
+      {
+        "row": 146443,
+        "variant": "V1Y+D2N+G3P+V4L"
+      },
+      {
+        "row": 37029,
+        "variant": "V1C+D2R+G3K+V4M"
+      },
+      {
+        "row": 128381,
+        "variant": "V1S+D2S+G3I+V4K"
+      },
+      {
+        "row": 137075,
+        "variant": "V1W+D2E+G3W+V4L"
+      },
+      {
+        "row": 148845,
+        "variant": "V1Y+D2W+G3M+V4I"
+      },
+      {
+        "row": 73897,
+        "variant": "V1I+D2M+G3H+V4W"
+      },
+      {
+        "row": 43149,
+        "variant": "V1D+D2R+G3M+V4H"
+      },
+      {
+        "row": 91169,
+        "variant": "V1M+D2C+G3W+V4N"
+      },
+      {
+        "row": 57482,
+        "variant": "V1F+D2Y+G3M+V4F"
+      },
+      {
+        "row": 113482,
+        "variant": "V1Q+D2M+G3T+V4N"
+      },
+      {
+        "row": 27412,
+        "variant": "V1Y+G3P+V4L"
+      },
+      {
+        "row": 46861,
+        "variant": "V1E+D2H+G3W+V4N"
+      },
+      {
+        "row": 131762,
+        "variant": "V1T+D2H+G3S+V4Q"
+      },
+      {
+        "row": 142763,
+        "variant": "V1W+D2Y+G3Y+V4F"
+      },
+      {
+        "row": 27248,
+        "variant": "V1Y+G3D+V4I"
+      },
+      {
+        "row": 91988,
+        "variant": "V1M+D2G+G3H+V4M"
+      },
+      {
+        "row": 55042,
+        "variant": "V1F+D2P+G3E+V4Q"
+      },
+      {
+        "row": 81247,
+        "variant": "V1K+D2P+G3L+V4Y"
+      },
+      {
+        "row": 145213,
+        "variant": "V1Y+D2K+G3C+V4E"
+      },
+      {
+        "row": 26825,
+        "variant": "V1W+D2N+G3V"
+      },
+      {
+        "row": 27323,
+        "variant": "V1Y+G3I+V4M"
+      },
+      {
+        "row": 89575,
+        "variant": "V1L+D2V+G3I+V4E"
+      },
+      {
+        "row": 143679,
+        "variant": "V1Y+D2E+G3P+V4R"
+      },
+      {
+        "row": 27479,
+        "variant": "V1Y+G3T+V4F"
+      },
+      {
+        "row": 32456,
+        "variant": "V1C+D2A+G3D+V4H"
+      },
+      {
+        "row": 55761,
+        "variant": "V1F+D2R+G3I+V4C"
+      },
+      {
+        "row": 112625,
+        "variant": "V1Q+D2K+G3I+V4W"
+      },
+      {
+        "row": 34123,
+        "variant": "V1C+D2G+G3Y+V4H"
+      },
+      {
+        "row": 102351,
+        "variant": "V1N+D2T+G3L+V4R"
+      },
+      {
+        "row": 81518,
+        "variant": "V1K+D2Q+G3F+V4W"
+      },
+      {
+        "row": 107324,
+        "variant": "V1P+D2P+G3A+V4G"
+      },
+      {
+        "row": 93944,
+        "variant": "V1M+D2M+G3Y+V4F"
+      },
+      {
+        "row": 116729,
+        "variant": "V1R+D2A+G3D+V4T"
+      },
+      {
+        "row": 104058,
+        "variant": "V1P+D2C+G3L+V4S"
+      },
+      {
+        "row": 21262,
+        "variant": "D2H+G3A+V4L"
+      },
+      {
+        "row": 145292,
+        "variant": "V1Y+D2K+G3H+V4M"
+      },
+      {
+        "row": 36961,
+        "variant": "V1C+D2R+G3E+V4R"
+      },
+      {
+        "row": 57349,
+        "variant": "V1F+D2Y+G3C+V4Q"
+      },
+      {
+        "row": 31854,
+        "variant": "V1A+D2V+G3A+V4N"
+      },
+      {
+        "row": 97914,
+        "variant": "V1N+D2E+G3M+V4Y"
+      },
+      {
+        "row": 69130,
+        "variant": "V1H+D2S+G3M+V4H"
+      },
+      {
+        "row": 70383,
+        "variant": "V1H+D2Y+G3D+V4E"
+      },
+      {
+        "row": 136715,
+        "variant": "V1W+D2C+G3W+V4F"
+      },
+      {
+        "row": 15356,
+        "variant": "V1P+D2Y+G3H"
+      },
+      {
+        "row": 25247,
+        "variant": "D2V+G3Q+V4F"
+      },
+      {
+        "row": 118581,
+        "variant": "V1R+D2H+G3K+V4N"
+      },
+      {
+        "row": 51706,
+        "variant": "V1F+D2C+G3I+V4Y"
+      },
+      {
+        "row": 69280,
+        "variant": "V1H+D2S+G3W+V4K"
+      },
+      {
+        "row": 51163,
+        "variant": "V1E+D2Y+G3R+V4Y"
+      },
+      {
+        "row": 25396,
+        "variant": "D2W+G3C+V4L"
+      },
+      {
+        "row": 70787,
+        "variant": "V1I+D2A+G3H+V4N"
+      },
+      {
+        "row": 63503,
+        "variant": "V1G+D2W+G3C+V4I"
+      },
+      {
+        "row": 107204,
+        "variant": "V1P+D2N+G3Q+V4N"
+      },
+      {
+        "row": 88333,
+        "variant": "V1L+D2Q+G3T+V4M"
+      },
+      {
+        "row": 108049,
+        "variant": "V1P+D2R+G3D+V4N"
+      },
+      {
+        "row": 18894,
+        "variant": "V1T+G3V+V4M"
+      },
+      {
+        "row": 65870,
+        "variant": "V1H+D2H+G3A+V4N"
+      },
+      {
+        "row": 24109,
+        "variant": "D2R+G3I+V4N"
+      },
+      {
+        "row": 59756,
+        "variant": "V1G+D2I+G3E+V4I"
+      },
+      {
+        "row": 108972,
+        "variant": "V1P+D2T+G3T+V4M"
+      },
+      {
+        "row": 92303,
+        "variant": "V1M+D2H+G3E+V4Y"
+      }
+    ],
+    "TrpB4": [
+      {
+        "row": 68726,
+        "variant": "V1K+F2P+V3T+S4I"
+      },
+      {
+        "row": 29182,
+        "variant": "V1E+F2Q+V3G+S4H"
+      },
+      {
+        "row": 20286,
+        "variant": "V1D+F2M+V3W+S4A"
+      },
+      {
+        "row": 108848,
+        "variant": "V1Q+F2Q+V3W+S4M"
+      },
+      {
+        "row": 92312,
+        "variant": "V1N+F2P+V3C+S4V"
+      },
+      {
+        "row": 74226,
+        "variant": "V1L+F2H+V3P+S4E"
+      },
+      {
+        "row": 87871,
+        "variant": "V1N+F2A+V3W+S4T"
+      },
+      {
+        "row": 35593,
+        "variant": "V1F+F2L+V3I+S4D"
+      },
+      {
+        "row": 43356,
+        "variant": "V1G+F2K+V3T+S4N"
+      },
+      {
+        "row": 97864,
+        "variant": "V1P+F2H+V3A+S4Y"
+      },
+      {
+        "row": 35494,
+        "variant": "V1F+F2L+V3D+S4E"
+      },
+      {
+        "row": 140657,
+        "variant": "F2Q+V3M+S4Q"
+      },
+      {
+        "row": 20220,
+        "variant": "V1D+F2M+V3R+S4R"
+      },
+      {
+        "row": 73238,
+        "variant": "V1L+V3D"
+      },
+      {
+        "row": 71405,
+        "variant": "V1K+F2Y+V3N+S4C"
+      },
+      {
+        "row": 24323,
+        "variant": "V1E+F2C+V3A+S4V"
+      },
+      {
+        "row": 147243,
+        "variant": "V1W+F2M+V3C+S4N"
+      },
+      {
+        "row": 41248,
+        "variant": "V1G+F2E+V3N+S4E"
+      },
+      {
+        "row": 83849,
+        "variant": "V1M+F2M+V3S+S4V"
+      },
+      {
+        "row": 141001,
+        "variant": "F2R+V3I+S4V"
+      },
+      {
+        "row": 135566,
+        "variant": "F2A+V3T+S4A"
+      },
+      {
+        "row": 20625,
+        "variant": "V1D+F2N+V3S+S4C"
+      },
+      {
+        "row": 99152,
+        "variant": "V1P+F2L+V3H+S4G"
+      },
+      {
+        "row": 82394,
+        "variant": "V1M+F2I+V3D+S4M"
+      },
+      {
+        "row": 21122,
+        "variant": "V1D+F2Q+V3A+S4A"
+      },
+      {
+        "row": 147623,
+        "variant": "V1W+F2N+V3A+S4P"
+      },
+      {
+        "row": 75662,
+        "variant": "V1L+F2M+V3F+S4A"
+      },
+      {
+        "row": 103331,
+        "variant": "V1P+F2Y+V3T+S4N"
+      },
+      {
+        "row": 82802,
+        "variant": "V1M+F2K+V3E+S4A"
+      },
+      {
+        "row": 156696,
+        "variant": "V1Y+F2Q+S4Q"
+      },
+      {
+        "row": 99637,
+        "variant": "V1P+F2M+V3M+S4P"
+      },
+      {
+        "row": 20064,
+        "variant": "V1D+F2M+V3H+S4W"
+      },
+      {
+        "row": 129753,
+        "variant": "V1T+F2H+V3F+S4W"
+      },
+      {
+        "row": 133750,
+        "variant": "V1T+F2T+V3G+S4D"
+      },
+      {
+        "row": 116256,
+        "variant": "V1R+F2P+V3L+S4Y"
+      },
+      {
+        "row": 144775,
+        "variant": "V1W+F2E+V3T+S4T"
+      },
+      {
+        "row": 142600,
+        "variant": "F2W+V3I+S4T"
+      },
+      {
+        "row": 71019,
+        "variant": "V1K+F2W+V3N+S4R"
+      },
+      {
+        "row": 51530,
+        "variant": "V1H+F2L+V3L+S4L"
+      },
+      {
+        "row": 154747,
+        "variant": "V1Y+F2K+V3Y+S4E"
+      },
+      {
+        "row": 52616,
+        "variant": "V1H+F2P+V3F+S4N"
+      },
+      {
+        "row": 139419,
+        "variant": "F2M+V3K"
+      },
+      {
+        "row": 83605,
+        "variant": "V1M+F2M+V3E+S4N"
+      },
+      {
+        "row": 141760,
+        "variant": "F2T+V3G+S4T"
+      },
+      {
+        "row": 79875,
+        "variant": "V1M+F2A+V3R+S4W"
+      },
+      {
+        "row": 154739,
+        "variant": "V1Y+F2K+V3W"
+      },
+      {
+        "row": 11632,
+        "variant": "V1C+F2L+V3E+S4I"
+      },
+      {
+        "row": 41029,
+        "variant": "V1G+F2E+V3A+S4F"
+      },
+      {
+        "row": 110264,
+        "variant": "V1Q+F2V+V3L+S4L"
+      },
+      {
+        "row": 150053,
+        "variant": "V1W+F2V+V3D+S4W"
+      },
+      {
+        "row": 48076,
+        "variant": "V1H+F2A+V3P+S4N"
+      },
+      {
+        "row": 11184,
+        "variant": "V1C+F2K+V3A+S4R"
+      },
+      {
+        "row": 38265,
+        "variant": "V1F+F2T+V3C+S4T"
+      },
+      {
+        "row": 101202,
+        "variant": "V1P+F2R+V3L+S4Q"
+      },
+      {
+        "row": 113249,
+        "variant": "V1R+V3Y+S4P"
+      },
+      {
+        "row": 44327,
+        "variant": "V1G+F2N+V3G+S4D"
+      },
+      {
+        "row": 50015,
+        "variant": "V1H+F2G+V3P+S4C"
+      },
+      {
+        "row": 120642,
+        "variant": "V1S+F2E+V3L+S4G"
+      },
+      {
+        "row": 14034,
+        "variant": "V1C+F2S+V3E+S4Y"
+      },
+      {
+        "row": 80478,
+        "variant": "V1M+F2D+V3G+S4L"
+      },
+      {
+        "row": 28577,
+        "variant": "V1E+F2N+V3S+S4A"
+      },
+      {
+        "row": 96748,
+        "variant": "V1P+F2E+V3F"
+      },
+      {
+        "row": 40745,
+        "variant": "V1G+F2D+V3H+S4A"
+      },
+      {
+        "row": 41732,
+        "variant": "V1G+V3S+S4I"
+      },
+      {
+        "row": 136188,
+        "variant": "F2D+V3I+S4D"
+      },
+      {
+        "row": 10290,
+        "variant": "V1C+F2G+V3S+S4N"
+      },
+      {
+        "row": 108888,
+        "variant": "V1Q+F2R+V3A+S4N"
+      },
+      {
+        "row": 5027,
+        "variant": "V1A+F2P+V3N+S4R"
+      },
+      {
+        "row": 3624,
+        "variant": "V1A+F2L+V3C+S4K"
+      },
+      {
+        "row": 114364,
+        "variant": "V1R+F2I+V3S+S4I"
+      },
+      {
+        "row": 137124,
+        "variant": "V3Q+S4W"
+      },
+      {
+        "row": 137818,
+        "variant": "F2H+V3K+S4P"
+      },
+      {
+        "row": 37700,
+        "variant": "V1F+F2R+V3Q+S4N"
+      },
+      {
+        "row": 85435,
+        "variant": "V1M+F2R+V3T+S4M"
+      },
+      {
+        "row": 62568,
+        "variant": "V1I+F2V+V3G+S4Y"
+      },
+      {
+        "row": 78210,
+        "variant": "V1L+F2T+V3N+S4N"
+      },
+      {
+        "row": 51147,
+        "variant": "V1H+F2K+V3M+S4A"
+      },
+      {
+        "row": 149245,
+        "variant": "V1W+F2S+V3D+S4M"
+      },
+      {
+        "row": 47582,
+        "variant": "V1G+F2Y+V3I+S4V"
+      },
+      {
+        "row": 109706,
+        "variant": "V1Q+F2T+V3C+S4L"
+      },
+      {
+        "row": 1168,
+        "variant": "V1A+F2D+V3W+S4L"
+      },
+      {
+        "row": 138899,
+        "variant": "F2L+V3D"
+      },
+      {
+        "row": 42429,
+        "variant": "V1G+F2H+V3M+S4F"
+      },
+      {
+        "row": 140923,
+        "variant": "F2R+V3E+S4Y"
+      },
+      {
+        "row": 43966,
+        "variant": "V1G+F2M+V3I+S4C"
+      },
+      {
+        "row": 104850,
+        "variant": "V1Q+F2E+V3Q+S4P"
+      },
+      {
+        "row": 73189,
+        "variant": "V1L+V3A+S4H"
+      },
+      {
+        "row": 119288,
+        "variant": "V1S+F2A+V3C+S4N"
+      },
+      {
+        "row": 145370,
+        "variant": "V1W+F2G+V3H+S4T"
+      },
+      {
+        "row": 144101,
+        "variant": "V1W+F2D+V3D+S4Y"
+      },
+      {
+        "row": 79934,
+        "variant": "V1M+F2A+S4V"
+      },
+      {
+        "row": 13045,
+        "variant": "V1C+F2P+V3R+S4D"
+      },
+      {
+        "row": 29595,
+        "variant": "V1E+F2R+V3G+S4Y"
+      },
+      {
+        "row": 5377,
+        "variant": "V1A+F2Q+V3L+S4F"
+      },
+      {
+        "row": 60002,
+        "variant": "V1I+F2M+S4I"
+      },
+      {
+        "row": 24115,
+        "variant": "V1E+F2A+V3M+S4L"
+      },
+      {
+        "row": 153174,
+        "variant": "V1Y+V3Y+S4Y"
+      },
+      {
+        "row": 148819,
+        "variant": "V1W+F2R+V3C+S4F"
+      },
+      {
+        "row": 7900,
+        "variant": "V1A+F2Y+V3S+S4L"
+      },
+      {
+        "row": 93344,
+        "variant": "V1N+F2R+V3Q+S4T"
+      },
+      {
+        "row": 1738,
+        "variant": "V1A+V3H+S4Y"
+      },
+      {
+        "row": 132562,
+        "variant": "V1T+F2Q+V3G+S4R"
+      },
+      {
+        "row": 18304,
+        "variant": "V1D+F2G+V3W+S4K"
+      },
+      {
+        "row": 83276,
+        "variant": "V1M+F2L+V3H+S4V"
+      },
+      {
+        "row": 5756,
+        "variant": "V1A+F2R+V3K+S4F"
+      },
+      {
+        "row": 122481,
+        "variant": "V1S+F2K+V3C+S4F"
+      },
+      {
+        "row": 78249,
+        "variant": "V1L+F2T+V3Q+S4M"
+      },
+      {
+        "row": 158684,
+        "variant": "V1Y+F2W+S4M"
+      },
+      {
+        "row": 119999,
+        "variant": "V1S+F2C+S4D"
+      },
+      {
+        "row": 137424,
+        "variant": "F2G+V3K+S4W"
+      },
+      {
+        "row": 83402,
+        "variant": "V1M+F2L+V3Q+S4E"
+      },
+      {
+        "row": 60798,
+        "variant": "V1I+F2P+S4G"
+      },
+      {
+        "row": 29122,
+        "variant": "V1E+F2Q+V3D+S4G"
+      },
+      {
+        "row": 25171,
+        "variant": "V1E+F2E+V3E+S4L"
+      },
+      {
+        "row": 13465,
+        "variant": "V1C+F2Q+V3S+S4H"
+      },
+      {
+        "row": 73492,
+        "variant": "V1L+V3S+S4L"
+      },
+      {
+        "row": 66812,
+        "variant": "V1K+F2I+V3Y+S4W"
+      },
+      {
+        "row": 57921,
+        "variant": "V1I+F2G+V3P+S4W"
+      },
+      {
+        "row": 86528,
+        "variant": "V1M+F2V+V3N+S4H"
+      },
+      {
+        "row": 146697,
+        "variant": "V1W+F2K+V3R+S4E"
+      },
+      {
+        "row": 30838,
+        "variant": "V1E+F2V+V3K+S4E"
+      },
+      {
+        "row": 88446,
+        "variant": "V1N+F2D+V3I+S4R"
+      },
+      {
+        "row": 62955,
+        "variant": "V1I+F2W+V3G+S4L"
+      },
+      {
+        "row": 73844,
+        "variant": "V1L+F2G+V3Q+S4C"
+      },
+      {
+        "row": 29900,
+        "variant": "V1E+F2S+V3C+S4F"
+      },
+      {
+        "row": 52136,
+        "variant": "V1H+F2N+V3A+S4F"
+      },
+      {
+        "row": 39714,
+        "variant": "V1F+F2Y+V3R+S4L"
+      },
+      {
+        "row": 4488,
+        "variant": "V1A+F2N+V3F"
+      },
+      {
+        "row": 33168,
+        "variant": "V1F+F2E+V3G+S4H"
+      },
+      {
+        "row": 93538,
+        "variant": "V1N+F2S+V3E+S4M"
+      },
+      {
+        "row": 1566,
+        "variant": "V1A+F2E+V3W+S4I"
+      },
+      {
+        "row": 102376,
+        "variant": "V1P+F2V+V3K+S4L"
+      },
+      {
+        "row": 66761,
+        "variant": "V1K+F2I+S4I"
+      },
+      {
+        "row": 100729,
+        "variant": "V1P+F2Q+V3G+S4W"
+      },
+      {
+        "row": 4155,
+        "variant": "V1A+F2M+V3K+S4A"
+      },
+      {
+        "row": 8978,
+        "variant": "V1C+F2D+V3L+S4N"
+      },
+      {
+        "row": 76213,
+        "variant": "V1L+F2N+V3N+S4N"
+      },
+      {
+        "row": 9198,
+        "variant": "V1C+F2E+V3A+S4P"
+      },
+      {
+        "row": 68505,
+        "variant": "V1K+F2P+V3G+S4G"
+      },
+      {
+        "row": 83104,
+        "variant": "V1M+F2K+V3W+S4G"
+      },
+      {
+        "row": 91647,
+        "variant": "V1N+F2M+V3K+S4K"
+      },
+      {
+        "row": 88734,
+        "variant": "V1N+F2E+V3D+S4D"
+      },
+      {
+        "row": 53587,
+        "variant": "V1H+F2R+V3R+S4F"
+      },
+      {
+        "row": 38549,
+        "variant": "V1F+F2T+V3T+S4C"
+      },
+      {
+        "row": 152952,
+        "variant": "V1Y+V3K+S4T"
+      },
+      {
+        "row": 10550,
+        "variant": "V1C+F2H+V3K+S4P"
+      },
+      {
+        "row": 13293,
+        "variant": "V1C+F2Q+V3H+S4Q"
+      },
+      {
+        "row": 135245,
+        "variant": "V1T+F2Y+V3Y+S4Y"
+      },
+      {
+        "row": 143234,
+        "variant": "F2Y+V3Y+S4M"
+      },
+      {
+        "row": 105149,
+        "variant": "V1Q+V3K+S4W"
+      },
+      {
+        "row": 127072,
+        "variant": "V1S+F2Y+V3M+S4T"
+      },
+      {
+        "row": 119126,
+        "variant": "V1R+F2Y+V3Q+S4L"
+      },
+      {
+        "row": 16971,
+        "variant": "V1D+F2D+V3N+S4K"
+      },
+      {
+        "row": 53893,
+        "variant": "V1H+F2S+V3L+S4N"
+      },
+      {
+        "row": 122444,
+        "variant": "V1S+F2I+V3Y+S4I"
+      },
+      {
+        "row": 16796,
+        "variant": "V1D+F2D+V3D+S4P"
+      },
+      {
+        "row": 9783,
+        "variant": "V1C+V3M+S4D"
+      },
+      {
+        "row": 93793,
+        "variant": "V1N+F2S+V3T+S4G"
+      },
+      {
+        "row": 149048,
+        "variant": "V1W+F2R+V3P+S4Q"
+      },
+      {
+        "row": 9136,
+        "variant": "V1C+F2D+S4L"
+      },
+      {
+        "row": 88462,
+        "variant": "V1N+F2D+V3K+S4M"
+      },
+      {
+        "row": 155018,
+        "variant": "V1Y+F2L+V3P+S4R"
+      },
+      {
+        "row": 74128,
+        "variant": "V1L+F2H+V3I+S4G"
+      },
+      {
+        "row": 37933,
+        "variant": "V1F+F2S+V3G+S4F"
+      },
+      {
+        "row": 127665,
+        "variant": "V1T+F2C+V3A+S4L"
+      },
+      {
+        "row": 122933,
+        "variant": "V1S+F2L+V3E+S4T"
+      },
+      {
+        "row": 15611,
+        "variant": "V1C+F2Y+V3E+S4D"
+      },
+      {
+        "row": 151027,
+        "variant": "V1W+F2Y+V3N+S4V"
+      },
+      {
+        "row": 81464,
+        "variant": "V1M+V3S+S4D"
+      },
+      {
+        "row": 148486,
+        "variant": "V1W+F2Q+V3F+S4G"
+      },
+      {
+        "row": 156989,
+        "variant": "V1Y+F2R+V3P+S4L"
+      },
+      {
+        "row": 98513,
+        "variant": "V1P+F2I+V3R+S4F"
+      },
+      {
+        "row": 45706,
+        "variant": "V1G+F2R+V3R+S4C"
+      },
+      {
+        "row": 148099,
+        "variant": "V1W+F2P+V3F+S4Q"
+      },
+      {
+        "row": 30048,
+        "variant": "V1E+F2S+V3K+S4P"
+      },
+      {
+        "row": 120499,
+        "variant": "V1S+F2E+V3D+S4D"
+      },
+      {
+        "row": 103168,
+        "variant": "V1P+F2Y+V3K+S4I"
+      },
+      {
+        "row": 141725,
+        "variant": "F2T+V3F+S4C"
+      },
+      {
+        "row": 68280,
+        "variant": "V1K+F2N+V3Q+S4W"
+      },
+      {
+        "row": 130405,
+        "variant": "V1T+F2I+S4N"
+      },
+      {
+        "row": 3568,
+        "variant": "V1A+F2K+V3W+S4P"
+      },
+      {
+        "row": 14570,
+        "variant": "V1C+F2T+V3M"
+      },
+      {
+        "row": 92498,
+        "variant": "V1N+F2P+V3N+S4G"
+      },
+      {
+        "row": 101566,
+        "variant": "V1P+F2S+V3I+S4V"
+      },
+      {
+        "row": 132431,
+        "variant": "V1T+F2P+V3Y+S4C"
+      },
+      {
+        "row": 150094,
+        "variant": "V1W+F2V+V3F+S4Y"
+      },
+      {
+        "row": 121552,
+        "variant": "V1S+F2G+V3R"
+      },
+      {
+        "row": 246,
+        "variant": "V1A+F2A+V3P+S4H"
+      },
+      {
+        "row": 111982,
+        "variant": "V1R+F2C+V3T+S4G"
+      },
+      {
+        "row": 121498,
+        "variant": "V1S+F2G+V3P+S4C"
+      },
+      {
+        "row": 140218,
+        "variant": "F2P+V3K+S4R"
+      },
+      {
+        "row": 64120,
+        "variant": "V1K+F2C+V3E+S4W"
+      }
+    ],
+    "T7": [
+      {
+        "row": 2818,
+        "variant": "N1D+R2I+Q3H"
+      },
+      {
+        "row": 1829,
+        "variant": "N1T+R2T+Q3L"
+      },
+      {
+        "row": 1293,
+        "variant": "N1S+R2T+Q3R"
+      },
+      {
+        "row": 1908,
+        "variant": "N1H+R2K"
+      },
+      {
+        "row": 2164,
+        "variant": "N1W+R2E+Q3E"
+      },
+      {
+        "row": 996,
+        "variant": "N1S+R2T+Q3I"
+      },
+      {
+        "row": 2298,
+        "variant": "N1V+R2Y+Q3K"
+      },
+      {
+        "row": 2158,
+        "variant": "N1G+R2V+Q3Y"
+      },
+      {
+        "row": 1909,
+        "variant": "N1W+R2Y+Q3D"
+      },
+      {
+        "row": 1525,
+        "variant": "N1D+Q3Y"
+      },
+      {
+        "row": 889,
+        "variant": "N1D+R2T+Q3I"
+      },
+      {
+        "row": 2833,
+        "variant": "N1Y+R2I+Q3L"
+      },
+      {
+        "row": 1348,
+        "variant": "N1P+R2K+Q3L"
+      },
+      {
+        "row": 805,
+        "variant": "N1G+R2V+Q3K"
+      },
+      {
+        "row": 49,
+        "variant": "N1K+R2I+Q3V"
+      },
+      {
+        "row": 39,
+        "variant": "N1Q+Q3C"
+      },
+      {
+        "row": 394,
+        "variant": "N1M+R2V+Q3R"
+      },
+      {
+        "row": 1649,
+        "variant": "N1S+R2I+Q3L"
+      },
+      {
+        "row": 214,
+        "variant": "N1L+R2E+Q3H"
+      },
+      {
+        "row": 95,
+        "variant": "N1L+R2K+Q3A"
+      },
+      {
+        "row": 2001,
+        "variant": "N1D+R2P+Q3D"
+      },
+      {
+        "row": 581,
+        "variant": "N1E+R2M+Q3F"
+      },
+      {
+        "row": 2611,
+        "variant": "N1S+R2W+Q3C"
+      },
+      {
+        "row": 655,
+        "variant": "N1L+R2K+Q3R"
+      },
+      {
+        "row": 2543,
+        "variant": "N1H+Q3A"
+      },
+      {
+        "row": 1957,
+        "variant": "N1P+R2E+Q3E"
+      },
+      {
+        "row": 375,
+        "variant": "N1G+R2K+Q3I"
+      },
+      {
+        "row": 669,
+        "variant": "N1H+R2T+Q3V"
+      },
+      {
+        "row": 1432,
+        "variant": "N1T+R2E+Q3F"
+      },
+      {
+        "row": 831,
+        "variant": "N1H+R2C+Q3D"
+      },
+      {
+        "row": 987,
+        "variant": "N1S+R2K+Q3I"
+      },
+      {
+        "row": 2219,
+        "variant": "N1D+R2T+Q3H"
+      },
+      {
+        "row": 157,
+        "variant": "N1D+R2M+Q3H"
+      },
+      {
+        "row": 1267,
+        "variant": "N1S+R2T+Q3V"
+      },
+      {
+        "row": 1466,
+        "variant": "N1A+R2E+Q3A"
+      },
+      {
+        "row": 1855,
+        "variant": "N1M+R2K+Q3K"
+      },
+      {
+        "row": 468,
+        "variant": "N1I+R2P+Q3K"
+      },
+      {
+        "row": 203,
+        "variant": "N1S+R2A+Q3Y"
+      },
+      {
+        "row": 2569,
+        "variant": "N1E+R2W+Q3H"
+      },
+      {
+        "row": 2139,
+        "variant": "R2T+Q3F"
+      },
+      {
+        "row": 1712,
+        "variant": "N1S+R2T+Q3E"
+      },
+      {
+        "row": 2222,
+        "variant": "N1R+R2M+Q3I"
+      },
+      {
+        "row": 484,
+        "variant": "N1H+R2P+Q3L"
+      },
+      {
+        "row": 1811,
+        "variant": "N1E+R2K+Q3D"
+      },
+      {
+        "row": 991,
+        "variant": "N1R+R2I+Q3E"
+      },
+      {
+        "row": 2300,
+        "variant": "N1W+R2T+Q3K"
+      },
+      {
+        "row": 324,
+        "variant": "N1H+R2E+Q3W"
+      },
+      {
+        "row": 342,
+        "variant": "N1Q+R2K+Q3H"
+      },
+      {
+        "row": 1317,
+        "variant": "N1M+R2W+Q3F"
+      },
+      {
+        "row": 778,
+        "variant": "R2T+Q3A"
+      },
+      {
+        "row": 741,
+        "variant": "N1D+R2C+Q3A"
+      },
+      {
+        "row": 62,
+        "variant": "N1C+R2C+Q3H"
+      },
+      {
+        "row": 975,
+        "variant": "N1S+R2K+Q3L"
+      },
+      {
+        "row": 2615,
+        "variant": "N1L+R2M+Q3C"
+      },
+      {
+        "row": 1395,
+        "variant": "N1H+R2C"
+      },
+      {
+        "row": 1710,
+        "variant": "N1L+R2Y"
+      },
+      {
+        "row": 224,
+        "variant": "N1E+R2C+Q3C"
+      },
+      {
+        "row": 731,
+        "variant": "N1G+R2I+Q3E"
+      },
+      {
+        "row": 2119,
+        "variant": "N1T+R2T+Q3I"
+      },
+      {
+        "row": 1716,
+        "variant": "N1R+R2M"
+      },
+      {
+        "row": 2655,
+        "variant": "N1G+R2P+Q3Y"
+      },
+      {
+        "row": 1604,
+        "variant": "N1D+R2I+Q3A"
+      },
+      {
+        "row": 2235,
+        "variant": "N1T+R2Y+Q3L"
+      },
+      {
+        "row": 494,
+        "variant": "N1H+R2A+Q3Y"
+      },
+      {
+        "row": 2110,
+        "variant": "N1L+R2A+Q3W"
+      },
+      {
+        "row": 2707,
+        "variant": "N1E+R2M+Q3A"
+      },
+      {
+        "row": 2649,
+        "variant": "N1A+Q3F"
+      },
+      {
+        "row": 2366,
+        "variant": "N1K+R2C+Q3W"
+      },
+      {
+        "row": 912,
+        "variant": "N1P+R2E+Q3F"
+      },
+      {
+        "row": 2384,
+        "variant": "N1R+R2I+Q3V"
+      },
+      {
+        "row": 1036,
+        "variant": "N1S+R2V+Q3F"
+      },
+      {
+        "row": 242,
+        "variant": "N1S+R2K+Q3H"
+      },
+      {
+        "row": 118,
+        "variant": "N1I+Q3W"
+      },
+      {
+        "row": 2034,
+        "variant": "N1H+R2P"
+      },
+      {
+        "row": 2203,
+        "variant": "R2C+Q3W"
+      },
+      {
+        "row": 1977,
+        "variant": "N1Q+R2I+Q3W"
+      },
+      {
+        "row": 1318,
+        "variant": "N1K+R2V+Q3L"
+      },
+      {
+        "row": 370,
+        "variant": "N1M+R2P+Q3C"
+      },
+      {
+        "row": 109,
+        "variant": "N1E+R2M+Q3W"
+      },
+      {
+        "row": 699,
+        "variant": "N1L+Q3E"
+      },
+      {
+        "row": 2257,
+        "variant": "N1D+R2K+Q3Y"
+      },
+      {
+        "row": 2291,
+        "variant": "N1M+Q3D"
+      },
+      {
+        "row": 720,
+        "variant": "N1I+R2C+Q3C"
+      },
+      {
+        "row": 1772,
+        "variant": "N1M+R2W+Q3R"
+      },
+      {
+        "row": 1689,
+        "variant": "N1L+R2C+Q3A"
+      },
+      {
+        "row": 1412,
+        "variant": "N1I+R2C+Q3V"
+      },
+      {
+        "row": 2681,
+        "variant": "N1P+R2Y+Q3W"
+      },
+      {
+        "row": 2602,
+        "variant": "R2M+Q3F"
+      },
+      {
+        "row": 658,
+        "variant": "N1I+R2A+Q3C"
+      },
+      {
+        "row": 2335,
+        "variant": "N1H+R2C+Q3H"
+      },
+      {
+        "row": 2260,
+        "variant": "N1A+R2E+Q3W"
+      },
+      {
+        "row": 1964,
+        "variant": "N1G+R2A+Q3E"
+      },
+      {
+        "row": 1828,
+        "variant": "N1C+R2Y+Q3D"
+      },
+      {
+        "row": 863,
+        "variant": "N1W+R2W+Q3C"
+      },
+      {
+        "row": 41,
+        "variant": "N1D+R2P+Q3C"
+      },
+      {
+        "row": 2532,
+        "variant": "N1C+R2C+Q3I"
+      },
+      {
+        "row": 907,
+        "variant": "N1S+R2C+Q3H"
+      },
+      {
+        "row": 1306,
+        "variant": "N1M+R2A+Q3H"
+      },
+      {
+        "row": 1796,
+        "variant": "N1Y+Q3D"
+      },
+      {
+        "row": 725,
+        "variant": "N1T+R2P+Q3F"
+      },
+      {
+        "row": 2777,
+        "variant": "N1Y+R2W"
+      },
+      {
+        "row": 1100,
+        "variant": "N1R+R2Y+Q3H"
+      },
+      {
+        "row": 1451,
+        "variant": "N1L+R2I"
+      },
+      {
+        "row": 1359,
+        "variant": "N1H+R2T+Q3H"
+      },
+      {
+        "row": 97,
+        "variant": "N1R+R2C+Q3C"
+      },
+      {
+        "row": 1052,
+        "variant": "N1D+R2W+Q3K"
+      },
+      {
+        "row": 2712,
+        "variant": "N1Y+R2M+Q3I"
+      },
+      {
+        "row": 538,
+        "variant": "N1K+R2K+Q3A"
+      },
+      {
+        "row": 358,
+        "variant": "N1Y+R2I+Q3V"
+      },
+      {
+        "row": 1761,
+        "variant": "N1P+R2V"
+      },
+      {
+        "row": 85,
+        "variant": "N1M+R2Y"
+      },
+      {
+        "row": 1961,
+        "variant": "N1Q+Q3V"
+      },
+      {
+        "row": 1779,
+        "variant": "N1C+R2W+Q3A"
+      },
+      {
+        "row": 520,
+        "variant": "N1T+R2M+Q3R"
+      },
+      {
+        "row": 630,
+        "variant": "N1T+R2P"
+      },
+      {
+        "row": 1949,
+        "variant": "N1L+Q3W"
+      },
+      {
+        "row": 1981,
+        "variant": "N1H+R2M+Q3A"
+      },
+      {
+        "row": 1955,
+        "variant": "R2A+Q3V"
+      },
+      {
+        "row": 2646,
+        "variant": "N1H+R2T+Q3R"
+      },
+      {
+        "row": 2403,
+        "variant": "N1H+R2W+Q3D"
+      },
+      {
+        "row": 2210,
+        "variant": "N1V+R2W+Q3K"
+      },
+      {
+        "row": 2185,
+        "variant": "N1A+R2C+Q3C"
+      },
+      {
+        "row": 738,
+        "variant": "N1M+R2E+Q3R"
+      },
+      {
+        "row": 1735,
+        "variant": "N1P+R2E+Q3W"
+      },
+      {
+        "row": 2010,
+        "variant": "N1G+R2Y+Q3E"
+      },
+      {
+        "row": 1377,
+        "variant": "N1L+R2Y+Q3K"
+      },
+      {
+        "row": 1986,
+        "variant": "N1G+R2C+Q3A"
+      },
+      {
+        "row": 723,
+        "variant": "N1I+R2A+Q3A"
+      },
+      {
+        "row": 1250,
+        "variant": "N1R+R2C+Q3R"
+      },
+      {
+        "row": 1830,
+        "variant": "N1T+R2A+Q3D"
+      },
+      {
+        "row": 147,
+        "variant": "N1D+R2V+Q3A"
+      },
+      {
+        "row": 1352,
+        "variant": "N1T+R2C+Q3V"
+      },
+      {
+        "row": 2212,
+        "variant": "N1I+R2W+Q3D"
+      },
+      {
+        "row": 2245,
+        "variant": "N1S+R2T+Q3H"
+      },
+      {
+        "row": 1683,
+        "variant": "N1Q+Q3D"
+      },
+      {
+        "row": 1427,
+        "variant": "N1T+R2I+Q3I"
+      },
+      {
+        "row": 1910,
+        "variant": "N1W+R2Y+Q3R"
+      },
+      {
+        "row": 742,
+        "variant": "N1P+R2C+Q3D"
+      },
+      {
+        "row": 580,
+        "variant": "N1A+R2Y+Q3L"
+      },
+      {
+        "row": 2406,
+        "variant": "N1Q+R2T+Q3F"
+      },
+      {
+        "row": 1702,
+        "variant": "N1M+R2W+Q3V"
+      },
+      {
+        "row": 2364,
+        "variant": "N1T+R2T+Q3K"
+      },
+      {
+        "row": 489,
+        "variant": "N1L+R2Y+Q3H"
+      },
+      {
+        "row": 1767,
+        "variant": "N1R+R2K+Q3W"
+      },
+      {
+        "row": 42,
+        "variant": "N1K+R2E+Q3K"
+      },
+      {
+        "row": 2766,
+        "variant": "N1S+R2T+Q3W"
+      },
+      {
+        "row": 1168,
+        "variant": "N1D+R2V+Q3E"
+      },
+      {
+        "row": 685,
+        "variant": "N1C+R2T+Q3H"
+      },
+      {
+        "row": 1989,
+        "variant": "N1E+R2M+Q3D"
+      },
+      {
+        "row": 594,
+        "variant": "N1M+R2E+Q3K"
+      },
+      {
+        "row": 460,
+        "variant": "N1A+R2M+Q3W"
+      },
+      {
+        "row": 1709,
+        "variant": "N1K+R2M+Q3C"
+      },
+      {
+        "row": 145,
+        "variant": "N1C+R2P+Q3C"
+      },
+      {
+        "row": 954,
+        "variant": "N1R+R2P+Q3F"
+      },
+      {
+        "row": 2013,
+        "variant": "N1R+R2C+Q3A"
+      },
+      {
+        "row": 1182,
+        "variant": "N1M+R2P+Q3R"
+      },
+      {
+        "row": 2065,
+        "variant": "N1Y+R2C+Q3I"
+      },
+      {
+        "row": 2211,
+        "variant": "N1A+R2V+Q3L"
+      },
+      {
+        "row": 2030,
+        "variant": "N1A+R2M+Q3I"
+      },
+      {
+        "row": 21,
+        "variant": "N1A+R2C+Q3W"
+      },
+      {
+        "row": 2324,
+        "variant": "N1Q+R2Y+Q3E"
+      },
+      {
+        "row": 517,
+        "variant": "N1D+R2C+Q3I"
+      },
+      {
+        "row": 2161,
+        "variant": "N1L+R2Y+Q3E"
+      },
+      {
+        "row": 2607,
+        "variant": "N1K+R2T+Q3V"
+      },
+      {
+        "row": 1062,
+        "variant": "N1L+R2Y+Q3A"
+      },
+      {
+        "row": 2442,
+        "variant": "N1P+R2P+Q3I"
+      },
+      {
+        "row": 2641,
+        "variant": "N1V+R2K+Q3L"
+      },
+      {
+        "row": 1727,
+        "variant": "N1P+R2K+Q3E"
+      },
+      {
+        "row": 545,
+        "variant": "N1E+R2A+Q3E"
+      },
+      {
+        "row": 764,
+        "variant": "N1V+R2A+Q3A"
+      },
+      {
+        "row": 1742,
+        "variant": "N1H+R2I+Q3Y"
+      },
+      {
+        "row": 192,
+        "variant": "N1K+R2I+Q3R"
+      },
+      {
+        "row": 2793,
+        "variant": "N1T+R2W+Q3V"
+      },
+      {
+        "row": 2597,
+        "variant": "N1W+R2K+Q3K"
+      },
+      {
+        "row": 1455,
+        "variant": "R2E+Q3V"
+      },
+      {
+        "row": 1766,
+        "variant": "N1L+R2A+Q3D"
+      },
+      {
+        "row": 2694,
+        "variant": "N1C+R2A+Q3H"
+      },
+      {
+        "row": 2729,
+        "variant": "N1G+Q3I"
+      },
+      {
+        "row": 380,
+        "variant": "N1Y+R2A+Q3Y"
+      },
+      {
+        "row": 1484,
+        "variant": "N1D+R2M+Q3Y"
+      },
+      {
+        "row": 1037,
+        "variant": "N1I+R2W+Q3A"
+      },
+      {
+        "row": 997,
+        "variant": "N1H+R2Y+Q3K"
+      },
+      {
+        "row": 1068,
+        "variant": "N1L+R2E+Q3Y"
+      },
+      {
+        "row": 1897,
+        "variant": "N1W+Q3E"
+      },
+      {
+        "row": 940,
+        "variant": "N1V+R2C+Q3E"
+      },
+      {
+        "row": 535,
+        "variant": "N1A+R2V+Q3F"
+      },
+      {
+        "row": 1902,
+        "variant": "N1A+R2T+Q3W"
+      },
+      {
+        "row": 2560,
+        "variant": "N1T+R2K+Q3R"
+      },
+      {
+        "row": 1808,
+        "variant": "N1I+R2P+Q3A"
+      },
+      {
+        "row": 2713,
+        "variant": "N1T+R2Y+Q3D"
+      },
+      {
+        "row": 547,
+        "variant": "N1V+R2P+Q3E"
+      },
+      {
+        "row": 2038,
+        "variant": "N1G+R2V+Q3D"
+      }
+    ],
+    "TEV": [
+      {
+        "row": 52499,
+        "variant": "T1L+D2Q+H3P+S4I"
+      },
+      {
+        "row": 24574,
+        "variant": "T1E+D2I+H3P+S4K"
+      },
+      {
+        "row": 83614,
+        "variant": "T1K+D2N+H3F+S4P"
+      },
+      {
+        "row": 79597,
+        "variant": "T1G+D2P+H3C+S4L"
+      },
+      {
+        "row": 17543,
+        "variant": "D2Y+H3W+S4F"
+      },
+      {
+        "row": 92584,
+        "variant": "T1M+D2I+H3K+S4N"
+      },
+      {
+        "row": 57214,
+        "variant": "T1L+D2A+H3W+S4G"
+      },
+      {
+        "row": 36588,
+        "variant": "T1A+D2T+H3F+S4K"
+      },
+      {
+        "row": 134279,
+        "variant": "T1Q+D2Y+H3V+S4W"
+      },
+      {
+        "row": 24696,
+        "variant": "T1D+D2N+H3I+S4D"
+      },
+      {
+        "row": 133958,
+        "variant": "T1R+D2T+H3D+S4P"
+      },
+      {
+        "row": 27535,
+        "variant": "T1D+D2M+H3Q+S4M"
+      },
+      {
+        "row": 66674,
+        "variant": "T1Q+D2E+S4L"
+      },
+      {
+        "row": 109492,
+        "variant": "T1N+D2V+H3L+S4N"
+      },
+      {
+        "row": 106235,
+        "variant": "T1S+D2W+H3T+S4I"
+      },
+      {
+        "row": 104801,
+        "variant": "T1S+D2C+H3M+S4A"
+      },
+      {
+        "row": 79161,
+        "variant": "T1G+D2P+H3P+S4M"
+      },
+      {
+        "row": 58937,
+        "variant": "T1K+D2W+H3A+S4R"
+      },
+      {
+        "row": 11211,
+        "variant": "D2Y+H3K+S4F"
+      },
+      {
+        "row": 88636,
+        "variant": "T1K+D2C+H3W+S4N"
+      },
+      {
+        "row": 108955,
+        "variant": "T1S+D2E+H3M+S4M"
+      },
+      {
+        "row": 139458,
+        "variant": "T1V+D2T+H3T+S4K"
+      },
+      {
+        "row": 125820,
+        "variant": "T1Y+D2F+H3S+S4H"
+      },
+      {
+        "row": 79958,
+        "variant": "T1I+D2S+H3Y+S4T"
+      },
+      {
+        "row": 46008,
+        "variant": "T1F+D2T+H3S+S4N"
+      },
+      {
+        "row": 158045,
+        "variant": "T1C+D2Y+H3T+S4G"
+      },
+      {
+        "row": 15185,
+        "variant": "T1V+D2C+S4C"
+      },
+      {
+        "row": 142037,
+        "variant": "T1V+D2T+H3N+S4F"
+      },
+      {
+        "row": 148013,
+        "variant": "T1V+D2W+H3M+S4C"
+      },
+      {
+        "row": 86869,
+        "variant": "T1I+D2M+H3C+S4Q"
+      },
+      {
+        "row": 123041,
+        "variant": "T1W+D2W+H3N+S4A"
+      },
+      {
+        "row": 143563,
+        "variant": "T1W+D2A+H3K+S4M"
+      },
+      {
+        "row": 154398,
+        "variant": "T1D+D2I+H3Q+S4W"
+      },
+      {
+        "row": 28876,
+        "variant": "T1E+D2K+H3A+S4G"
+      },
+      {
+        "row": 27865,
+        "variant": "T1D+D2R+H3R+S4L"
+      },
+      {
+        "row": 38528,
+        "variant": "T1A+D2T+H3T+S4N"
+      },
+      {
+        "row": 140798,
+        "variant": "T1W+D2Q+H3F+S4H"
+      },
+      {
+        "row": 107201,
+        "variant": "T1S+D2Y+H3W+S4K"
+      },
+      {
+        "row": 33553,
+        "variant": "T1A+D2V+H3Y+S4G"
+      },
+      {
+        "row": 98685,
+        "variant": "T1M+D2Y+H3E+S4E"
+      },
+      {
+        "row": 61400,
+        "variant": "T1Q+D2L+H3G+S4I"
+      },
+      {
+        "row": 112794,
+        "variant": "T1N+D2N+H3G+S4H"
+      },
+      {
+        "row": 46743,
+        "variant": "T1F+D2T+H3Y+S4D"
+      },
+      {
+        "row": 75487,
+        "variant": "T1G+D2M+H3F+S4F"
+      },
+      {
+        "row": 22644,
+        "variant": "T1E+D2Q+H3E+S4G"
+      },
+      {
+        "row": 134905,
+        "variant": "T1R+D2K+H3R+S4A"
+      },
+      {
+        "row": 129893,
+        "variant": "T1R+D2H+H3L+S4N"
+      },
+      {
+        "row": 124830,
+        "variant": "T1Y+D2S+H3K+S4I"
+      },
+      {
+        "row": 38373,
+        "variant": "T1C+D2E+S4N"
+      },
+      {
+        "row": 11684,
+        "variant": "D2Q+H3Y+S4C"
+      },
+      {
+        "row": 79142,
+        "variant": "T1G+D2Q+H3S+S4C"
+      },
+      {
+        "row": 45878,
+        "variant": "T1F+D2N+H3M+S4L"
+      },
+      {
+        "row": 33475,
+        "variant": "T1A+D2E+H3G+S4E"
+      },
+      {
+        "row": 114184,
+        "variant": "T1N+D2T+H3C+S4I"
+      },
+      {
+        "row": 37142,
+        "variant": "T1A+D2W+H3Y+S4E"
+      },
+      {
+        "row": 93343,
+        "variant": "T1M+D2S+H3Q+S4M"
+      },
+      {
+        "row": 20831,
+        "variant": "T1E+D2N+H3Y+S4Y"
+      },
+      {
+        "row": 73788,
+        "variant": "T1H+D2C+H3T+S4R"
+      },
+      {
+        "row": 42985,
+        "variant": "T1F+D2K+H3W+S4D"
+      },
+      {
+        "row": 147596,
+        "variant": "T1W+D2A+H3Y+S4W"
+      },
+      {
+        "row": 147311,
+        "variant": "T1W+D2R+H3V+S4D"
+      },
+      {
+        "row": 158180,
+        "variant": "T1C+D2L+H3G+S4E"
+      },
+      {
+        "row": 133242,
+        "variant": "T1R+D2V+H3G+S4Y"
+      },
+      {
+        "row": 157649,
+        "variant": "T1D+D2A+H3I+S4Y"
+      },
+      {
+        "row": 40262,
+        "variant": "T1F+H3L"
+      },
+      {
+        "row": 153676,
+        "variant": "T1C+D2R+H3R+S4I"
+      },
+      {
+        "row": 78590,
+        "variant": "T1H+D2A+S4D"
+      },
+      {
+        "row": 2115,
+        "variant": "T1H+D2L+H3R+S4P"
+      },
+      {
+        "row": 119692,
+        "variant": "T1Y+D2W+H3L+S4Q"
+      },
+      {
+        "row": 74564,
+        "variant": "T1G+D2E+H3E+S4A"
+      },
+      {
+        "row": 95864,
+        "variant": "T1M+D2V+H3D+S4C"
+      },
+      {
+        "row": 51654,
+        "variant": "T1L+D2K+H3W+S4W"
+      },
+      {
+        "row": 49138,
+        "variant": "T1F+D2A+H3A+S4P"
+      },
+      {
+        "row": 101478,
+        "variant": "T1S+D2S+H3P+S4L"
+      },
+      {
+        "row": 28060,
+        "variant": "T1E+D2A+H3D+S4A"
+      },
+      {
+        "row": 114070,
+        "variant": "T1N+D2S+H3C+S4W"
+      },
+      {
+        "row": 158075,
+        "variant": "T1C+D2P+H3M+S4P"
+      },
+      {
+        "row": 91671,
+        "variant": "T1M+D2A+H3S+S4W"
+      },
+      {
+        "row": 65454,
+        "variant": "T1Q+D2N+H3A+S4K"
+      },
+      {
+        "row": 118425,
+        "variant": "T1N+D2V+H3F+S4A"
+      },
+      {
+        "row": 70277,
+        "variant": "T1G+D2K+H3V+S4E"
+      },
+      {
+        "row": 102802,
+        "variant": "T1S+D2C+H3N+S4P"
+      },
+      {
+        "row": 134392,
+        "variant": "T1R+D2K+H3L+S4C"
+      },
+      {
+        "row": 21083,
+        "variant": "T1E+D2F+H3I+S4W"
+      },
+      {
+        "row": 130638,
+        "variant": "T1Q+D2V+H3P+S4G"
+      },
+      {
+        "row": 84703,
+        "variant": "T1K+D2A+H3P+S4L"
+      },
+      {
+        "row": 85308,
+        "variant": "T1I+D2Q+H3F+S4Q"
+      },
+      {
+        "row": 16897,
+        "variant": "T1V+D2F+H3V+S4P"
+      },
+      {
+        "row": 20854,
+        "variant": "T1E+D2C+H3D+S4W"
+      },
+      {
+        "row": 67052,
+        "variant": "T1P+D2W+H3K+S4T"
+      },
+      {
+        "row": 113066,
+        "variant": "T1P+D2F+H3N+S4M"
+      },
+      {
+        "row": 72690,
+        "variant": "T1G+D2Q+H3M+S4P"
+      },
+      {
+        "row": 78128,
+        "variant": "T1G+D2Q+H3T"
+      },
+      {
+        "row": 67679,
+        "variant": "T1P+D2T+H3C+S4K"
+      },
+      {
+        "row": 79381,
+        "variant": "T1G+D2I+H3T+S4D"
+      },
+      {
+        "row": 105995,
+        "variant": "T1S+D2E+H3A+S4W"
+      },
+      {
+        "row": 40188,
+        "variant": "T1F+D2L+H3W+S4C"
+      },
+      {
+        "row": 103775,
+        "variant": "T1S+D2V+H3Y+S4K"
+      },
+      {
+        "row": 1856,
+        "variant": "T1I+D2K+H3M+S4H"
+      },
+      {
+        "row": 92247,
+        "variant": "T1M+D2Q+H3W+S4E"
+      },
+      {
+        "row": 113946,
+        "variant": "T1P+D2K+H3I+S4N"
+      },
+      {
+        "row": 109370,
+        "variant": "T1N+D2P+H3N+S4V"
+      },
+      {
+        "row": 27643,
+        "variant": "T1E+D2E+H3V+S4W"
+      },
+      {
+        "row": 85334,
+        "variant": "T1K+D2F+H3T+S4F"
+      },
+      {
+        "row": 13259,
+        "variant": "D2G+H3C+S4T"
+      },
+      {
+        "row": 12578,
+        "variant": "T1V+D2L+H3A+S4D"
+      },
+      {
+        "row": 81186,
+        "variant": "T1I+D2S+H3V+S4T"
+      },
+      {
+        "row": 100925,
+        "variant": "T1S+D2I+H3E+S4K"
+      },
+      {
+        "row": 43466,
+        "variant": "T1F+D2H+H3W+S4F"
+      },
+      {
+        "row": 156615,
+        "variant": "T1C+D2Y+H3M+S4V"
+      },
+      {
+        "row": 72314,
+        "variant": "T1G+D2T+H3T+S4H"
+      },
+      {
+        "row": 106881,
+        "variant": "T1S+H3Q+S4K"
+      },
+      {
+        "row": 132761,
+        "variant": "T1R+D2K+H3S+S4E"
+      },
+      {
+        "row": 68111,
+        "variant": "T1Q+D2F+H3I+S4R"
+      },
+      {
+        "row": 52815,
+        "variant": "T1L+D2R+H3Y+S4G"
+      },
+      {
+        "row": 10698,
+        "variant": "D2K+S4M"
+      },
+      {
+        "row": 71964,
+        "variant": "T1G+D2G+H3G+S4V"
+      },
+      {
+        "row": 108272,
+        "variant": "T1S+D2I+H3Y+S4L"
+      },
+      {
+        "row": 24947,
+        "variant": "T1D+D2Q+H3S+S4K"
+      },
+      {
+        "row": 154387,
+        "variant": "T1D+D2A+H3F+S4D"
+      },
+      {
+        "row": 88466,
+        "variant": "T1I+D2M+H3I+S4A"
+      },
+      {
+        "row": 408,
+        "variant": "T1I+D2A+H3W+S4F"
+      },
+      {
+        "row": 52676,
+        "variant": "T1L+D2T+H3K+S4F"
+      },
+      {
+        "row": 139238,
+        "variant": "T1W+D2E+H3I+S4T"
+      },
+      {
+        "row": 97126,
+        "variant": "T1M+D2L+H3K+S4Y"
+      },
+      {
+        "row": 134870,
+        "variant": "T1R+D2R+H3A+S4E"
+      },
+      {
+        "row": 70263,
+        "variant": "T1G+D2L+H3P+S4K"
+      },
+      {
+        "row": 118657,
+        "variant": "T1P+D2E+H3D+S4M"
+      },
+      {
+        "row": 42149,
+        "variant": "T1F+D2V+H3K"
+      },
+      {
+        "row": 68708,
+        "variant": "T1Q+D2F+H3S+S4W"
+      },
+      {
+        "row": 117247,
+        "variant": "T1P+H3A+S4M"
+      },
+      {
+        "row": 76671,
+        "variant": "T1G+D2A+H3K+S4E"
+      },
+      {
+        "row": 70580,
+        "variant": "T1G+D2P+H3F+S4Y"
+      },
+      {
+        "row": 94331,
+        "variant": "T1M+D2R+H3M+S4G"
+      },
+      {
+        "row": 19502,
+        "variant": "D2P+H3D+S4W"
+      },
+      {
+        "row": 75609,
+        "variant": "T1H+D2C+H3A+S4R"
+      },
+      {
+        "row": 14088,
+        "variant": "T1V+D2C+S4G"
+      },
+      {
+        "row": 72799,
+        "variant": "T1G+H3R+S4I"
+      },
+      {
+        "row": 93929,
+        "variant": "T1M+D2W+H3M+S4G"
+      },
+      {
+        "row": 17233,
+        "variant": "T1V+D2L+H3Q+S4V"
+      },
+      {
+        "row": 2902,
+        "variant": "T1I+D2G+H3G+S4F"
+      },
+      {
+        "row": 49378,
+        "variant": "T1F+D2K+H3V+S4G"
+      },
+      {
+        "row": 53577,
+        "variant": "T1L+H3D+S4G"
+      },
+      {
+        "row": 102295,
+        "variant": "T1S+D2R+H3E"
+      },
+      {
+        "row": 4009,
+        "variant": "T1I+D2K+H3R+S4F"
+      },
+      {
+        "row": 142727,
+        "variant": "T1V+D2Q+H3N+S4M"
+      },
+      {
+        "row": 134858,
+        "variant": "T1Q+D2S+S4G"
+      },
+      {
+        "row": 130495,
+        "variant": "T1R+D2W+H3V+S4A"
+      },
+      {
+        "row": 137403,
+        "variant": "T1R+D2N+H3P+S4C"
+      },
+      {
+        "row": 145552,
+        "variant": "T1W+D2E+H3L+S4K"
+      },
+      {
+        "row": 79937,
+        "variant": "T1I+D2N+H3T+S4W"
+      },
+      {
+        "row": 116469,
+        "variant": "T1N+D2V+H3V+S4N"
+      },
+      {
+        "row": 137442,
+        "variant": "T1R+D2C+H3V+S4V"
+      },
+      {
+        "row": 61327,
+        "variant": "T1Q+D2K+H3E+S4Y"
+      },
+      {
+        "row": 14671,
+        "variant": "T1V+D2A+H3D+S4T"
+      },
+      {
+        "row": 18004,
+        "variant": "D2G+H3F+S4L"
+      },
+      {
+        "row": 15920,
+        "variant": "T1V+H3G+S4N"
+      },
+      {
+        "row": 126375,
+        "variant": "T1Y+D2F+H3F+S4A"
+      },
+      {
+        "row": 46225,
+        "variant": "T1F+D2K+H3F+S4N"
+      },
+      {
+        "row": 27707,
+        "variant": "T1D+D2V+H3Q+S4Q"
+      },
+      {
+        "row": 95867,
+        "variant": "T1N+D2E+H3K+S4P"
+      },
+      {
+        "row": 50674,
+        "variant": "T1L+D2P+H3Q+S4E"
+      },
+      {
+        "row": 33650,
+        "variant": "T1A+D2H+H3Q+S4H"
+      },
+      {
+        "row": 106601,
+        "variant": "T1S+D2F+H3V+S4D"
+      },
+      {
+        "row": 111797,
+        "variant": "T1N+D2P+H3V+S4V"
+      },
+      {
+        "row": 117166,
+        "variant": "T1N+D2N+H3K+S4M"
+      },
+      {
+        "row": 141856,
+        "variant": "T1V+D2V+H3C+S4F"
+      },
+      {
+        "row": 89865,
+        "variant": "T1M+D2S+S4H"
+      },
+      {
+        "row": 41086,
+        "variant": "T1F+D2F+H3G+S4N"
+      },
+      {
+        "row": 44301,
+        "variant": "T1F+D2L+H3L+S4R"
+      },
+      {
+        "row": 30148,
+        "variant": "T1A+D2C+S4P"
+      },
+      {
+        "row": 11466,
+        "variant": "D2V+S4M"
+      },
+      {
+        "row": 4190,
+        "variant": "T1I+D2F+H3F+S4E"
+      },
+      {
+        "row": 74422,
+        "variant": "T1G+D2T+H3Y+S4Q"
+      },
+      {
+        "row": 19473,
+        "variant": "D2Q+H3A+S4M"
+      },
+      {
+        "row": 138470,
+        "variant": "T1R+D2Y+H3K+S4F"
+      },
+      {
+        "row": 80313,
+        "variant": "T1I+D2Q+H3D+S4T"
+      },
+      {
+        "row": 126019,
+        "variant": "T1W+D2Y+H3A"
+      },
+      {
+        "row": 10957,
+        "variant": "T1V+D2K+H3F+S4G"
+      },
+      {
+        "row": 51456,
+        "variant": "T1L+D2G+H3G+S4P"
+      },
+      {
+        "row": 72789,
+        "variant": "T1G+D2V+H3P+S4L"
+      },
+      {
+        "row": 45964,
+        "variant": "T1E+D2S+H3L+S4M"
+      },
+      {
+        "row": 42877,
+        "variant": "T1E+D2V+H3V+S4A"
+      },
+      {
+        "row": 3453,
+        "variant": "T1I+H3W"
+      },
+      {
+        "row": 46949,
+        "variant": "T1F+D2S+H3Y+S4W"
+      },
+      {
+        "row": 124163,
+        "variant": "T1Y+D2G+H3F+S4N"
+      },
+      {
+        "row": 143333,
+        "variant": "T1W+D2P+H3P+S4A"
+      },
+      {
+        "row": 114921,
+        "variant": "T1P+D2C+H3M+S4E"
+      },
+      {
+        "row": 60890,
+        "variant": "T1Q+D2N+H3N+S4A"
+      },
+      {
+        "row": 44125,
+        "variant": "T1E+D2V+H3S+S4Y"
+      },
+      {
+        "row": 128731,
+        "variant": "T1Y+D2S+H3F+S4T"
+      },
+      {
+        "row": 125235,
+        "variant": "T1Y+H3E+S4F"
+      }
+    ]
+  }
+}

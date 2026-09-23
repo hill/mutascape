@@ -44,11 +44,10 @@ def main() -> None:
         _run(
             sys.executable,
             "-m",
-            "scripts.build_quantile_manuscript",
+            "scripts.build_singles_manuscript",
             "--manuscript",
             str(args.manuscript),
         )
-        build_search_table(args.manuscript, args.results)
         _run(
             "typst", "compile", str(args.manuscript / "main.typ"), str(args.manuscript / "main.pdf")
         )

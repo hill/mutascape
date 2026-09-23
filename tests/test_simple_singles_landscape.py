@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from mutascape.experimental.singles import SimpleLandscape, _pair
+from mutascape import SimpleLandscape
+from mutascape.experimental.singles import _pair
 from scripts.investigate_singles_only import local_geometry
 from scripts.singles_warm_start import DMSOracle
 

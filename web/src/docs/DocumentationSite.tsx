@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react"
 import generatedDocs from "../../data/docs.generated.json"
 import { highlightPython } from "../python-highlight"
 import "./docs.css"
-import { Equation, InlineMath } from "./Equation"
+import { Equation } from "./Equation"
 
 export const DOCS_PAGES = [
   { id: "docs", title: "Introduction", path: "/docs" },
@@ -233,7 +233,7 @@ function OverviewPage({ onNavigate }: { onNavigate: (page: DocsPage) => void }) 
           </div>
           <div>
             <dt>Generator</dt>
-            <dd>The model and prior that draw an oracle.</dd>
+            <dd>The model that constructs a fixed oracle.</dd>
           </div>
           <div>
             <dt>Oracle</dt>
@@ -250,11 +250,32 @@ function OverviewPage({ onNavigate }: { onNavigate: (page: DocsPage) => void }) 
         </p>
       </section>
 
+      <section className="docs-section">
+        <h2>The manuscript model</h2>
+        <p>
+          SimpleLandscape needs a WT sequence and measured WT and singles from the same assay. It
+          requires no combination pilot or protein structure. The table has mutations and fitness
+          columns, with WT represented by an empty dictionary. Each queried substitution needs a
+          measured single effect.
+        </p>
+        <CodeBlock
+          label="Python"
+          code={`from mutascape import SimpleLandscape
+
+landscape = SimpleLandscape.from_singles(sequence, singles, seed=42)
+fitness = landscape["A102G+P20Y"]`}
+        />
+      </section>
+
       <section className="docs-section" id="quick-start">
         <div className="docs-section-heading">
-          <h2>Quick start</h2>
-          <p>Load DMS data, draw an oracle, and score variants.</p>
+          <h2>File interface and studio</h2>
+          <p>Load DMS data and query a fixed landscape.</p>
         </div>
+        <p>
+          This file interface retains the empirical-range generator used by the studio. The
+          manuscript model uses SimpleLandscape and needs no donor prior.
+        </p>
         <div className="docs-code-stack">
           <CodeBlock label="Python" code={quickStartCode} />
           <CodeBlock label="Output" code={oracleOutput()} output />
@@ -263,8 +284,8 @@ function OverviewPage({ onNavigate }: { onNavigate: (page: DocsPage) => void }) 
 
       <FigureSection
         id="example-output"
-        title="Example output"
-        description="Each group contains 160 CreiLOV variants. Grey shows the single-effect model. Green shows one fixed oracle draw."
+        title="File-interface example"
+        description="Each group contains 160 CreiLOV variants. Grey shows the single-effect model. Green shows one fixed oracle sample."
         src="/assets/docs/oracle-profile.svg"
         alt="Fitness distributions for a single-effect baseline and fixed synthetic oracle at mutation depths one to four"
       />
@@ -422,9 +443,9 @@ oracle.save_manifest("oracle.json")`}
 
 const MODEL_SECTIONS: Section[] = [
   { id: "the-equation", title: "The equation" },
-  { id: "singles", title: "Measured fitness values" },
+  { id: "singles", title: "Measured single effects" },
   { id: "couplings", title: "Pair interactions" },
-  { id: "global-epistasis", title: "Saturating readout" },
+  { id: "global-epistasis", title: "Sigmoid fitness map" },
 ]
 
 function ModelPage({ onNavigate }: { onNavigate: (page: DocsPage) => void }) {
@@ -434,96 +455,59 @@ function ModelPage({ onNavigate }: { onNavigate: (page: DocsPage) => void }) {
         <p className="docs-breadcrumb">Documentation / The fitness model</p>
         <h1>The fitness model</h1>
         <p className="docs-lead">
-          One equation decides every score an oracle returns. Reading it explains most of what the
-          package does.
+          SimpleLandscape combines measured single effects with fixed random pair interactions. A
+          sigmoid maps the combined latent score back to fitness.
         </p>
       </header>
-
       <section className="docs-section" id="the-equation">
         <h2>The equation</h2>
-        <Equation formula="f_s(x) \;=\; f_{\mathrm{WT}} \;+\; g\!\left( \sum_i \tilde{h}_i(x_i) \;+\; \lambda \sigma \sum_{i<j} \tilde{J}^{(s)}_{ij}(x_i,x_j) \right)" />
-        <dl className="docs-concept-grid">
-          <div>
-            <dt>
-              <InlineMath formula="\tilde{h}_i" />
-            </dt>
-            <dd>The measured single effect in the latent readout space.</dd>
-          </div>
-          <div>
-            <dt>
-              <InlineMath formula="\tilde{J}^{(s)}_{ij}" />
-            </dt>
-            <dd>A seed-specific pair coefficient with a zero wild-type baseline.</dd>
-          </div>
-          <div>
-            <dt>
-              <InlineMath formula="\lambda" />
-            </dt>
-            <dd>The pair strength. The validated default is 0.1.</dd>
-          </div>
-          <div>
-            <dt>
-              <InlineMath formula="\sigma" />
-            </dt>
-            <dd>The scale of the target protein's measured single effects.</dd>
-          </div>
-          <div>
-            <dt>
-              <InlineMath formula="g" />
-            </dt>
-            <dd>The global-epistasis function, a saturating sigmoid.</dd>
-          </div>
-        </dl>
+        <Equation formula="f_r(x) = f_0 + g\!\left(\sum_i \ell_i(x_i) + \alpha\sigma_\ell\sum_{i<j}\kappa_{ij,r}(x_i,x_j)\right)" />
+        <p>
+          The latent single effects are ℓ. The pair coefficients κ stay fixed for each seed. Their
+          scale is the standard deviation of latent single effects, σℓ, multiplied by α. The default
+          interaction strength is 0.3.
+        </p>
         <p className="docs-note">
-          The model uses measured DMS effects, random pair interactions, and an empirical readout.
-          It does not use a contact map or claim a structural mechanism.
+          This page describes the manuscript model, SimpleLandscape. The from_dms interface and
+          studio retain the earlier empirical-range model.
         </p>
       </section>
-
       <section className="docs-section" id="singles">
-        <h2>Measured fitness values</h2>
+        <h2>Measured single effects</h2>
+        <Equation formula="h_i(a)=f_i(a)-f_0,\qquad \ell_i(a)=g^{-1}[h_i(a)]" />
         <p>
-          Additive effects are summed in the preimage of <InlineMath formula="g" />, so each stored
-          effect is the value that <InlineMath formula="g" /> maps back onto the measurement.
-        </p>
-        <Equation formula="\tilde{h}_i \;=\; g^{-1}(h_i) \qquad\Longrightarrow\qquad f(\text{single}_i) \;=\; g\!\left(g^{-1}(h_i)\right) \;=\; h_i" />
-        <p>
-          Wild type, single mutants, and any supplied combinations return their measured scores. The
-          model generates values only for combinations absent from the input.
+          Each effect is relative to WT. The inverse sigmoid maps it to a latent contribution. WT
+          and supplied singles return their measured fitness exactly. Construction accepts no
+          combination measurements.
         </p>
       </section>
-
       <section className="docs-section" id="couplings">
         <h2>Pair interactions</h2>
         <p>
-          Each seed draws a stable table for every pair of mutable positions. A double difference
-          removes the wild-type row and column.
+          A seed fixes a Gaussian table for each site pair. The WT contrast makes each pair effect
+          vanish when either residue is WT. A factor of one half gives unit marginal variance.
         </p>
-        <Equation formula="J_{ij}^{\ast} \;=\; J(m_i, m_j) \;-\; J(w_i, m_j) \;-\; J(m_i, w_j) \;+\; J(w_i, w_j)" />
+        <Equation formula="\kappa_{ij}(a,b)=\tfrac12[v(a,b)-v(a,b_0)-v(a_0,b)+v(a_0,b_0)]" />
         <p>
-          Here <InlineMath formula="m" /> is the mutant residue and <InlineMath formula="w" /> the
-          wild-type one. The correction is zero whenever either position is unmutated, so singles
-          pick up no coupling and the sum can run over mutated pairs alone.
-        </p>
-        <p className="docs-note">
-          The same seed returns the same pair table and the same score for every query. Changing the
-          seed draws another benchmark landscape from the generator.
+          Related combinations share table entries. Repeated queries therefore return the same
+          fitness. A different seed changes the interactions without changing the supplied
+          observations. These samples describe synthetic assumptions, rather than calibrated
+          uncertainty about true fitness.
         </p>
       </section>
-
       <section className="docs-section" id="global-epistasis">
-        <h2>Saturating readout</h2>
+        <h2>Sigmoid fitness map</h2>
         <p>
-          Real assays saturate. A protein cannot fold better than folded, and a dead variant cannot
-          get deader once the readout hits its floor.
+          The sigmoid extends 5% beyond the range of WT-centred single measurements, including zero.
+          Its shift makes g(0) zero. Each supplied effect lies inside the limits, so its inverse is
+          finite. Five development proteins selected this margin and the default pair strength.
         </p>
-        <Equation formula="g(z) \;=\; y_{\min} \;+\; \frac{y_{\max} - y_{\min}}{1 + e^{-k(z - z_0)}}" />
         <p>
-          Target singles set the local scale. Other measured combinatorial landscapes supply the
-          typical assay range. Their pooled values set the lower and upper bounds of the readout.
+          This model assumes that single-mutant measurements give a useful synthetic fitness range.
+          They can miss much larger changes from combinations, as the CreiLOV evaluation shows.
+          Neither construction nor individual queries require library enumeration.
         </p>
       </section>
-
       <NextPageLink
         label="Next guide"
         title="Run a benchmark campaign"
@@ -563,8 +547,8 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
         <ol className="docs-protocol-list">
           <ProtocolItem
             number="01"
-            title="Fix the oracle draw"
-            text="Save the generator version, source digest, coupling, and draw seed."
+            title="Fix the oracle sample"
+            text="Save the generator version, source digest, coupling, and landscape seed."
           />
           <ProtocolItem
             number="02"
@@ -578,15 +562,15 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
           />
           <ProtocolItem
             number="04"
-            title="Repeat methods and oracle draws"
-            text="Run ten search trials on three matched oracle draws."
+            title="Repeat methods and oracle samples"
+            text="Run ten search trials on three matched oracle samples."
           />
         </ol>
       </section>
 
       <section className="docs-section">
         <div className="docs-section-heading">
-          <h2>Compare against a fixed method ranking</h2>
+          <h2>Fixed rankings and the archived reference study</h2>
         </div>
         <p>
           High pair agreement can reflect method orderings shared across proteins. Fit a fixed
@@ -594,10 +578,10 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
           protein. Score it on the same eligible comparisons as the generator.
         </p>
         <p>
-          At 48 queries, this control scores 91.9%, 84.0%, and 73.8% on SSMuLA, CombinGym, and
-          GraphFLA. Mutascape scores 89.5%, 69.1%, and 73.5%. It exceeds the control in four of
-          twelve development comparisons. The 31 assay entries include repeated proteins across
-          collections.
+          In the archived empirical-range study, this control scores 91.9%, 84.0%, and 73.8% on
+          SSMuLA, CombinGym, and GraphFLA. Mutascape scores 89.5%, 69.1%, and 73.5%. It exceeds the
+          control in four of twelve development comparisons. The 31 assay entries include repeated
+          proteins across collections.
         </p>
         <p>
           A prospective ParB-Noc test exceeds the control at every budget. Median classifier AUCs
@@ -608,14 +592,30 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
       </section>
 
       <section className="docs-section">
-        <div className="docs-section-heading">
-          <h2>Mutascape with measured combinations</h2>
-        </div>
+        <h2>Current singles-only evaluation</h2>
         <p>
-          The manuscript uses QuantileCalibratedLandscape. It fits mutation-depth effects and a
-          fitness-distribution map from same-assay wild type, singles and a random measured pilot.
-          Each seed fixes one landscape. Wild type and singles retain their measurements exactly.
-          Pilot combinations fit shared terms and can have different generated fitness.
+          Five development proteins select settings. GB1, TrpB4, T7 and TEV test those settings.
+          Mean scaled Wasserstein distance is 1.116 and local Walsh distance is 0.500. The additive
+          control gives 4.534 and 0.766. Local spectra use 256 complete three-site subcubes per
+          protein, with no missing-value filling.
+        </p>
+        <p>
+          Mean sequence-aware C2ST AUC is 0.979, which exposes substantial distribution mismatch.
+          The optional extension reaches 0.667 using 192 measured combinations per protein. It fits
+          none of the 1,000 evaluation genotypes or spectral-test corners. All four confirmation
+          proteins improve, but classifiers still detect differences.
+        </p>
+        <p>
+          With WT and singles known before search, mean Kendall correlation reaches 0.207 at 48 new
+          queries and 0.582 at 96. The fixed ranking from development proteins gives 0.164 and
+          0.523. Paired protein-bootstrap intervals do not establish consistent added value over
+          that control.
+        </p>
+        <h2>Optional extension with measured combinations</h2>
+        <p>
+          QuantileCalibratedLandscape fits depth effects and an interaction scale from a random
+          pilot. It maps generated score percentiles to the pilot's empirical fitness quantiles. WT
+          and singles remain exact. The cost is the additional combination measurements.
         </p>
         <CodeBlock
           label="Python"
@@ -623,32 +623,20 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
 
 model = QuantileCalibratedLandscape.fit(sequence, singles, pilot)
 oracle = model.draw(seed=42)
-values = oracle.evaluate_batch(variants)`}
+fitness = oracle["A102G+P20Y"]`}
         />
         <p>
-          Use a uniform sample of supported combinations. Each draw enumerates the library before
-          queries start, with a default limit of one million variants. Both tables need mutations
-          and fitness columns. The singles table must include measured wild type as an empty
-          mutation dictionary.
-        </p>
-        <p>
-          With 192 pilot combinations across five proteins, mean boosted-classifier AUC is 0.679, or
-          0.739 with sequence indicators. Mean method-pair agreement is 94.3 per cent, compared with
-          88.9 per cent for a fixed ranking from other proteins. The comparison uses 12 methods and
-          query budgets of 48 and 96. Classifiers still detect differences, and spectra vary across
-          proteins. Three draws share one pilot per protein.
-        </p>
-        <p>
-          The Python import remains in mutascape.experimental. The from_dms interface and browser
-          studio retain the singles-only generator. The reference results below describe that
-          interface, rather than the manuscript model.
+          The extension currently enumerates the supported library, with a default limit of one
+          million variants. Each table needs mutations and fitness columns. The singles table
+          includes measured WT as an empty dictionary. The matched test uses one pilot per protein,
+          shared across landscape samples.
         </p>
       </section>
 
       <FigureSection
         id="creilov-shape"
-        title="CreiLOV shape check"
-        description="Thirty fixed draws give a close standardised histogram and projected Walsh spectrum. The projection averages amino-acid variants within mutated-site patterns and fills 118 missing patterns with the observed mean. Raw fitness remains mismatched."
+        title="Archived CreiLOV shape check"
+        description="Thirty fixed samples give a close standardised histogram and projected Walsh spectrum. The projection averages amino-acid variants within mutated-site patterns and fills 118 missing patterns with the observed mean. Raw fitness remains mismatched."
         src="/assets/docs/creilov-shape-validation.png"
         alt="Measured and synthetic CreiLOV fitness distributions and Walsh interaction-order spectra"
       />
@@ -669,7 +657,7 @@ values = oracle.evaluate_batch(variants)`}
       </section>
 
       <section className="docs-section" id="minimal-campaign">
-        <h2>Adversarial assessment</h2>
+        <h2>Classifier tests and the archived assay comparison</h2>
         <p>
           A classifier tries to distinguish measured and synthetic fitness on held-out genotypes.
           AUC and balanced accuracy near 0.5 mean weak discrimination for that classifier. They do
@@ -677,10 +665,10 @@ values = oracle.evaluate_batch(variants)`}
           Permutation tests swap source labels within pairs and refit the classifier.
         </p>
         <p>
-          The CreiLOV assay-scale test gives AUC above 0.999 for three synthetic draws. This exposes
-          the raw fitness mismatch despite the close standardised histogram. Replicates 1 and 2 give
-          AUC near 0.51. Comparisons with replicate 3 give about 0.66. Replicate disagreement is a
-          reference, not a universal noise floor.
+          The archived CreiLOV assay-scale test gives AUC above 0.999 for three synthetic samples.
+          This exposes the raw fitness mismatch despite the close standardised histogram. Replicates
+          1 and 2 give AUC near 0.51. Comparisons with replicate 3 give about 0.66. Replicate
+          disagreement is a reference, not a universal noise floor.
         </p>
         <p>
           The original DMS and combinatorial assay disagree even on shared single mutants.

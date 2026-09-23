@@ -6,13 +6,10 @@
 
 Synthetic combinatorial protein fitness landscapes for ML-assisted directed evolution benchmarks.
 
-Mutascape generates fixed landscapes from same-assay wild type, singles and a random measured combination pilot.
-It preserves measured singles and maps generated combination scores to pilot fitness quantiles.
-A seed fixes the shared pair effects and the distribution map.
-The model supports synthetic method comparisons without predicting the true fitness of unmeasured combinations.
-
-The manuscript uses `QuantileCalibratedLandscape`.
-The existing `from_dms` interface and browser studio retain the singles-only generator.
+Mutascape generates fixed synthetic landscapes from a wild-type sequence and measured single-mutant fitness.
+It preserves WT and singles exactly and adds shared random pair effects through a sigmoid fitness map.
+The manuscript model needs no combination measurements, donor prior or protein structure.
+Its purpose is synthetic method comparison, without predicting the true fitness of unmeasured combinations.
 
 ## Installation
 
@@ -23,24 +20,30 @@ uv sync              # core dependencies
 uv sync --extra dev  # + pytest/ruff
 ```
 
-## Fit the manuscript model
+## Construct the manuscript model
 
 ```python
-from mutascape.experimental import QuantileCalibratedLandscape
+from mutascape import SimpleLandscape
 
-model = QuantileCalibratedLandscape.fit(sequence, singles, pilot)
-landscape = model.draw(seed=42)
-fitness = landscape.evaluate_batch(variants)
+landscape = SimpleLandscape.from_singles(sequence, singles, seed=42)
+fitness = landscape["A102G+P20Y"]
 ```
 
-The tables need `mutations` dictionaries and numeric `fitness` columns.
-Include measured wild type as `{}` in `singles`.
-Use a uniform sample of supported combinations for `pilot`, with at least two substitutions per combination.
-Pilot combinations fit shared terms and do not retain their measured fitness exactly.
-The default library limit is one million variants because each draw enumerates the supported domain.
-See the [input guide](docs/quantile_generator.md).
+The table contains `mutations` and numeric `fitness` columns, with WT represented by `{}`.
+Include a same-assay measurement for every queried substitution.
+The example assumes that A102G and P20Y match the sequence and appear in the singles table.
+The default pair strength is 0.3 and the sigmoid extends 5% beyond the WT and singles range.
+Queries do not enumerate the library.
+See the [singles input guide](docs/singles_generator.md).
 
-## Singles-only interface
+An [optional extension](docs/quantile_generator.md) uses measured combinations to fit depth effects and a fitness-distribution map.
+It needs those additional measurements and currently enumerates the library.
+
+## Existing file interface and browser studio
+
+The `from_dms` interface below retains the empirical-range generator for existing workflows.
+Its donor prior and default interaction strength differ from `SimpleLandscape`.
+The browser studio also retains this implementation.
 
 ```python
 from mutascape import from_dms
@@ -119,21 +122,24 @@ Scoring reads the true fitness of the variant with the best read, not the read i
 
 ## Evidence for the manuscript model
 
-The five-protein evaluation uses 192 calibration combinations and 1,000 separate evaluation genotypes per protein.
-Mean boosted-classifier AUC is 0.679, or 0.739 with residue indicators.
-Mean fitness-distribution distance is 0.107 measured standard deviations.
-The classifiers still detect differences, and interaction spectra vary across proteins.
+Five development proteins select generator settings through distribution and local Walsh distances.
+Four further proteins test those settings without target combination fitting.
+Across those four, mean scaled Wasserstein distance is 1.116 and local Walsh distance is 0.500.
+The additive control gives 4.534 and 0.766, respectively.
+Mean sequence-aware C2ST AUC is 0.979, so the classifier readily detects mismatch.
+The optional extension reaches 0.667 with 192 separate pilot combinations per protein.
+It uses the same evaluation genotypes and excludes all spectral-test corners from its pilot.
 
-Across 12 methods and query budgets of 48 and 96, mean pair agreement is 94.3 per cent.
-The fixed ranking from other proteins reaches 88.9 per cent on the same eligible comparisons.
-Mean Kendall correlation is 0.653.
-These results describe five proteins, one pilot per protein and three conditional landscape draws.
-The full measurement cost includes the pilot, beyond wild type and singles.
+With WT and singles already known, mean Kendall correlation across 12 methods reaches 0.207 at 48 queries and 0.582 at 96.
+The fixed ranking learned from development proteins gives 0.164 and 0.523.
+Paired protein-bootstrap intervals do not establish consistent added value over that control.
+These results support controlled synthetic benchmarks, without replacing measured search benchmarks.
 
-The [result report](docs/quantile_calibration_2026-09-23.md) includes every protein and the model's limits.
-The manuscript presents this model as Mutascape.
+The [singles study](docs/singles_only_research_results.md) reports the model comparisons.
+The [matched extension report](docs/singles_pilot_extension_results.md) gives the additional experiment and its limits.
+Rebuild the current manuscript from saved results with `uv run python -m scripts.rebuild_preprint`.
 
-## Singles-only reference study
+## Archived empirical-range reference study
 
 Mutascape uses task-relative validity. A useful search benchmark should preserve conclusions about which optimisation method performs better.
 
@@ -169,7 +175,7 @@ The [review assessment](docs/review_response_2026-09-23.md) records controls, ne
 The [experimental pilot generator](docs/pilot_generator.md) uses measured combinations to fit mutation-depth effects.
 On CreiLOV, 48 calibration combinations reduce raw Wasserstein distance from 0.439 to 0.062 against a matched singles-only control.
 
-## Reproduce the task-transfer result
+## Reproduce the archived task-transfer result
 
 ```bash
 just benchmark-data
@@ -178,7 +184,7 @@ for budget in 48 96 192 384; do
     --ssmula-root .mutascape/benchmark-data/ssmula \
     --combingym-root .mutascape/benchmark-data/combingym \
     --output "notebooks/iclr/output_validity_b${budget}_primary" \
-    --budget "$budget" --seeds 10 --draws 3 \
+    --budget "$budget" --seeds 10 --samples 3 \
     --generators primary --dms-pairwise-coupling 0.1
 done
 ```
@@ -187,7 +193,7 @@ The runner writes trial-level regret, rank transfer, paired winners, and measure
 
 ## Browser studio
 
-The studio exposes the same DMS-pairwise oracle. It shows the frozen task-transfer result, fitness by mutation depth, a genotype graph, and exact queries.
+The studio exposes the existing empirical-range DMS-pairwise oracle. It shows the frozen task-transfer result, fitness by mutation depth, a genotype graph, and exact queries.
 
 Upload DMS data with either supported CSV schema. Both schemas require a matching FASTA sequence.
 
@@ -207,7 +213,7 @@ V39A:D40W,0.91
 
 Run the studio and API locally with `uv sync --extra dev --extra web` and `just dev`. The local address is `http://localhost:8000`.
 
-The API keeps its existing posterior route names for compatibility. Studio labels describe oracle draws and variation rather than biological uncertainty.
+The API keeps its existing posterior route names for compatibility. Studio labels describe oracle samples and variation rather than biological uncertainty.
 
 ## Legacy structure-aware generator
 

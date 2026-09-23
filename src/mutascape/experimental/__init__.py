@@ -1,4 +1,4 @@
-"""Experimental generators with input contracts beyond measured singles."""
+"""Experimental landscape generators for research comparisons."""
 
 from mutascape.experimental.pilot import PilotCalibratedLandscape
 from mutascape.experimental.quantile import QuantileCalibratedLandscape

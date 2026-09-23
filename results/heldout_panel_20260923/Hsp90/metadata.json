@@ -1,0 +1,11 @@
+{
+  "landscape": "Hsp90",
+  "genotype_space": "Hsp90",
+  "dataset": "Bank2016a.csv",
+  "source": "graphfla",
+  "source_url": "https://github.com/COLA-Laboratory/GraphFLA",
+  "source_revision": "9f86def1a12db76d26af16077ba28cb61ee0af5f",
+  "path": ".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla/data/BioSequence/Bank2016a.csv",
+  "path_sha256": "277e5d6a2d1a9972b5038d3ec75220b39f186e869bd06feb2ec82d110c8fb864",
+  "sequence": "AAAAAA"
+}

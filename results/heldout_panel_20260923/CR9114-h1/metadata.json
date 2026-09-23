@@ -1,5 +1,6 @@
 {
-  "family": "CR9114",
+  "landscape": "CR9114-h1",
+  "genotype_space": "CR9114",
   "dataset": "Phillips2021_CR9114_h1.csv",
   "source": "graphfla",
   "source_url": "https://github.com/COLA-Laboratory/GraphFLA",

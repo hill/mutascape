@@ -1,5 +1,6 @@
 {
-  "family": "SARS-CoV-2-RBD",
+  "landscape": "RBD-ACE2",
+  "genotype_space": "SARS-CoV-2-RBD",
   "dataset": "Moulana2022_ACE2.csv",
   "source": "graphfla",
   "source_url": "https://github.com/COLA-Laboratory/GraphFLA",

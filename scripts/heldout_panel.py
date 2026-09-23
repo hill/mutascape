@@ -19,36 +19,52 @@ OUT = Path("results/heldout_panel_20260923")
 SSMULA = Path(".mutascape/benchmark-data/ssmula")
 COMBINGYM = Path(".mutascape/benchmark-data/combingym")
 GRAPHFLA = Path(".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla")
-MINIMUM_COMBINATIONS = 1000
 TEST_SIZE = 1000
 CUBES = 256
 SEED_BASE = 2026092400
 SEARCH_SEEDS = (2026092411, 2026092412, 2026092413)
 BUDGETS = (48, 96, 192)
+# A campaign that buys a tenth of its own library is not a search problem, so
+# each landscape keeps only the budgets it can support.
+BUDGET_FRACTION = 0.1
 
-# Families already used to develop or confirm the generator. Reusing any of them
-# would let a choice made on development data score itself.
-USED_FAMILIES = ("DHFR", "eqFP611", "ParB", "ParD", "CreiLOV", "GB1", "TrpB", "T7", "TEV")
+# Proteins already used to develop or confirm the generator. A library from one
+# of these is kept, but its scores are reported apart from the held-out mean.
+USED_PROTEINS = ("DHFR", "eqFP611", "ParB-Noc", "ParD2", "CreiLOV", "GB1", "TrpB4", "T7", "TEV")
 
-# Ordered within each family, most measured combinations first. The first
-# candidate of a family that passes the other rules is the one kept.
+# Libraries sharing a genotype space differ only in the assayed target, so the
+# panel bootstrap resamples spaces rather than rows of this list.
 CANDIDATES = (
-    ("PhoQ", "graphfla", "Podgornaia2015_PhoQ.csv", "AVST"),
-    ("CR9114", "graphfla", "Phillips2021_CR9114_h1.csv", "0" * 16),
-    ("CR9114", "graphfla", "Phillips2021_CR9114_h3.csv", "0" * 16),
-    ("CR9114", "combingym", "CR9114_H1_binding", None),
-    ("SARS-CoV-2-RBD", "graphfla", "Moulana2022_ACE2.csv", "0" * 15),
-    ("SARS-CoV-2-RBD", "graphfla", "Moulana2023_CB6.csv", "0" * 15),
-    ("H1-haemagglutinin", "graphfla", "Phillips2023_SI06.csv", "0" * 16),
-    ("RhlA", "combingym", "RhlA_RLs", None),
-    ("CR6261", "graphfla", "Phillips2021_CR6261_h1.csv", "0" * 11),
-    ("CR6261", "combingym", "CR6261_H1_binding", None),
-    ("SaCas9", "combingym", "SaCas9_activity", None),
-    ("HIV-1", "combingym", "HIV1_activity", None),
-    ("SpCas9", "combingym", "SpCas9_activity", None),
-    ("ParB", "graphfla", "Jalal2020_parS.csv", "RTAG"),
-    ("ParD", "ssmula", "ParD3", None),
-    ("TrpB", "ssmula", "TrpB3A", None),
+    ("PhoQ", "PhoQ", "graphfla", "Podgornaia2015_PhoQ.csv", "AVST"),
+    ("CR9114", "CR9114-h1", "graphfla", "Phillips2021_CR9114_h1.csv", "auto"),
+    ("CR9114", "CR9114-h3", "graphfla", "Phillips2021_CR9114_h3.csv", "auto"),
+    ("CR9114", "CR9114-fluB", "graphfla", "Phillips2021_CR9114_fluB.csv", "auto"),
+    ("CR6261", "CR6261-h1", "graphfla", "Phillips2021_CR6261_h1.csv", "auto"),
+    ("CR6261", "CR6261-h9", "graphfla", "Phillips2021_CR6261_h9.csv", "auto"),
+    ("SARS-CoV-2-RBD", "RBD-ACE2", "graphfla", "Moulana2022_ACE2.csv", "auto"),
+    ("SARS-CoV-2-RBD", "RBD-S309", "graphfla", "Moulana2023_S309.csv", "auto"),
+    ("SARS-CoV-2-RBD", "RBD-CB6", "graphfla", "Moulana2023_CB6.csv", "auto"),
+    ("SARS-CoV-2-RBD", "RBD-CoV555", "graphfla", "Moulana2023_CoV555.csv", "auto"),
+    ("SARS-CoV-2-RBD", "RBD-REGN10987", "graphfla", "Moulana2023_REGN10987.csv", "auto"),
+    ("H1-haemagglutinin", "H1-SI06", "graphfla", "Phillips2023_SI06.csv", "auto"),
+    ("H1-haemagglutinin", "H1-MA90", "graphfla", "Phillips2023_MA90.csv", "auto"),
+    ("H1-haemagglutinin", "H1-G189E", "graphfla", "Phillips2023_G189E.csv", "auto"),
+    ("H3-haemagglutinin", "H3-HK68", "graphfla", "Wu2020_HK68.csv", "EEFDFA"),
+    ("H3-haemagglutinin", "H3-Bk79", "graphfla", "Wu2020_Bk79.csv", "EEFDFA"),
+    ("COV107-23", "COV107-23", "graphfla", "Schulz2025.csv", "auto"),
+    ("Hsp90", "Hsp90", "graphfla", "Bank2016a.csv", "QFGFSAAAE"),
+    ("IMDH", "IMDH", "graphfla", "Lunzer2005_fitness.csv", "DDFAGR"),
+    ("phage-lambda-J", "lambda-J-LamB", "graphfla", "Michael2024_LamB.csv", "auto"),
+    ("phage-lambda-J", "lambda-J-OmpF", "graphfla", "Michael2024_OmpF.csv", "auto"),
+    ("RhlA", "RhlA-RLs", "combingym", "RhlA_RLs", None),
+    ("RhlA", "RhlA-product", "combingym", "RhlA_product", None),
+    ("SaCas9", "SaCas9", "combingym", "SaCas9_activity", None),
+    ("SpCas9", "SpCas9", "combingym", "SpCas9_activity", None),
+    ("HIV-1", "HIV-1", "combingym", "HIV1_activity", None),
+    ("ParB-Noc", "ParB-parS", "graphfla", "Jalal2020_parS.csv", "RTAG"),
+    ("ParD2", "ParD3", "ssmula", "ParD3", None),
+    ("TrpB4", "TrpB3A", "ssmula", "TrpB3A", None),
+    ("TrpB4", "TrpB3F", "ssmula", "TrpB3F", None),
 )
 
 
@@ -60,8 +76,16 @@ def spec_for(family, source, key, reference):
     return SSMULA, next(s for s in SSMULA_MANIFEST if s.name == key)
 
 
+def binary_reference(key):
+    """Return the all-ancestral genotype of a GraphFLA presence-absence table."""
+    columns = pd.read_csv(GRAPHFLA / "data" / "BioSequence" / key, nrows=0).columns
+    return "0" * sum(c.startswith("pos") and c[3:].isdigit() for c in columns)
+
+
 def load(family, source, key, reference):
     """Return the measured library restricted to substitutions with a measured single."""
+    if reference == "auto":
+        reference = binary_reference(key)
     root, spec = spec_for(family, source, key, reference)
     dataset = load_landscape(root, spec, require_complete=False)
     sequence = dataset.wild_type_sequence
@@ -85,35 +109,31 @@ def load(family, source, key, reference):
 
 
 def screen(seed):
-    """Apply the exclusion rules in order and return every candidate's verdict."""
-    verdicts, kept_families = [], set()
-    for number, (family, source, key, reference) in enumerate(CANDIDATES):
-        record = dict(family=family, source=source, dataset=key)
-        frame, sequence, codes, shape, path, _ = load(family, source, key, reference)
+    """Measure every candidate and drop only those the protocol cannot run on."""
+    verdicts = []
+    for number, (family, name, source, key, reference) in enumerate(CANDIDATES):
+        record = dict(landscape=name, genotype_space=family, source=source, dataset=key)
+        frame, _, codes, shape, _, _ = load(family, source, key, reference)
         singles = frame.loc[frame.depth == 1]
         combinations = int((frame.depth > 1).sum())
+        budgets = [b for b in BUDGETS if b <= BUDGET_FRACTION * combinations]
         record.update(
+            held_out=family not in USED_PROTEINS,
             combinations=combinations,
             sites=len(shape),
             singles=len(singles),
             singles_sd=round(float(singles.fitness.std()), 6),
+            budgets=budgets,
         )
-        if family in USED_FAMILIES:
-            record["excluded"] = "family already used in development or confirmation"
-        elif combinations < MINIMUM_COMBINATIONS:
-            record["excluded"] = f"fewer than {MINIMUM_COMBINATIONS} measured combinations"
-        elif record["singles_sd"] < 1e-6:
-            record["excluded"] = "single-mutant fitness carries no variance"
-        elif family in kept_families:
-            record["excluded"] = "another assay of this family is already in the panel"
+        if record["singles_sd"] < 1e-6:
+            record["excluded"] = "singles are all equal, so the model has nothing to fit"
+        elif not budgets:
+            record["excluded"] = f"too small for a budget of {min(BUDGETS)}"
         else:
             try:
-                cubes = sample_cubes(codes, shape, seed + number)
+                record["cubes"] = len(sample_cubes(codes, shape, seed + number))
             except ValueError as error:
                 record["excluded"] = str(error)
-            else:
-                record["cubes"] = len(cubes)
-                kept_families.add(family)
         verdicts.append(record)
     return verdicts
 
@@ -123,11 +143,11 @@ def freeze():
     verdicts = screen(SEED_BASE)
     accepted = [v for v in verdicts if "excluded" not in v]
     inventory = []
-    for number, (family, source, key, reference) in enumerate(CANDIDATES):
-        if not any(v["dataset"] == key for v in accepted):
+    for number, (family, name, source, key, reference) in enumerate(CANDIDATES):
+        if not any(v["landscape"] == name for v in accepted):
             continue
         frame, sequence, codes, shape, path, spec = load(family, source, key, reference)
-        folder = OUT / family
+        folder = OUT / name
         folder.mkdir(exist_ok=True)
         combinations = np.flatnonzero(frame.depth > 1)
         test = np.random.default_rng(SEED_BASE + number).choice(
@@ -139,7 +159,8 @@ def freeze():
         (folder / "metadata.json").write_text(
             json.dumps(
                 dict(
-                    family=family,
+                    landscape=name,
+                    genotype_space=family,
                     dataset=key,
                     source=spec.source,
                     source_url=spec.source_url,
@@ -154,8 +175,9 @@ def freeze():
         )
         inventory.append(
             dict(
-                family=family,
-                dataset=key,
+                landscape=name,
+                genotype_space=family,
+                held_out=family not in USED_PROTEINS,
                 measured=len(frame),
                 combinations=int((frame.depth > 1).sum()),
                 singles=int((frame.depth == 1).sum()),
@@ -166,31 +188,42 @@ def freeze():
         )
     panel = dict(
         purpose=(
-            "Held-out panel for the preregistered test of whether Mutascape transfers "
-            "method rankings from DMS singles alone"
+            "Panel for the preregistered test of whether Mutascape transfers method "
+            "rankings from DMS singles alone"
         ),
         frozen_before_scoring=True,
-        panel=[record["family"] for record in accepted],
+        panel=[record["landscape"] for record in accepted],
+        held_out=[record["landscape"] for record in accepted if record["held_out"]],
         rules=dict(
-            order="Candidates are screened in the listed order, one rule at a time",
-            used_families=USED_FAMILIES,
-            minimum_combinations=MINIMUM_COMBINATIONS,
-            singles_variance="Single-mutant fitness standard deviation above 1e-6",
-            one_per_family="Keep the first passing assay of each protein family",
-            cubes=f"At least 64 complete three-site subcubes, target {CUBES}",
+            singles_variance="Drop a library whose singles all share one fitness",
+            budgets=(
+                f"Keep the budgets in {BUDGETS} that cost at most "
+                f"{BUDGET_FRACTION:g} of the measured combinations"
+            ),
+            cubes=f"Drop a library with fewer than 64 three-site subcubes, target {CUBES}",
+            used_proteins=(
+                "Libraries from these proteins stay in the panel and are scored, but the "
+                "headline mean covers the held-out ones only"
+            ),
             nucleotide_libraries="Not considered. The generator takes a protein sequence",
         ),
+        used_proteins=USED_PROTEINS,
         candidates=verdicts,
         analysis=dict(
             primary=(
                 "Kendall tau between the synthetic and measured warm-start method ranking, "
-                "averaged over panel proteins"
+                "averaged over held-out landscapes"
             ),
             budgets=BUDGETS,
+            budget_fraction=BUDGET_FRACTION,
             search_seeds=SEARCH_SEEDS,
             search_trials=10,
             test_size=TEST_SIZE,
             cubes=CUBES,
+            bootstrap=(
+                "Paired bootstrap over genotype spaces, not over landscapes, since several "
+                "libraries assay different targets on one genotype space"
+            ),
             arms=[
                 "mutascape",
                 "shuffled_singles",
@@ -204,7 +237,7 @@ def freeze():
             ],
             criterion=(
                 "Mutascape beats the shuffled-singles and structure-only controls on mean "
-                "Kendall tau, and the paired protein bootstrap 95 per cent interval for each "
+                "Kendall tau, and the paired bootstrap 95 per cent interval for each "
                 "difference excludes zero. The fixed ranking is reported alongside as a "
                 "reference, not as a gate"
             ),

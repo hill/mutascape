@@ -1,0 +1,11 @@
+{
+  "landscape": "H1-G189E",
+  "genotype_space": "H1-haemagglutinin",
+  "dataset": "Phillips2023_G189E.csv",
+  "source": "graphfla",
+  "source_url": "https://github.com/COLA-Laboratory/GraphFLA",
+  "source_revision": "9f86def1a12db76d26af16077ba28cb61ee0af5f",
+  "path": ".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla/data/BioSequence/Phillips2023_G189E.csv",
+  "path_sha256": "c775bfbdff7174dd69d341ebc49c743df1964b38449d28124a53d8f674bb120a",
+  "sequence": "AAAAAAAAAAAAAAAA"
+}

@@ -1,0 +1,11 @@
+{
+  "landscape": "RBD-CB6",
+  "genotype_space": "SARS-CoV-2-RBD",
+  "dataset": "Moulana2023_CB6.csv",
+  "source": "graphfla",
+  "source_url": "https://github.com/COLA-Laboratory/GraphFLA",
+  "source_revision": "9f86def1a12db76d26af16077ba28cb61ee0af5f",
+  "path": ".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla/data/BioSequence/Moulana2023_CB6.csv",
+  "path_sha256": "d79dedd13cd96859e0a74869e2d2496cf8cd8eae44e88f3b2d6e493bcd7994a7",
+  "sequence": "AAAAAAAAAAAAAAA"
+}

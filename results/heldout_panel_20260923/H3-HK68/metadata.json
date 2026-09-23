@@ -1,0 +1,11 @@
+{
+  "landscape": "H3-HK68",
+  "genotype_space": "H3-haemagglutinin",
+  "dataset": "Wu2020_HK68.csv",
+  "source": "graphfla",
+  "source_url": "https://github.com/COLA-Laboratory/GraphFLA",
+  "source_revision": "9f86def1a12db76d26af16077ba28cb61ee0af5f",
+  "path": ".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla/data/BioSequence/Wu2020_HK68.csv",
+  "path_sha256": "48e01a56c3a0e1fcbb51abb9758706d26a6b32f7a74711f8e6f01c07f8d1afed",
+  "sequence": "AAAAAA"
+}

@@ -1,5 +1,6 @@
 {
-  "family": "SaCas9",
+  "landscape": "SaCas9",
+  "genotype_space": "SaCas9",
   "dataset": "SaCas9_activity",
   "source": "combingym",
   "source_url": "https://github.com/sitonglab/CombinGym",

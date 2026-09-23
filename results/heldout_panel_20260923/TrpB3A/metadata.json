@@ -1,0 +1,11 @@
+{
+  "landscape": "TrpB3A",
+  "genotype_space": "TrpB4",
+  "dataset": "TrpB3A",
+  "source": "ssmula",
+  "source_url": "https://zenodo.org/records/15203754",
+  "source_revision": "4926b8e614d426ca567159988834482c23da13a3",
+  "path": ".mutascape/benchmark-data/ssmula/data/TrpB/scale2max/TrpB3A.csv",
+  "path_sha256": "439c3fb4d6f99a29bc24ec556b10bc09b1eddf1443c73a0fc33da9b4dc395ab8",
+  "sequence": "AET"
+}

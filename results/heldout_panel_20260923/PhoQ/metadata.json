@@ -1,5 +1,6 @@
 {
-  "family": "PhoQ",
+  "landscape": "PhoQ",
+  "genotype_space": "PhoQ",
   "dataset": "Podgornaia2015_PhoQ.csv",
   "source": "graphfla",
   "source_url": "https://github.com/COLA-Laboratory/GraphFLA",

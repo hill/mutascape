@@ -1,0 +1,11 @@
+{
+  "landscape": "ParD3",
+  "genotype_space": "ParD2",
+  "dataset": "ParD3",
+  "source": "ssmula",
+  "source_url": "https://zenodo.org/records/15203754",
+  "source_revision": "4926b8e614d426ca567159988834482c23da13a3",
+  "path": ".mutascape/benchmark-data/ssmula/data/ParD3/scale2max/ParD3.csv",
+  "path_sha256": "68575c1df37f74cdbc79f7cd47a77457c136a5ae8a721e9864cc1dfe2816f790",
+  "sequence": "DKE"
+}

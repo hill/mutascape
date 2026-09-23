@@ -1,0 +1,11 @@
+{
+  "landscape": "CR6261-h1",
+  "genotype_space": "CR6261",
+  "dataset": "Phillips2021_CR6261_h1.csv",
+  "source": "graphfla",
+  "source_url": "https://github.com/COLA-Laboratory/GraphFLA",
+  "source_revision": "9f86def1a12db76d26af16077ba28cb61ee0af5f",
+  "path": ".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla/data/BioSequence/Phillips2021_CR6261_h1.csv",
+  "path_sha256": "d5a24f1a9534e759099522032d524b3fc05540e4a6d0f3c88e24fccbb84fb390",
+  "sequence": "AAAAAAAAAAA"
+}

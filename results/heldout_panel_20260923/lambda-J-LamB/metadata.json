@@ -1,0 +1,11 @@
+{
+  "landscape": "lambda-J-LamB",
+  "genotype_space": "phage-lambda-J",
+  "dataset": "Michael2024_LamB.csv",
+  "source": "graphfla",
+  "source_url": "https://github.com/COLA-Laboratory/GraphFLA",
+  "source_revision": "9f86def1a12db76d26af16077ba28cb61ee0af5f",
+  "path": ".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla/data/BioSequence/Michael2024_LamB.csv",
+  "path_sha256": "6eb54fdea092fff2d2cc074d57de6555b27f9c2e1c6a013d996511dd698ef9d1",
+  "sequence": "AAAAAAAAA"
+}

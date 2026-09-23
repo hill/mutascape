@@ -1,5 +1,6 @@
 {
-  "family": "RhlA",
+  "landscape": "RhlA-RLs",
+  "genotype_space": "RhlA",
   "dataset": "RhlA_RLs",
   "source": "combingym",
   "source_url": "https://github.com/sitonglab/CombinGym",

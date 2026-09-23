@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from mutascape.completion import DMSPairwiseLandscape, PosteriorLandscape
+from mutascape.imputation import complete_singles, restore_completion
 from mutascape.mutant import Mutant, parse_variant
 from mutascape.priors import DEFAULT_PRIOR_ID, load_prior_bundle
 
@@ -55,8 +56,6 @@ def from_dms(
         prior_id=prior_id,
     )
     if complete == "esm2":
-        from mutascape.imputation import complete_singles
-
         generator = complete_singles(generator, model_name=esm_model)
     return generator
 
@@ -93,8 +92,6 @@ def load_oracle(
     )
     expected_digest = str(settings.get("source_digest", ""))
     if "completion" in settings:
-        from mutascape.imputation import restore_completion
-
         generator = restore_completion(generator, settings["completion"])
     if generator.source_digest != expected_digest:
         raise ValueError("DMS data and wild-type sequence do not match the oracle manifest")

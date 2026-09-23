@@ -28,6 +28,7 @@ from mutascape.epistasis import AMINO_ACIDS
 logger = logging.getLogger(__name__)
 
 try:
+    import esm
     import torch
     import torch.nn.functional as F
 
@@ -128,8 +129,6 @@ class ESM2Scorer(PLMScorer):
     def _load_model(self) -> None:
         if self._model is not None:
             return
-
-        import esm
 
         logger.info(f"Loading {self.model_name} on {self.device}")
         self._model, self._alphabet = esm.pretrained.load_model_and_alphabet(self.model_name)

@@ -17,15 +17,19 @@ def main():
     metadata = json.loads((args.directory / "metadata.json").read_text())
     metrics = pd.read_csv(args.directory / "metrics.csv")
     for row in metrics.itertuples(index=False):
-        with np.load(args.directory / f"features_{row.seed}.npz") as features:
+        pilot_protocol = "split_seed" in metrics.columns
+        seed = row.split_seed if pilot_protocol else row.seed
+        left = "measured" if pilot_protocol else row.left
+        right = row.arm if pilot_protocol else row.right
+        with np.load(args.directory / f"features_{seed}.npz") as features:
             result = classifier_two_sample_test(
-                features[row.left],
-                features[row.right],
+                features[left],
+                features[right],
                 real_groups=features["groups"],
                 synthetic_groups=features["groups"],
                 n_permutations=0,
-                seed=row.seed,
-                n_splits=metadata["folds"],
+                seed=seed,
+                n_splits=metadata.get("folds", 5),
                 classifier=row.classifier,
             )
         np.testing.assert_allclose(result.fold_aucs, json.loads(row.fold_aucs), atol=1e-12)

@@ -606,6 +606,12 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
           AUC near 0.51. Comparisons with replicate 3 give about 0.66. Replicate disagreement is a
           reference, not a universal noise floor.
         </p>
+        <p>
+          The original DMS and combinatorial assay disagree even on shared single mutants.
+          Same-assay singles reduce the offset, but do not recover the negative trend from combining
+          mutations. Pilot-calibrated models remain experimental and need measured combinations.
+          They do not replace the singles-only generator described here.
+        </p>
         <CodeBlock
           label="Paired classifier test"
           code={`import numpy as np

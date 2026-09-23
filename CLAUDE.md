@@ -16,7 +16,6 @@ Web stack (Bun frontend plus FastAPI oracle):
 
 ```bash
 just dev             # builds frontend, serves both on :8000
-just web-data        # regenerate web/data/gb1.json after changing data/gb1/
 just web-check       # lint, type-check, test, and build the studio
 just docs-assets     # rebuild documentation figures and generated facts
 ```
@@ -33,9 +32,21 @@ Update the site in the same change when you alter a public API, default value, b
 
 ## What this produces
 
-Synthetic combinatorially complete protein fitness landscapes for benchmarking MLDE and ALDE methods. It is a benchmark generator, not a digital twin of any one protein. Fitness is always relative to wild type, where WT is 0.0.
+Synthetic combinatorial protein fitness landscapes for benchmarking MLDE and ALDE methods. Generated combinations do not predict true biological fitness. The public API preserves supplied wild-type fitness.
 
-## The fitness function
+## Current public generator
+
+`mutascape.from_dms` in `api.py` returns a `PosteriorLandscape`. Its `draw(seed)` method returns a fixed `DMSPairwiseLandscape` oracle.
+
+The current model uses measured singles, seeded pair interactions, and a saturating readout. The default pair coupling is 0.1. `completion.py` defines this model. `priors.py` loads its empirical prior.
+
+Unknown singles raise an error unless the user requests `complete="esm2"`. ESM completion fills missing substitutions, preserves measurements, and records query provenance. Saved manifests freeze imputed effects.
+
+`results/creilov_c2st/` contains the raw adversarial audit. It exposes a calibration failure. Pilot experiments remain separate and must not change the public default without validation.
+
+The structural model below is a legacy API. Its defaults and regression metrics do not describe the current public generator.
+
+## Legacy structural model
 
 Everything centres on `Landscape.evaluate` in `src/mutascape/landscape.py`. Reading that one method explains most of the package:
 
@@ -60,9 +71,9 @@ Invariants worth knowing before you touch any of it:
 - **`evaluate` strips entries matching wild type first**, so a sparse mutation dict and a full WT-context dict give the same answer.
 - **Unmeasured `(pos, aa)` effects are imputed by position mean**, never defaulted to 0. A 0 default would inject fake neutral mutations into every multi-mutant and bias the landscape toward additivity.
 
-## Frozen reference configs
+## Legacy reference configs
 
-`src/mutascape/validation/reference_configs.py` holds `GB1_HEADLINE` and `TRPB_HEADLINE`, the publication pipelines. `tests/test_reference_configs.py` asserts their headline metrics inside tolerance bands.
+`src/mutascape/validation/reference_configs.py` holds the older `GB1_HEADLINE` and `TRPB_HEADLINE` pipelines. `tests/test_reference_configs.py` checks their regression metrics within tolerance bands.
 
 Those tests are the tripwire for any change to `landscape.py`, `epistasis.py`, `nonlinearity.py` or `validation/fourier.py`. A failure is either a real regression or a deliberate recalibration. If deliberate, the numbers appear in three places and all three need updating, the test, `docs/project_status.md`, and the README.
 
@@ -72,7 +83,7 @@ Random pairwise couplings are **off by default** (`sigma = 0`). Setting `sigma >
 
 ## Layout
 
-- `src/mutascape/` core package. `landscape.py` (the oracle, with `from_dms` and `from_plm` constructors), `epistasis.py`, `nonlinearity.py`, `contacts.py`, `scoring.py` (ESM2), `mutant.py` (a `dict` subclass supporting `+` and `-`), and `viz_export.py`.
+- `src/mutascape/` core package. `landscape.py` (the oracle, with `from_dms` and `from_plm` constructors), `epistasis.py`, `nonlinearity.py`, `contacts.py`, `scoring.py` (ESM2), and `mutant.py` (a `dict` subclass supporting `+` and `-`).
 - `web/` React studio and FastAPI application. Run the server through `web.server:app`.
 - `src/mutascape/validation/` metrics and the frozen pipeline. `fourier.py` computes the headline `walsh_L1`, `metrics.py` covers local optima, accessible paths and landscape attributes, `real_data.py` loads ProteinGym-style CSVs.
 - `scripts/` versioned analysis runs. `rebuild_reference_outputs.py` regenerates the paper figures and sweep CSVs.

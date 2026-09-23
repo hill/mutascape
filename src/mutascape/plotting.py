@@ -76,11 +76,9 @@ def plot_alpha_sweep(
     if alphas is None:
         alphas = [0.0, 0.25, 0.5, 1.0, 2.0, 5.0]
 
-    from mutascape.landscape import Landscape as Ls
-
     sweep: dict[float, dict[str, float]] = {}
     for alpha in alphas:
-        ls = Ls(
+        ls = Landscape(
             wild_type=landscape.wild_type,
             single_site_effects=landscape.single_site_effects,
             contact_map=landscape.contact_map,

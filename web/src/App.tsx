@@ -1895,10 +1895,12 @@ function BuildProgress({ stages }: { stages: BuildStage[] }) {
 
 function PanelHint({ content }: { content: string }) {
   return (
-    <Tooltip content={content} delay={150}>
-      <button type="button" className="panel-hint" aria-label={content}>
-        <Info size={15} weight="bold" />
-      </button>
+    <Tooltip
+      content={content}
+      delay={150}
+      render={<button type="button" className="panel-hint" aria-label={content} />}
+    >
+      <Info size={15} weight="bold" />
     </Tooltip>
   )
 }

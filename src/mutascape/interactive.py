@@ -7,6 +7,8 @@ import numpy as np
 import plotly.graph_objects as go
 from numpy.typing import NDArray
 from scipy.interpolate import griddata
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 from mutascape.epistasis import AMINO_ACIDS
 from mutascape.landscape import Landscape
@@ -47,15 +49,11 @@ def _embed_2d(
     method = method.lower()
 
     if method == "pca":
-        from sklearn.decomposition import PCA
-
         reducer = PCA(n_components=2, random_state=random_state)
         coords = reducer.fit_transform(features)
         return coords, "PCA"
 
     if method == "tsne":
-        from sklearn.manifold import TSNE
-
         perplexity = min(30, features.shape[0] - 1)
         reducer = TSNE(n_components=2, perplexity=perplexity, random_state=random_state)
         coords = reducer.fit_transform(features)
@@ -101,9 +99,7 @@ def _evaluate_at_alpha(
     alpha: float,
 ) -> NDArray[np.float64]:
     """Evaluate variants at a given alpha without mutating the original landscape."""
-    from mutascape.landscape import Landscape as Ls
-
-    ls = Ls(
+    ls = Landscape(
         wild_type=landscape.wild_type,
         single_site_effects=landscape.single_site_effects,
         contact_map=landscape.contact_map,
@@ -238,9 +234,7 @@ def morphing_landscape(
     # Sample variants from a seeded copy so we don't mutate the caller's RNG.
     # _sample() takes a fixed int for n_mutations, so when a range is given
     # we split samples evenly across depths.
-    from mutascape.landscape import Landscape as Ls
-
-    sampler_ls = Ls(
+    sampler_ls = Landscape(
         wild_type=landscape.wild_type,
         single_site_effects=landscape.single_site_effects,
         contact_map=landscape.contact_map,

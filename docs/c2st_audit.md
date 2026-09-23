@@ -106,6 +106,9 @@ The documentation chart reads these result tables through `just docs-assets`.
 
 ## Next adversarial test
 
+The [model diagnosis](creilov_model_diagnosis.md) traces the assay mismatch and tests small model changes.
+It separates singles-only transfer from experiments that use measured combinatorial pilot batches.
+
 Keep the assay-scale C2ST as a calibration diagnostic.
 Add a separate test of local neighbourhoods after a declared fitness transformation.
 Give its classifier neighbour fitness differences and uphill fractions from matched genotype patches.

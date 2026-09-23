@@ -19,7 +19,6 @@ The React studio and FastAPI application live in `web/`. Bundled empirical prior
 
 ### Web application
 
-- `just web-data` rebuilds `web/data/gb1.json` from prepared GB1 data.
 - `just web-build` installs Bun packages and builds the browser bundle.
 - `just web-check` lints, type-checks, tests, and builds the studio.
 - `just docs-assets` rebuilds documentation figures, output facts, and API summaries.

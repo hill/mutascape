@@ -22,6 +22,7 @@ import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 import numpy as np
 from Bio.PDB import MMCIFParser, PDBParser
@@ -261,8 +262,6 @@ ESMFOLD_API_URL = "https://api.esmatlas.com/foldSequence/v1/pdb/"
 
 def _predict_esmfold(sequence: str) -> str:
     """Predict structure via the public ESMFold API. Returns PDB-format string."""
-    from urllib.request import Request, urlopen
-
     req = Request(ESMFOLD_API_URL, data=sequence.encode(), method="POST")
     resp = urlopen(req, timeout=120)
 

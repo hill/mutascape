@@ -9,6 +9,7 @@ notebooks and ad hoc scripts.
 from dataclasses import dataclass
 from pathlib import Path
 
+from mutascape.epistasis import MSACouplingsEpistasis
 from mutascape.nonlinearity import GlobalEpistasisSigmoid
 
 from .calibration import build_landscape
@@ -90,8 +91,6 @@ class ReferenceConfig:
 
     def build_landscape(self, **overrides):
         """Build the named landscape through the shared validation API."""
-        from mutascape.epistasis import MSACouplingsEpistasis
-
         nonlinearity = overrides.pop("nonlinearity", "fit")
         params = {
             "alpha": self.alpha,

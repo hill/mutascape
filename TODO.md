@@ -28,15 +28,20 @@ Keep the tool small. Its core needs are a queryable oracle, a campaign interface
 - [x] Add paired C2ST with logistic and boosted classifiers, AUC, and balanced accuracy.
 - [x] Repair C2ST permutations and save reproducible CreiLOV replicate controls.
 - [x] Keep generated documentation figures and API signatures checked against the code.
+- [x] Trace the CreiLOV classifier failure to assay mismatch and a missing negative combinatorial trend.
+- [x] Compare same-assay anchors, transferred burden terms, and small pilot-calibrated models.
+- [x] Check the import refactor against tests and regenerated C2ST results.
 
 ESM implementation and validation are in [single completion](docs/esm_completion.md).
 The classifier results and provenance repair are in [the C2ST audit](docs/c2st_audit.md).
 
 ## Next work, in priority order
 
-1. [ ] Separate assay calibration from search-relevant structure in adversarial assessment.
-   Keep raw C2ST visible. Add one test of disjoint genotype neighbourhoods under a declared fitness transformation.
-   Freeze features and classifier settings before changing the generator.
+1. [ ] Validate the burden model on another protein before adding a public calibration API.
+   Keep the singles-only default and its raw C2ST limitation visible.
+   Treat 48-combination pilot calibration as a separate input contract.
+   Require both adversarial and search checks before changing the default.
+   Freeze features and model settings before each new assessment.
 2. [ ] Add one command that rebuilds the current publication reference results and figures.
    Record source hashes, prior settings, seeds, and software versions.
    Replace the obsolete reference command that rebuilds older structural experiments.
@@ -53,6 +58,8 @@ The classifier results and provenance repair are in [the C2ST audit](docs/c2st_a
 CreiLOV raw C2ST gives near-perfect discrimination, despite close standardised histograms and Walsh spectra.
 This is an open limitation, not a completed realism claim.
 Replicate disagreement is an assay-specific reference and does not define a universal acceptance threshold.
+Pilot calibration experiments do not establish transfer from single-mutant data alone.
+See [the model diagnosis](docs/creilov_model_diagnosis.md) for the tested changes and refactor checks.
 
 Oracle variation across draws measures benchmark sensitivity. It does not give calibrated biological uncertainty.
 The existing campaign noise option is sufficient for simple noisy-search experiments.

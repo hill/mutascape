@@ -12,10 +12,14 @@ of shape (|A_1|, ..., |A_L|) for L positions with observed alphabets A_i,
 as returned by fourier.fitness_tensor_from_real / _from_landscape.
 """
 
+from itertools import combinations, permutations
+
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from scipy import stats as sp_stats
+from scipy.signal import find_peaks
+from scipy.stats import gaussian_kde
 
 
 def additive_correlation_profile(
@@ -545,8 +549,6 @@ def accessible_paths(
     the fraction of 2x2 sub-landscapes that show reciprocal sign epistasis, the
     predominant cause of inaccessible paths (Poelwijk 2011).
     """
-    from itertools import combinations, permutations
-
     tensor = np.where(np.isnan(tensor), np.nanmin(tensor) - 1e6, tensor)
     shape = tensor.shape
     L = tensor.ndim
@@ -680,9 +682,6 @@ def ssmula_attributes(
 
     Pass `active_threshold` explicitly for non-WT-referenced landscapes.
     """
-    from scipy.signal import find_peaks
-    from scipy.stats import gaussian_kde
-
     finite = tensor[np.isfinite(tensor)].ravel()
     if finite.size == 0:
         return {

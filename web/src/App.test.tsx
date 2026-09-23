@@ -366,6 +366,7 @@ describe("landscape builder", () => {
     const router = createAppRouter(createMemoryHistory({ initialEntries: ["/"] }))
     render(<RouterProvider router={router} />)
     await chooseSource("GB1 reference")
+    expect(document.querySelector("button button")).toBeNull()
 
     expect(await screen.findByRole("heading", { name: "Single-mutant effects" })).toBeTruthy()
     expect(screen.getByText("1 measured")).toBeTruthy()

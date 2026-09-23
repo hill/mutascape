@@ -1,0 +1,36 @@
+{
+  "sign_epistasis_site": 2,
+  "background_pairs": [
+    [
+      4,
+      12
+    ],
+    [
+      17,
+      25
+    ]
+  ],
+  "inputs": [
+    0,
+    0.45,
+    0.22,
+    -0.32,
+    0.12,
+    -0.15
+  ],
+  "couplings": [
+    0,
+    0.1,
+    0.8
+  ],
+  "seed": 0,
+  "peak_counts": [
+    1,
+    1,
+    3
+  ],
+  "readout": "GlobalEpistasisSigmoid(floor=-1.2778535997097356, ceiling=0.8310022298480524, scale=1.6183226407497104, floor_hard=None)",
+  "anchor_checks": "passed",
+  "uphill_path_checks": "passed",
+  "monotone_peak_check": "passed"
+}

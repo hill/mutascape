@@ -26,6 +26,7 @@ explicit rather than implicit.
 
 import hashlib
 import math
+import warnings
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from itertools import combinations, product
@@ -34,6 +35,7 @@ from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
+from Bio import SeqIO
 from numpy.typing import NDArray
 
 from mutascape.contacts import ContactMap
@@ -102,8 +104,6 @@ def _impute_missing_single_sites(
         out[pos] = complete
 
     if n_imputed:
-        import warnings
-
         warnings.warn(
             f"Mutascape: imputed {n_imputed} unmeasured (pos, aa) single-site "
             f"effects using strategy={strategy!r}. The synthetic landscape now "
@@ -898,7 +898,7 @@ class Landscape:
         seed: int | None = None,
     ):
         """Scatter plot of additive vs actual fitness at each mutation depth."""
-        from mutascape.plotting import plot_epistasis_scatter
+        from mutascape.plotting import plot_epistasis_scatter  # cycle: plotting imports Landscape
 
         return plot_epistasis_scatter(
             self, depths=depths or [1, 2, 4], n_samples=n_samples, seed=seed
@@ -910,7 +910,9 @@ class Landscape:
         n_samples: int = 500,
     ):
         """Fitness distributions at different mutation depths."""
-        from mutascape.plotting import plot_fitness_distribution
+        from mutascape.plotting import (
+            plot_fitness_distribution,  # cycle: plotting imports Landscape
+        )
 
         return plot_fitness_distribution(self, depths=depths or [1, 2, 3, 4], n_samples=n_samples)
 
@@ -924,13 +926,13 @@ class Landscape:
 
         Returns (figure, sweep_data) where sweep_data is {alpha: stats_dict}.
         """
-        from mutascape.plotting import plot_alpha_sweep
+        from mutascape.plotting import plot_alpha_sweep  # cycle: plotting imports Landscape
 
         return plot_alpha_sweep(self, alphas=alphas, n_samples=n_samples, n_mutations=n_mutations)
 
     def plot_contacts(self):
         """Heatmap of the structural contact map."""
-        from mutascape.plotting import plot_contact_map
+        from mutascape.plotting import plot_contact_map  # cycle: plotting imports Landscape
 
         return plot_contact_map(self)
 
@@ -939,7 +941,7 @@ class Landscape:
 
         See :func:`interactive.morphing_landscape` for full arguments.
         """
-        from mutascape.interactive import morphing_landscape
+        from mutascape.interactive import morphing_landscape  # cycle: interactive imports Landscape
 
         return morphing_landscape(self, **kwargs)
 
@@ -1101,8 +1103,6 @@ class Landscape:
         if wt_fasta is not None and wt_sequence is not None:
             raise ValueError("Pass wt_fasta or wt_sequence, not both")
         if wt_fasta is not None:
-            from Bio import SeqIO
-
             record = next(SeqIO.parse(str(wt_fasta), "fasta"))
             wt_sequence = str(record.seq)
 
@@ -1140,8 +1140,6 @@ class Landscape:
         available_positions = [p for p in all_effect_positions if p in set(contact_map.positions)]
         if len(available_positions) < len(all_effect_positions):
             n_missing = len(all_effect_positions) - len(available_positions)
-            import warnings
-
             warnings.warn(
                 f"{n_missing} positions not found in contact map and will have "
                 f"no epistatic interactions."

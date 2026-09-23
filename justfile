@@ -25,14 +25,6 @@ benchmark-data *ARGS:
 benchmark-completion *ARGS:
     uv run python scripts/run_completion_benchmark.py {{ARGS}}
 
-# Export aggregate benchmark figures for a manuscript.
-benchmark-figures *ARGS:
-    uv run python scripts/export_completion_figures.py {{ARGS}}
-
-# Regenerate web/data/gb1.json from the GB1 CSVs (run after updating data/gb1/).
-web-data:
-    uv run python -m mutascape.viz_export
-
 # Install frontend deps (bun) and build the TypeScript bundle into web/dist/.
 web-build:
     cd web && bun install --silent && bun run build

@@ -22,6 +22,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 import numpy as np
+from Bio import SeqIO
 from numpy.typing import NDArray
 
 from mutascape.contacts import ContactMap
@@ -384,8 +385,6 @@ class MSACouplingsEpistasis(EpistasisModel):
         tools; use `from_npz` with a plmDCA-derived matrix for the full-fidelity
         path.
         """
-        from Bio import SeqIO
-
         seqs = list(SeqIO.parse(str(fasta_path), "fasta"))
         if not seqs:
             raise ValueError(f"No sequences in {fasta_path}")

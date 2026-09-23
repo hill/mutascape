@@ -14,6 +14,7 @@ from importlib.metadata import PackageNotFoundError, version
 from itertools import combinations
 from math import sqrt
 from os import PathLike
+from pathlib import Path
 from typing import TYPE_CHECKING, Self
 
 import numpy as np
@@ -917,7 +918,7 @@ class CompletedLandscape:
         """Mapping onto one donor landscape, fixed by this sample's seed."""
         if not self.posterior.donors:
             return None
-        from mutascape.transplant import build_index
+        from mutascape.transplant import build_index  # cycle: transplant imports PosteriorLandscape
 
         return build_index(list(self.posterior.donors), self.posterior.single_effects, self.seed)
 
@@ -1233,8 +1234,6 @@ class DMSPairwiseLandscape:
 
     def save_manifest(self, path: str | PathLike[str]) -> None:
         """Write the oracle manifest as formatted JSON."""
-        from pathlib import Path
-
         Path(path).write_text(json.dumps(self.manifest(), indent=2, sort_keys=True) + "\n")
 
     def __getitem__(self, variant: VariantLike) -> float:

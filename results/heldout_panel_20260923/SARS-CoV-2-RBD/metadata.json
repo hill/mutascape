@@ -1,0 +1,10 @@
+{
+  "family": "SARS-CoV-2-RBD",
+  "dataset": "Moulana2022_ACE2.csv",
+  "source": "graphfla",
+  "source_url": "https://github.com/COLA-Laboratory/GraphFLA",
+  "source_revision": "9f86def1a12db76d26af16077ba28cb61ee0af5f",
+  "path": ".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla/data/BioSequence/Moulana2022_ACE2.csv",
+  "path_sha256": "71b466b5d4165f955d5f6407d2fbd6fd412602f29020b006810ea22c82f6460e",
+  "sequence": "AAAAAAAAAAAAAAA"
+}

@@ -310,8 +310,10 @@ def _normalise_site_sequences(raw: pd.DataFrame, spec: LandscapeSpec) -> Landsca
     return LandscapeDataset(spec, variants, spec.wild_type, mutable_positions, alphabets)
 
 
-def _normalise_graphfla(raw: pd.DataFrame, spec: LandscapeSpec) -> LandscapeDataset:
-    """Normalise a complete GraphFLA table around its declared reference genotype."""
+def _normalise_graphfla(
+    raw: pd.DataFrame, spec: LandscapeSpec, *, require_complete: bool = True
+) -> LandscapeDataset:
+    """Normalise a GraphFLA table around its declared reference genotype."""
     position_columns = sorted(
         (column for column in raw if column.startswith("pos") and column[3:].isdigit()),
         key=lambda column: int(column[3:]),
@@ -327,11 +329,12 @@ def _normalise_graphfla(raw: pd.DataFrame, spec: LandscapeSpec) -> LandscapeData
     if finite.empty:
         raise ValueError(f"{spec.name} has no finite variants")
 
-    expected = 1
-    for column in position_columns:
-        expected *= int(finite[column].nunique())
-    if len(finite) != expected:
-        raise ValueError(f"{spec.name} is not a complete Cartesian landscape")
+    if require_complete:
+        expected = 1
+        for column in position_columns:
+            expected *= int(finite[column].nunique())
+        if len(finite) != expected:
+            raise ValueError(f"{spec.name} is not a complete Cartesian landscape")
 
     reference_values: list[object] = []
     reference_mask = pd.Series(True, index=finite.index)
@@ -385,13 +388,20 @@ def _normalise_graphfla(raw: pd.DataFrame, spec: LandscapeSpec) -> LandscapeData
     }
     mutable_positions = tuple(alphabets)
     expected_singles = sum(len(alphabet) - 1 for alphabet in alphabets.values())
-    if int((variants["depth"] == 1).sum()) != expected_singles:
+    if require_complete and int((variants["depth"] == 1).sum()) != expected_singles:
         raise ValueError(f"{spec.name} reference row lacks a complete single-mutant shell")
     return LandscapeDataset(spec, variants, wild_type, mutable_positions, alphabets)
 
 
-def load_landscape(root: str | Path, spec: LandscapeSpec) -> LandscapeDataset:
-    """Load one landscape from an SSMuLA or CombinGym checkout."""
+def load_landscape(
+    root: str | Path, spec: LandscapeSpec, *, require_complete: bool = True
+) -> LandscapeDataset:
+    """Load one landscape from an SSMuLA, CombinGym or GraphFLA checkout.
+
+    ``require_complete`` applies to GraphFLA tables. Setting it to ``False``
+    admits a partially measured library, whose missing genotypes simply do not
+    appear in the returned variants.
+    """
     path = Path(root) / spec.relative_path
     if not path.exists():
         raise FileNotFoundError(f"missing {spec.name} source table: {path}")
@@ -405,7 +415,7 @@ def load_landscape(root: str | Path, spec: LandscapeSpec) -> LandscapeDataset:
     if missing:
         raise ValueError(f"{spec.name} is missing columns: {', '.join(missing)}")
     if spec.source == "graphfla":
-        return _normalise_graphfla(raw, spec)
+        return _normalise_graphfla(raw, spec, require_complete=require_complete)
     if spec.source == "ssmula":
         return _normalise_site_sequences(raw, spec)
     return _normalise_full_sequences(raw, spec)

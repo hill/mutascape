@@ -1,0 +1,7 @@
+family,dataset,measured,combinations,singles,sites,declared,cubes
+PhoQ,Podgornaia2015_PhoQ.csv,103224,103154,69,4,108300,256
+CR9114,Phillips2021_CR9114_h1.csv,65094,65077,16,16,65536,256
+SARS-CoV-2-RBD,Moulana2022_ACE2.csv,32565,32549,15,15,32768,256
+RhlA,RhlA_RLs,2346,2315,30,11,663552,256
+SaCas9,SaCas9_activity,1296,1283,12,8,1296,256
+HIV-1,HIV1_activity,1175,1161,13,11,4608,256

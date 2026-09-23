@@ -1,0 +1,233 @@
+{
+  "purpose": "Held-out panel for the preregistered test of whether Mutascape transfers method rankings from DMS singles alone",
+  "frozen_before_scoring": true,
+  "panel": [
+    "PhoQ",
+    "CR9114",
+    "SARS-CoV-2-RBD",
+    "RhlA",
+    "SaCas9",
+    "HIV-1"
+  ],
+  "rules": {
+    "order": "Candidates are screened in the listed order, one rule at a time",
+    "used_families": [
+      "DHFR",
+      "eqFP611",
+      "ParB",
+      "ParD",
+      "CreiLOV",
+      "GB1",
+      "TrpB",
+      "T7",
+      "TEV"
+    ],
+    "minimum_combinations": 1000,
+    "singles_variance": "Single-mutant fitness standard deviation above 1e-6",
+    "one_per_family": "Keep the first passing assay of each protein family",
+    "cubes": "At least 64 complete three-site subcubes, target 256",
+    "nucleotide_libraries": "Not considered. The generator takes a protein sequence"
+  },
+  "candidates": [
+    {
+      "family": "PhoQ",
+      "source": "graphfla",
+      "dataset": "Podgornaia2015_PhoQ.csv",
+      "combinations": 103154,
+      "sites": 4,
+      "singles": 69,
+      "singles_sd": 5.300611,
+      "cubes": 256
+    },
+    {
+      "family": "CR9114",
+      "source": "graphfla",
+      "dataset": "Phillips2021_CR9114_h1.csv",
+      "combinations": 65077,
+      "sites": 16,
+      "singles": 16,
+      "singles_sd": 0.348487,
+      "cubes": 256
+    },
+    {
+      "family": "CR9114",
+      "source": "graphfla",
+      "dataset": "Phillips2021_CR9114_h3.csv",
+      "combinations": 65518,
+      "sites": 16,
+      "singles": 16,
+      "singles_sd": 0.0,
+      "excluded": "single-mutant fitness carries no variance"
+    },
+    {
+      "family": "CR9114",
+      "source": "combingym",
+      "dataset": "CR9114_H1_binding",
+      "combinations": 48824,
+      "sites": 16,
+      "singles": 16,
+      "singles_sd": 0.348487,
+      "excluded": "another assay of this family is already in the panel"
+    },
+    {
+      "family": "SARS-CoV-2-RBD",
+      "source": "graphfla",
+      "dataset": "Moulana2022_ACE2.csv",
+      "combinations": 32549,
+      "sites": 15,
+      "singles": 15,
+      "singles_sd": 0.319681,
+      "cubes": 256
+    },
+    {
+      "family": "SARS-CoV-2-RBD",
+      "source": "graphfla",
+      "dataset": "Moulana2023_CB6.csv",
+      "combinations": 16495,
+      "sites": 15,
+      "singles": 15,
+      "singles_sd": 0.621033,
+      "excluded": "another assay of this family is already in the panel"
+    },
+    {
+      "family": "H1-haemagglutinin",
+      "source": "graphfla",
+      "dataset": "Phillips2023_SI06.csv",
+      "combinations": 65491,
+      "sites": 16,
+      "singles": 16,
+      "singles_sd": 0.0,
+      "excluded": "single-mutant fitness carries no variance"
+    },
+    {
+      "family": "RhlA",
+      "source": "combingym",
+      "dataset": "RhlA_RLs",
+      "combinations": 2315,
+      "sites": 11,
+      "singles": 30,
+      "singles_sd": 0.322894,
+      "cubes": 256
+    },
+    {
+      "family": "CR6261",
+      "source": "graphfla",
+      "dataset": "Phillips2021_CR6261_h1.csv",
+      "combinations": 501,
+      "sites": 9,
+      "singles": 9,
+      "singles_sd": 0.178237,
+      "excluded": "fewer than 1000 measured combinations"
+    },
+    {
+      "family": "CR6261",
+      "source": "combingym",
+      "dataset": "CR6261_H1_binding",
+      "combinations": 501,
+      "sites": 9,
+      "singles": 9,
+      "singles_sd": 0.178237,
+      "excluded": "fewer than 1000 measured combinations"
+    },
+    {
+      "family": "SaCas9",
+      "source": "combingym",
+      "dataset": "SaCas9_activity",
+      "combinations": 1283,
+      "sites": 8,
+      "singles": 12,
+      "singles_sd": 0.550845,
+      "cubes": 256
+    },
+    {
+      "family": "HIV-1",
+      "source": "combingym",
+      "dataset": "HIV1_activity",
+      "combinations": 1161,
+      "sites": 11,
+      "singles": 13,
+      "singles_sd": 0.721596,
+      "cubes": 256
+    },
+    {
+      "family": "SpCas9",
+      "source": "combingym",
+      "dataset": "SpCas9_activity",
+      "combinations": 78,
+      "sites": 6,
+      "singles": 7,
+      "singles_sd": 0.20226,
+      "excluded": "fewer than 1000 measured combinations"
+    },
+    {
+      "family": "ParB",
+      "source": "graphfla",
+      "dataset": "Jalal2020_parS.csv",
+      "combinations": 159923,
+      "sites": 4,
+      "singles": 76,
+      "singles_sd": 3.433994,
+      "excluded": "family already used in development or confirmation"
+    },
+    {
+      "family": "ParD",
+      "source": "ssmula",
+      "dataset": "ParD3",
+      "combinations": 7824,
+      "sites": 3,
+      "singles": 57,
+      "singles_sd": 0.15049,
+      "excluded": "family already used in development or confirmation"
+    },
+    {
+      "family": "TrpB",
+      "source": "ssmula",
+      "dataset": "TrpB3A",
+      "combinations": 7517,
+      "sites": 3,
+      "singles": 56,
+      "singles_sd": 0.195929,
+      "excluded": "family already used in development or confirmation"
+    }
+  ],
+  "analysis": {
+    "primary": "Kendall tau between the synthetic and measured warm-start method ranking, averaged over panel proteins",
+    "budgets": [
+      48,
+      96,
+      192
+    ],
+    "search_seeds": [
+      2026092411,
+      2026092412,
+      2026092413
+    ],
+    "search_trials": 10,
+    "test_size": 1000,
+    "cubes": 256,
+    "arms": [
+      "mutascape",
+      "shuffled_singles",
+      "structure_only",
+      "nk_k1",
+      "nk_k2",
+      "additive",
+      "potts",
+      "rough_mount_fuji",
+      "fixed_ranking"
+    ],
+    "criterion": "Mutascape beats the shuffled-singles and structure-only controls on mean Kendall tau, and the paired protein bootstrap 95 per cent interval for each difference excludes zero. The fixed ranking is reported alongside as a reference, not as a gate",
+    "secondary": [
+      "w1 over measured standard deviation",
+      "three-site local Walsh L1",
+      "sequence-aware classifier two-sample test",
+      "probability of reaching the measured top 1 per cent within budget"
+    ]
+  },
+  "source_sha256": {
+    "/Users/tomhill/Uni/research-project/mutascape/scripts/heldout_panel.py": "968ae472268d52a974ccd9cb8e4aec1cbc1838dbedb3ccd44036d9b2c68205c8",
+    "src/mutascape/model.py": "c33414a91d0a031c1d060bac4df38cae78020a03e5ca2fd08c4cb5a339d23019",
+    "src/mutascape/benchmarks/datasets.py": "23bae27af2b43d0262bf16884a873d5b635b3903ac3bb188599707c403756059",
+    "scripts/singles_warm_start.py": "f0a9802b0783cc214aabd8f4290c0979af542d18acaf908ba7301bda585c2698"
+  }
+}

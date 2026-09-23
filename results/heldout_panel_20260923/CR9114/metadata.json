@@ -1,0 +1,10 @@
+{
+  "family": "CR9114",
+  "dataset": "Phillips2021_CR9114_h1.csv",
+  "source": "graphfla",
+  "source_url": "https://github.com/COLA-Laboratory/GraphFLA",
+  "source_revision": "9f86def1a12db76d26af16077ba28cb61ee0af5f",
+  "path": ".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla/data/BioSequence/Phillips2021_CR9114_h1.csv",
+  "path_sha256": "30b6f5ee05661dd1025eee0836b4bc6d0985ef020078262b75d50fbc8403e6e9",
+  "sequence": "AAAAAAAAAAAAAAAA"
+}

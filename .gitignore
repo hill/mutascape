@@ -68,3 +68,4 @@ web/bun.lock
 
 # Rebuilt by scripts/build_suite.py
 suite/
+results/**/frame.pkl

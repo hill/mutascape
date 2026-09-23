@@ -1,0 +1,10 @@
+{
+  "family": "HIV-1",
+  "dataset": "HIV1_activity",
+  "source": "combingym",
+  "source_url": "https://github.com/sitonglab/CombinGym",
+  "source_revision": "e635a959731d2a14f90269245ccbec4bf2645324",
+  "path": ".mutascape/benchmark-data/combingym/Data/DMS/Clean/HIV-1_clean.xlsx",
+  "path_sha256": "a0ed221928a81e6e3d5b57571867dccfc4771bc7f4db6629c2da2cf8a99a6023",
+  "sequence": "PQITLWRRPLVTIKIGGQLKEALLDTGADDTVLEEMNLPGRWKPKMIGGIGGFIKVRQYDQILIEICGHKAIGTVLVGPTPVNIIGRNLLTQIGCTLNF"
+}

@@ -80,6 +80,17 @@ def synthetic_bootstrap(values, rng, replicates=BOOTSTRAPS):
     return values[chosen[:, :, None], trials].mean(axis=(1, 2)).reshape(replicates, methods)
 
 
+def paired_synthetic_bootstrap(values, rng, replicates=BOOTSTRAPS):
+    """Resample samples with their matching control search-seed blocks."""
+    samples, repeats, _ = next(iter(values.values())).shape
+    chosen = rng.integers(samples, size=(replicates, samples))
+    trials = rng.integers(repeats, size=(replicates, samples, repeats))
+    return {
+        model: array[chosen[:, :, None], trials].mean(axis=(1, 2))
+        for model, array in values.items()
+    }
+
+
 def validate_runs(table, inventory):
     assert not table.duplicated(["protein", "budget", "model", "sample", "trial", "method"]).any()
     assert np.isfinite(table.regret).all()
@@ -134,16 +145,12 @@ def analyse():
             remaining_boot = measured_bootstrap(remaining, indices)
             predictions = {"fixed": fixed}
             predictions_boot = {"fixed": fixed_boot}
-            # Controls share repeat indices. Mutascape also has sample uncertainty.
-            control_indices = rng.integers(100, size=(BOOTSTRAPS, 100))
+            synthetic_values = {}
             for model in MODELS[:3]:
                 values = trial_array(table, name, budget, model)
                 predictions[model] = values.mean(axis=0)
-                predictions_boot[model] = (
-                    synthetic_bootstrap(values.reshape(5, 20, len(METHOD_NAMES)), rng)
-                    if model == "mutascape"
-                    else values[control_indices].mean(axis=1)
-                )
+                synthetic_values[model] = values.reshape(5, 20, len(METHOD_NAMES))
+            predictions_boot.update(paired_synthetic_bootstrap(synthetic_values, rng))
             for subset in ("all", "ml_only"):
                 keep = np.array(
                     [True if subset == "all" else m not in BASELINES for m in METHOD_NAMES]
@@ -342,7 +349,7 @@ def analyse():
                 rows=len(table),
                 trial_hashes={str(p): digest(p) for p in paths},
                 synthetic_resampling=(
-                    "Hierarchical Mutascape samples and repeats. Paired deterministic controls."
+                    "Resample samples and matching control seed blocks, then paired repeats."
                 ),
             ),
             indent=2,

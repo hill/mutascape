@@ -4,6 +4,7 @@ import numpy as np
 
 from scripts.analyse_search_selection import (
     choice_weights,
+    paired_synthetic_bootstrap,
     selected_performance,
     synthetic_bootstrap,
     weighted_disagreement,
@@ -39,3 +40,10 @@ def test_bootstrap_includes_landscape_sample_uncertainty():
 def test_tau_remains_undefined_for_identical_method_means():
     assert np.isnan(batch_tau(np.ones(4), np.arange(4)))
     assert batch_tau(np.arange(4), np.arange(4)) == 1
+
+
+def test_matching_synthetic_results_keep_zero_difference_in_every_resample():
+    rng = np.random.default_rng(572)
+    values = rng.random((5, 20, 4))
+    samples = paired_synthetic_bootstrap({"first": values, "second": values.copy()}, rng, 300)
+    np.testing.assert_array_equal(samples["first"], samples["second"])

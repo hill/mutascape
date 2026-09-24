@@ -108,6 +108,11 @@ class _PairwiseLinear:
         return np.concatenate(blocks, axis=1)
 
     def fit(self, codes: NDArray[np.int16], values: NDArray[np.float64]) -> _PairwiseLinear:
+        feature_count = sum(self.sizes) + sum(
+            self.sizes[first] * self.sizes[second] for first, second in self.pairs
+        )
+        if feature_count > 4096:
+            return self._fit_dual(codes, values)
         model = Ridge(alpha=self.alpha).fit(self._design(codes), values)
         weights = model.coef_
         self.intercept = float(model.intercept_)
@@ -123,6 +128,41 @@ class _PairwiseLinear:
                 self.sizes[first], self.sizes[second]
             )
             cursor += size
+        return self
+
+    def _fit_dual(self, codes: NDArray[np.int16], values: NDArray[np.float64]) -> _PairwiseLinear:
+        """Fit the same indicator regression without a large feature matrix.
+
+        Two rows share one site indicator per matching site. Each pair of
+        matching sites adds one shared pair indicator. Centring this kernel
+        gives the unpenalised intercept used by Ridge.
+        """
+        matches = np.zeros((len(codes), len(codes)), dtype=np.float64)
+        for site in range(codes.shape[1]):
+            matches += codes[:, site, None] == codes[None, :, site]
+        kernel = matches
+        if self.pairs:
+            kernel = matches * (matches + 1.0) / 2.0
+        column_mean = kernel.mean(axis=0)
+        kernel = kernel - column_mean[None, :] - column_mean[:, None] + kernel.mean()
+        kernel[np.diag_indices_from(kernel)] += self.alpha
+        dual = np.linalg.solve(kernel, values - np.mean(values))
+        # Reconstruct coefficients for fast lookup during acquisition.
+        dual -= dual.mean()
+        self.intercept = float(np.mean(values))
+        self.singles = []
+        for site, size in enumerate(self.sizes):
+            indices = codes[:, site].astype(np.int64)
+            weights = np.bincount(indices, weights=dual, minlength=size)
+            self.singles.append(weights)
+            self.intercept -= float(np.mean(weights[indices]))
+        self.couples = {}
+        for first, second in self.pairs:
+            size = self.sizes[first] * self.sizes[second]
+            indices = codes[:, first].astype(np.int64) * self.sizes[second] + codes[:, second]
+            weights = np.bincount(indices, weights=dual, minlength=size)
+            self.couples[first, second] = weights.reshape(self.sizes[first], self.sizes[second])
+            self.intercept -= float(np.mean(weights[indices]))
         return self
 
     def predict(self, codes: NDArray[np.int16]) -> NDArray[np.float64]:

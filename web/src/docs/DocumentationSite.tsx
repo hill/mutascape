@@ -741,8 +741,11 @@ print(result.auc, result.accuracy)`}
             <span className="docs-claim-label">
               <Check weight="bold" /> Supported use
             </span>
-            <h3>Compare search decisions</h3>
-            <p>Report method rankings, pairwise winners, regret, and query counts.</p>
+            <h3>Compare methods on synthetic landscapes</h3>
+            <p>
+              Report synthetic method rankings, regret, and query counts. Check transfer against
+              measured results before recommending a method for a protein.
+            </p>
           </article>
           <article className="docs-claim-card restricted">
             <span className="docs-claim-label">Current boundary</span>
@@ -753,6 +756,11 @@ print(result.auc, result.accuracy)`}
             </p>
           </article>
         </div>
+        <p className="docs-note">
+          A test on two new proteins found no clear method-selection advantage over additive
+          landscapes or a fixed development ranking at 96 queries. Synthetic ranking agreement alone
+          does not establish that a method choice improves measured fitness.
+        </p>
       </section>
 
       <NextPageLink

@@ -71,3 +71,4 @@ suite/
 results/**/frame.pkl
 results/heldout_test_20260923/*/measured.csv
 results/pilot_ramp_20260923/*/measured.csv
+results/search_selection_20260924/

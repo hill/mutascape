@@ -191,9 +191,12 @@ def creilov_figure(destination):
         np.testing.assert_allclose(np.sum(values * np.diff(bins), axis=1), 1)
     with plt.rc_context(STYLE):
         fig, axes = plt.subplots(1, 2, figsize=(7.1, 2.75))
-        axes[0].stairs(observed, bins, color="#111111", lw=1, label="Experimental")
+        spectrum_axis, distribution_axis = axes
+        distribution_axis.stairs(observed, bins, color="#111111", lw=1, label="Experimental")
         x = np.arange(3)
-        axes[1].bar(x - 0.23, experimental, width=0.2, color="#e0e0e0", edgecolor="#111111", lw=0.8)
+        spectrum_axis.bar(
+            x - 0.23, experimental, width=0.2, color="#e0e0e0", edgecolor="#111111", lw=0.8
+        )
         for offset, (name, edge, fill) in enumerate(
             [
                 ("Mutascape", BLUE, PALE_BLUE),
@@ -202,9 +205,10 @@ def creilov_figure(destination):
         ):
             hist = histograms[name]
             mid, lo, hi = np.median(hist, axis=0), hist.min(axis=0), hist.max(axis=0)
-            axes[0].stairs(mid, bins, color=edge, lw=1, label=name)
-            axes[0].stairs(hi, bins, baseline=lo, fill=True, color=fill, alpha=0.65)
-            axes[0].errorbar(
+            label = "Single-site-only Mutascape" if name == "Mutascape" else name
+            distribution_axis.stairs(mid, bins, color=edge, lw=1, label=label)
+            distribution_axis.stairs(hi, bins, baseline=lo, fill=True, color=fill, alpha=0.65)
+            distribution_axis.errorbar(
                 centres,
                 mid,
                 yerr=[mid - lo, hi - mid],
@@ -215,7 +219,7 @@ def creilov_figure(destination):
             )
             spec = spectra[name]
             mid = np.median(spec, axis=0)
-            axes[1].bar(
+            spectrum_axis.bar(
                 x + offset * 0.23,
                 mid,
                 width=0.2,
@@ -225,21 +229,21 @@ def creilov_figure(destination):
                 yerr=[mid - spec.min(axis=0), spec.max(axis=0) - mid],
                 error_kw={"ecolor": edge, "elinewidth": 0.65, "capsize": 2},
             )
-        axes[0].set(
-            title="(a) Fluorescence distributions",
+        distribution_axis.set(
+            title="(b) Fluorescence distributions",
             xlabel="Log fluorescence relative to WT",
             ylabel="Density",
             ylim=(0, None),
         )
-        axes[0].legend(frameon=False, fontsize=7.5)
-        axes[1].set(
-            title="(b) Local Walsh spectra",
+        distribution_axis.legend(frameon=False, fontsize=7.5)
+        spectrum_axis.set(
+            title="(a) Local Walsh spectra",
             xlabel="Interaction order",
             ylabel="Fraction of local variance",
             ylim=(0, 1.05),
         )
-        axes[1].set_xticks(x, ["1", "2", "3"])
-        for ax, title in zip(axes, ["(a) Fluorescence distributions", "(b) Local Walsh spectra"]):
+        spectrum_axis.set_xticks(x, ["1", "2", "3"])
+        for ax, title in zip(axes, ["(a) Local Walsh spectra", "(b) Fluorescence distributions"]):
             ax.set_title("")
             ax.set_title(title, loc="left", fontsize=10)
             ax.spines[["top", "right"]].set_visible(False)

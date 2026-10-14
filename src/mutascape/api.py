@@ -49,10 +49,13 @@ def from_dms(
     strength and a fitness-distribution map. WT and single-site values stay exact.
     Calibration measurements fit the model and are not preserved as exact values.
 
-    With calibration, ``generator.draw(seed=...)`` enumerates the search space
-    once, with a default limit of one million variants. This mode does not support
-    ``complete`` or ``maximum_depth``. Omitting calibration keeps the single-site-only
-    generator. ``pilot`` remains an alias for ``calibration``. Supply only one.
+    With calibration, ``generator.draw(seed=...)`` fixes the percentile map using
+    100,000 uniformly sampled generated multi-mutants, or all multi-mutants when
+    fewer exist. The search space has no default size limit. Pass
+    ``reference_size=None`` to ``draw`` for exact enumeration. This mode does not
+    support ``complete`` or ``maximum_depth``. Omitting calibration keeps the
+    single-site-only generator. ``pilot`` remains an alias for ``calibration``.
+    Supply only one.
     """
     if calibration is not None and pilot is not None:
         raise ValueError("provide only one of calibration or pilot")

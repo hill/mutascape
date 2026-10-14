@@ -199,7 +199,7 @@ def main():
             if readout is not None:
                 values = readout.forward(values)
             if calibrated is not None:
-                values = calibrated.draw(draw).evaluate_batch(all_mutations)
+                values = calibrated.draw(draw, reference_size=None).evaluate_batch(all_mutations)
             full_arms[f"pilot_{draw}"] = values
             spectra.append(
                 dict(

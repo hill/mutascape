@@ -5,9 +5,10 @@ each draw onto the measured combination-fitness distribution. The burden model
 underneath it fits depth terms to the same pilot.
 """
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 from itertools import combinations, islice, product
-from typing import Self
+from typing import Literal, Self
 
 import numpy as np
 import pandas as pd
@@ -20,6 +21,38 @@ from mutascape.completion import dms_pairwise_unit_coefficient
 from mutascape.domain import MutationDomain
 from mutascape.mutant import VariantLike, parse_variant
 from mutascape.nonlinearity import GlobalEpistasisSigmoid
+
+DEFAULT_REFERENCE_SIZE = 100_000
+
+
+def _sample_reference_batches(
+    domain: MutationDomain, size: int, seed: int, batch_size: int = 8192
+) -> Iterator[list[tuple[tuple[int, str], ...]]]:
+    """Sample uniformly with replacement from supported multi-mutant genotypes.
+
+    Independent uniform residue choices give uniform genotypes even when sites
+    have different alphabet sizes. Reject WT and single-site variants without
+    balancing mutation depths or using experimental combination fitness.
+    """
+    rng = np.random.default_rng(seed)
+    positions = domain.positions
+    alternatives = [domain.substitutions_at(p) for p in positions]
+    sizes = np.asarray([len(aa) + 1 for aa in alternatives])
+    remaining = size
+    while remaining:
+        codes = rng.integers(sizes, size=(min(batch_size, remaining), len(positions)))
+        codes = codes[np.count_nonzero(codes, axis=1) > 1]
+        batch = [
+            tuple(
+                (position, residues[code - 1])
+                for position, residues, code in zip(positions, alternatives, row)
+                if code
+            )
+            for row in codes
+        ]
+        if batch:
+            remaining -= len(batch)
+            yield batch
 
 
 def _design(keys, effects):
@@ -240,7 +273,8 @@ class QuantileCalibratedLandscape:
     """Fit a pilot model and calibrate its combination-fitness distribution.
 
     Calibration combinations must sample the intended library uniformly.
-    Each draw enumerates the supported library to fix its score distribution.
+    A fixed uniform reference sample estimates the generated score distribution.
+    Small search spaces use every supported multi-mutant instead.
     Measured wild type and singles retain their original values.
     """
 
@@ -273,11 +307,46 @@ class QuantileCalibratedLandscape:
             raise ValueError("invalid calibration fitness")
         return cls(PilotCalibratedLandscape.from_dict(payload["reference"]), np.sort(values))
 
-    def draw(self, seed: int, *, maximum_variants: int = 1_000_000) -> QuantileLandscapeDraw:
-        """Construct one fixed oracle after enumerating its supported library."""
+    def draw(
+        self,
+        seed: int,
+        *,
+        reference_size: int | None = DEFAULT_REFERENCE_SIZE,
+        reference_seed: int = 0,
+        maximum_variants: int | None = None,
+    ) -> QuantileLandscapeDraw:
+        """Construct a fixed oracle using a uniform score reference sample.
+
+        At most ``reference_size`` multi-mutant scores define the percentile map.
+        Larger spaces use that many uniform samples with replacement. Smaller
+        spaces use all multi-mutants exactly. Set ``reference_size=None`` to
+        request exact enumeration explicitly, including for archived results.
+
+        ``reference_seed`` fixes reference genotypes independently of the pair
+        interaction seed. No further experimental measurements are needed.
+        Keep both seeds and the reference size to reproduce a sampled landscape.
+        There is no default search-space limit. ``maximum_variants`` remains an
+        optional caller-specified limit for compatibility with earlier code.
+        """
+        for name, value, minimum in (
+            ("reference_size", reference_size, 2),
+            ("reference_seed", reference_seed, 0),
+            ("maximum_variants", maximum_variants, 1),
+        ):
+            if value is None and name != "reference_seed":
+                continue
+            if (
+                isinstance(value, (bool, np.bool_))
+                or not isinstance(value, (int, np.integer))
+                or value < minimum
+            ):
+                raise ValueError(f"{name} must be an integer greater than or equal to {minimum}")
         g = self.reference
-        if g.domain.count() > maximum_variants:
-            raise ValueError("library exceeds maximum_variants for exact distribution calibration")
+        total = g.domain.count()
+        if maximum_variants is not None and total > maximum_variants:
+            raise ValueError("search space exceeds the requested maximum_variants")
+        multi_count = total - len(g.effects) - 1
+        exact = reference_size is None or multi_count <= reference_size
         keys = sorted(g.effects)
         weights = np.zeros((len(keys), len(keys)))
         for i, j in combinations(range(len(keys)), 2):
@@ -294,23 +363,36 @@ class QuantileCalibratedLandscape:
         alphabets = [
             (g.domain.wild_type_sequence[p - 1], *g.domain.substitutions_at(p)) for p in positions
         ]
-        variants = (
-            tuple(
-                (p, aa)
-                for p, aa in zip(positions, residues)
-                if aa != g.domain.wild_type_sequence[p - 1]
+        if exact:
+            variants = (
+                tuple(
+                    (p, aa)
+                    for p, aa in zip(positions, residues)
+                    if aa != g.domain.wild_type_sequence[p - 1]
+                )
+                for residues in product(*alphabets)
             )
-            for residues in product(*alphabets)
-        )
+            batches = iter(lambda: list(islice(variants, 8192)), [])
+        else:
+            batches = _sample_reference_batches(g.domain, reference_size, reference_seed)
         scores = []
-        while batch := list(islice(variants, 8192)):
+        for batch in batches:
             batch = [key for key in batch if len(key) > 1]
             if batch:
                 scores.append(oracle.base_values(batch))
         all_scores = np.sort(np.concatenate(scores))
         unique, start, counts = np.unique(all_scores, return_index=True, return_counts=True)
         probabilities = (start + counts / 2) / len(all_scores)
-        return QuantileLandscapeDraw(self, keys, weights, unique, probabilities)
+        return QuantileLandscapeDraw(
+            self,
+            keys,
+            weights,
+            unique,
+            probabilities,
+            reference_mode="exact" if exact else "sampled",
+            reference_size=len(all_scores),
+            reference_seed=None if exact else int(reference_seed),
+        )
 
 
 @dataclass(frozen=True)
@@ -322,6 +404,9 @@ class QuantileLandscapeDraw:
     weights: NDArray[np.float64]
     score_knots: NDArray[np.float64]
     probabilities: NDArray[np.float64]
+    reference_mode: Literal["exact", "sampled"] = "exact"
+    reference_size: int = 0
+    reference_seed: int | None = None
 
     @property
     def domain(self) -> MutationDomain:
@@ -351,7 +436,7 @@ class QuantileLandscapeDraw:
         if not keys:
             return np.empty(0)
         values = self.base_values(keys)
-        probabilities = np.interp(values, self.score_knots, self.probabilities)
+        probabilities = np.interp(values, self.score_knots, self.probabilities, left=0.0, right=1.0)
         result = empirical_quantiles(self.generator.pilot_fitness, probabilities)
         for i, key in enumerate(keys):
             if key in g.anchors:

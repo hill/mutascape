@@ -100,7 +100,7 @@ def evaluate(name, seed):
         return
     frame, design, _ = data(name)
     model = QuantileCalibratedLandscape.from_dict(json.loads((folder / "model.json").read_text()))
-    landscape = model.draw(seed)
+    landscape = model.draw(seed, reference_size=None)
     values = np.concatenate(
         [
             landscape.evaluate_batch(frame.iloc[start : start + 8192].mutations.tolist())

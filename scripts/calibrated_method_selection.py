@@ -169,7 +169,7 @@ def prepare_sample(protein: str, calibration: int) -> None:
             for sample in range(1 if label == "additive" else N_SAMPLES):
                 seed = seed_for(2, protein, calibration, sample)
                 fitted = (
-                    model.draw(seed)
+                    model.draw(seed, reference_size=None)
                     if label == "calibrated"
                     else DMSLandscape.from_singles(
                         metadata["sequence"],

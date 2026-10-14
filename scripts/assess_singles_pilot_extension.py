@@ -77,7 +77,7 @@ def evaluate(name, seed):
     singles = frame.loc[frame.depth <= 1]
     requested = np.unique(np.r_[design["test"], design["cubes"].ravel(), singles.index])
     model = QuantileCalibratedLandscape.from_dict(json.loads((folder / "model.json").read_text()))
-    landscape = model.draw(seed)
+    landscape = model.draw(seed, reference_size=None)
     values = np.full(len(frame), np.nan)
     values[requested] = landscape.evaluate_batch(frame.iloc[requested].mutations.tolist())
     np.testing.assert_array_equal(values[singles.index], singles.fitness)

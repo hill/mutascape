@@ -651,12 +651,23 @@ landscape = generator.draw(seed=42)
 fitness = landscape["A102G+P20Y"]`}
         />
         <p>
-          Combination-calibrated Mutascape enumerates the supported search space, with a default
-          limit of one million variants. The calibration table needs variant and fitness columns and
-          holds multi-mutant genotypes only. Every substitution needs a single-site measurement.
-          This mode does not support ESM-2 completion or a maximum-depth limit. Omitting calibration
-          keeps the single-site-only generator. The older pilot argument remains an alias for
-          calibration.
+          Combination-calibrated Mutascape estimates score percentiles from 100,000 uniformly
+          sampled generated multi-mutants, or uses every multi-mutant when fewer exist. The
+          reference sample remains fixed during queries and needs no additional measurements. There
+          is no default search-space size limit. The calibration table needs variant and fitness
+          columns and holds multi-mutant genotypes only. Every substitution needs a single-site
+          measurement. This mode does not support ESM-2 completion or a maximum-depth limit.
+          Omitting calibration keeps the single-site-only generator. The older pilot argument
+          remains an alias for calibration.
+        </p>
+        <p>
+          Use{" "}
+          <InlineCode>generator.draw(seed=42, reference_size=100_000, reference_seed=0)</InlineCode>{" "}
+          to control the sample size and its seed independently of the pair interactions. Keep both
+          seeds and the reference size to reproduce a sampled landscape. Setting{" "}
+          <InlineCode>reference_size=None</InlineCode> requests exact enumeration for numerical
+          checks or reproduction of archived results. Larger samples improve percentile precision at
+          additional computational cost.
         </p>
       </section>
 

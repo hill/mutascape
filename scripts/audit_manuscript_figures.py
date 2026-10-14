@@ -88,7 +88,7 @@ def audit(manuscript):
             ),
             (
                 "Combination-calibrated Mutascape",
-                calibrated.draw(seed=seed),
+                calibrated.draw(seed=seed, reference_size=None),
                 PILOT / "CreiLOV" / f"evaluation_{seed}.npy",
             ),
         ):

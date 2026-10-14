@@ -113,7 +113,7 @@ def run(name):
     tests = pd.read_csv(PREVIOUS / name / "test_0.csv").row.to_numpy()
     seed = 2026092901
     g = QuantileCalibratedLandscape.fit(dataset.wild_type_sequence, singles, frame.iloc[pilots])
-    d = g.draw(seed)
+    d = g.draw(seed, reference_size=None)
     reference = d.base_values([tuple(sorted(m.items())) for m in frame.mutations])
     quantile = d.evaluate_batch(frame.mutations.tolist())
     outputs = {

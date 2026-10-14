@@ -179,7 +179,7 @@ def run(name, size):
     rows, structure = [], []
     mutations = frame.mutations.tolist()
     for seed in SEEDS:
-        draw = model.draw(seed)
+        draw = model.draw(seed, reference_size=None)
         reference = draw.base_values([tuple(sorted(m.items())) for m in mutations])
         quantile = draw.evaluate_batch(mutations)
         rng = np.random.default_rng(seed + 177)

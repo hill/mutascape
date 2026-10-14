@@ -83,7 +83,7 @@ def model_for(name, meta, frame, pilot):
     if len(pilot) == 0:
         return DMSLandscape.from_singles(meta["sequence"], singles, seed=DRAW_SEED)
     fitted = QuantileCalibratedLandscape.fit(meta["sequence"], singles, frame.iloc[pilot])
-    return fitted.draw(DRAW_SEED)
+    return fitted.draw(DRAW_SEED, reference_size=None)
 
 
 def measured_ranking(name, budgets):

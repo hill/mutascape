@@ -335,7 +335,12 @@ def audit_assets(destination):
             (generator, RESULTS / "CreiLOV" / f"fitness_sigmoid_{seed}.npy"),
             (calibrated, PILOT / "CreiLOV" / f"evaluation_{seed}.npy"),
         ):
-            current = model.draw(seed=seed).evaluate_batch(frame.iloc[requested].mutations.tolist())
+            options = (
+                {"reference_size": None} if isinstance(model, QuantileCalibratedLandscape) else {}
+            )
+            current = model.draw(seed=seed, **options).evaluate_batch(
+                frame.iloc[requested].mutations.tolist()
+            )
             np.testing.assert_array_equal(current, np.load(path)[requested])
     fitness = np.array([[2.0, 2.0], [4.0, 8.0]])
     parity = np.array([[1, 1], [1, -1]])

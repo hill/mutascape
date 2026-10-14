@@ -23,6 +23,8 @@ from mutascape.mutant import VariantLike, parse_variant
 from mutascape.nonlinearity import GlobalEpistasisSigmoid
 
 DEFAULT_REFERENCE_SIZE = 100_000
+# Share of the calibration sample whose upper quantiles set the slope of the latent tail.
+TAIL_FRACTION = 0.1
 
 
 def _sample_reference_batches(
@@ -276,36 +278,78 @@ class QuantileCalibratedLandscape:
     A fixed uniform reference sample estimates the generated score distribution.
     Small search spaces use every supported multi-mutant instead.
     Measured wild type and singles retain their original values.
+
+    A random calibration sample rarely contains the fittest combinations, so a
+    quantile map alone caps the landscape near the best calibration value. The
+    ``"latent"`` upper tail lets fitness keep rising with the latent score above
+    that value, at the slope the map shows across the top of the sample.
+    ``"linear"`` extrapolates the quantile function instead.
     """
 
     reference: PilotCalibratedLandscape
     pilot_fitness: NDArray[np.float64]
+    upper_tail: Literal["latent", "linear"] = "latent"
 
     @classmethod
-    def fit(cls, wild_type_sequence: str, singles: pd.DataFrame, pilot: pd.DataFrame) -> Self:
+    def fit(
+        cls,
+        wild_type_sequence: str,
+        singles: pd.DataFrame,
+        pilot: pd.DataFrame,
+        *,
+        upper_tail: Literal["latent", "linear"] = "latent",
+    ) -> Self:
         """Fit using measured wild type, singles, and a uniform combination pilot."""
+        if upper_tail not in ("latent", "linear"):
+            raise ValueError("upper_tail must be latent or linear")
         return cls(
             PilotCalibratedLandscape.fit(wild_type_sequence, singles, pilot),
             np.sort(pilot.fitness.to_numpy(dtype=float)),
+            upper_tail,
         )
 
     def to_dict(self) -> dict:
         """Return the fitted model without its generated score distributions."""
         return {
-            "model": "quantile-pilot-v1",
+            "model": "quantile-pilot-v2",
             "reference": self.reference.to_dict(),
             "pilot_fitness": self.pilot_fitness.tolist(),
+            "upper_tail": self.upper_tail,
         }
 
     @classmethod
     def from_dict(cls, payload: dict) -> Self:
-        """Restore a fitted model without calibration refits."""
-        if payload.get("model") != "quantile-pilot-v1":
+        """Restore a fitted model without calibration refits.
+
+        Version 1 payloads predate the latent tail and restore with the linear tail.
+        """
+        version = payload.get("model")
+        if version == "quantile-pilot-v1":
+            upper_tail = "linear"
+        elif version == "quantile-pilot-v2":
+            upper_tail = payload.get("upper_tail")
+        else:
             raise ValueError("unsupported quantile model version")
+        if upper_tail not in ("latent", "linear"):
+            raise ValueError("invalid upper tail")
         values = np.asarray(payload["pilot_fitness"], dtype=float)
         if values.ndim != 1 or len(values) < 3 or not np.isfinite(values).all():
             raise ValueError("invalid calibration fitness")
-        return cls(PilotCalibratedLandscape.from_dict(payload["reference"]), np.sort(values))
+        return cls(
+            PilotCalibratedLandscape.from_dict(payload["reference"]), np.sort(values), upper_tail
+        )
+
+    def _latent_tail(
+        self, score_knots: NDArray[np.float64], probabilities: NDArray[np.float64]
+    ) -> tuple[float, float, float]:
+        """Return the latent score, fitness and slope where the latent tail begins."""
+        n = len(self.pilot_fitness)
+        top = (n - 0.5) / n
+        low = (n - 0.5 - max(1, round(TAIL_FRACTION * n))) / n
+        value_low, value_top = empirical_quantiles(self.pilot_fitness, np.array([low, top]))
+        score_low, score_top = np.interp([low, top], probabilities, score_knots)
+        slope = (value_top - value_low) / (score_top - score_low) if score_top > score_low else 0.0
+        return float(score_top), float(value_top), float(max(slope, 0.0))
 
     def draw(
         self,
@@ -379,10 +423,15 @@ class QuantileCalibratedLandscape:
         for batch in batches:
             batch = [key for key in batch if len(key) > 1]
             if batch:
-                scores.append(oracle.base_values(batch))
+                scores.append(oracle.latent_values(batch))
         all_scores = np.sort(np.concatenate(scores))
         unique, start, counts = np.unique(all_scores, return_index=True, return_counts=True)
         probabilities = (start + counts / 2) / len(all_scores)
+        tail = (
+            self._latent_tail(unique, probabilities)
+            if self.upper_tail == "latent"
+            else (np.inf, np.nan, np.nan)
+        )
         return QuantileLandscapeDraw(
             self,
             keys,
@@ -392,6 +441,9 @@ class QuantileCalibratedLandscape:
             reference_mode="exact" if exact else "sampled",
             reference_size=len(all_scores),
             reference_seed=None if exact else int(reference_seed),
+            tail_score=tail[0],
+            tail_value=tail[1],
+            tail_slope=tail[2],
         )
 
 
@@ -407,6 +459,9 @@ class QuantileLandscapeDraw:
     reference_mode: Literal["exact", "sampled"] = "exact"
     reference_size: int = 0
     reference_seed: int | None = None
+    tail_score: float = np.inf
+    tail_value: float = np.nan
+    tail_slope: float = np.nan
 
     @property
     def domain(self) -> MutationDomain:
@@ -416,7 +471,7 @@ class QuantileLandscapeDraw:
         """Return whether this genotype is measured wild type or a measured single."""
         return tuple(sorted(self.domain.parse(variant).items())) in self.generator.reference.anchors
 
-    def base_values(self, variants: list[tuple]) -> NDArray[np.float64]:
+    def latent_values(self, variants: list[tuple]) -> NDArray[np.float64]:
         g = self.generator.reference
         additive, design = _design(variants, g.effects)
         lookup = {key: i for i, key in enumerate(self.keys)}
@@ -425,9 +480,11 @@ class QuantileLandscapeDraw:
             for key in variant:
                 indicators[row, lookup[key]] = 1
         interactions = np.sum((indicators @ self.weights) * indicators, axis=1)
-        return g.anchors[()] + g.readout.forward(
-            additive + design @ g.coefficients + g.pair_scale * interactions
-        )
+        return additive + design @ g.coefficients + g.pair_scale * interactions
+
+    def base_values(self, variants: list[tuple]) -> NDArray[np.float64]:
+        g = self.generator.reference
+        return g.anchors[()] + g.readout.forward(self.latent_values(variants))
 
     def evaluate_batch(self, variants: list[VariantLike]) -> NDArray[np.float64]:
         """Evaluate variants without changing the draw or its calibration map."""
@@ -435,9 +492,11 @@ class QuantileLandscapeDraw:
         keys = [tuple(sorted(g.domain.parse(v).items())) for v in variants]
         if not keys:
             return np.empty(0)
-        values = self.base_values(keys)
-        probabilities = np.interp(values, self.score_knots, self.probabilities, left=0.0, right=1.0)
+        scores = self.latent_values(keys)
+        probabilities = np.interp(scores, self.score_knots, self.probabilities, left=0.0, right=1.0)
         result = empirical_quantiles(self.generator.pilot_fitness, probabilities)
+        tail = scores > self.tail_score
+        result[tail] = self.tail_value + self.tail_slope * (scores[tail] - self.tail_score)
         for i, key in enumerate(keys):
             if key in g.anchors:
                 result[i] = g.anchors[key]

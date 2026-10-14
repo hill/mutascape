@@ -139,3 +139,69 @@ def test_invalid_reference_settings_fail_before_generation(options):
     model = QuantileCalibratedLandscape.fit("AAAA", singles, pilot)
     with pytest.raises(ValueError, match=next(iter(options))):
         model.draw(42, **options)
+
+
+def tail_library():
+    """Six sites with two alternatives each, and a pilot of additive combinations."""
+    rng = np.random.default_rng(4)
+    effects = {(p, aa): rng.normal(0, 1) for p in range(1, 7) for aa in "CD"}
+    singles = pd.DataFrame(
+        {"mutations": [{}, *({p: aa} for p, aa in effects)], "fitness": [0.0, *effects.values()]}
+    )
+    multis = [
+        {p: aa for p, aa in zip(range(1, 7), residues) if aa != "A"}
+        for residues in product("ACD", repeat=6)
+    ]
+    multis = [m for m in multis if len(m) > 1]
+    rows = rng.choice(len(multis), 40, replace=False)
+    pilot = pd.DataFrame(
+        {
+            "mutations": [multis[i] for i in rows],
+            "fitness": [
+                sum(effects[k] for k in multis[i].items()) + rng.normal(0, 0.3) for i in rows
+            ],
+        }
+    )
+    return singles, pilot, multis
+
+
+def test_latent_tail_continues_past_the_best_calibration_value():
+    singles, pilot, multis = tail_library()
+    model = QuantileCalibratedLandscape.fit("A" * 6, singles, pilot)
+    draw = model.draw(73)
+    assert draw.tail_slope > 0
+    keys = [tuple(sorted(m.items())) for m in multis]
+    scores = draw.latent_values(keys)
+    values = draw.evaluate_batch(multis)
+    above = scores > draw.tail_score
+    assert above.any() and (~above).any()
+    assert np.all(np.diff(values[np.argsort(scores)]) >= -1e-12)
+    assert_allclose(
+        values[above], draw.tail_value + draw.tail_slope * (scores[above] - draw.tail_score)
+    )
+    assert np.all(values[~above] <= draw.tail_value + 1e-12)
+    n = len(pilot)
+    assert draw.tail_value == pytest.approx(
+        empirical_quantiles(model.pilot_fitness, np.array([(n - 0.5) / n]))[0]
+    )
+    linear = QuantileCalibratedLandscape.fit("A" * 6, singles, pilot, upper_tail="linear")
+    capped = linear.draw(73).evaluate_batch(multis)
+    assert values.max() > capped.max()
+    assert_allclose(values[~above], capped[~above])
+
+
+def test_version_one_payloads_keep_the_linear_tail():
+    singles, pilot = calibration_data()
+    linear = QuantileCalibratedLandscape.fit("AAAA", singles, pilot, upper_tail="linear")
+    payload = linear.to_dict() | {"model": "quantile-pilot-v1"}
+    payload.pop("upper_tail")
+    restored = QuantileCalibratedLandscape.from_dict(payload)
+    assert restored.upper_tail == "linear"
+    variants = [{1: "C", 2: "C"}, {1: "C", 2: "C", 3: "C", 4: "C"}]
+    assert_array_equal(
+        restored.draw(5).evaluate_batch(variants), linear.draw(5).evaluate_batch(variants)
+    )
+    latent = QuantileCalibratedLandscape.fit("AAAA", singles, pilot)
+    assert QuantileCalibratedLandscape.from_dict(latent.to_dict()).upper_tail == "latent"
+    with pytest.raises(ValueError, match="upper_tail"):
+        QuantileCalibratedLandscape.fit("AAAA", singles, pilot, upper_tail="flat")

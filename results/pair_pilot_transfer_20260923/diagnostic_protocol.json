@@ -1,7 +1,0 @@
-{
-  "status": "Post-result diagnostics. No model settings changed.",
-  "edge_seed": 2026092800,
-  "edge_count": 10000,
-  "tail": "Top one per cent within each 2000-genotype test set",
-  "spectra_and_peaks": "Full-library descriptive checks, including calibration genotypes"
-}

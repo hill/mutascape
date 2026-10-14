@@ -1,7 +1,0 @@
-{
-  "model": "esm2_t33_650M_UR50D",
-  "seed": 42,
-  "folds": 5,
-  "dms_sha256": "53135cc49d69606ceb0e8ab48fdc48d25e0fd0cc56a225e661345e28865f496c",
-  "fasta_sha256": "9b93db99fabd431a14c347afd88cd4d5e8fde3884a7973c607fb9a79a270401a"
-}

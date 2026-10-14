@@ -1,9 +1,0 @@
-{
-  "sequence": "AAAA",
-  "source": ".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla/data/BioSequence/Jalal2020_NBS.csv",
-  "source_sha256": "b55df35cee80483a407c5ca85b71ad9c295b669839de48d4ba0099032d6f767a",
-  "structure": {
-    "available": false,
-    "reason": "No verified residue mapping in this study"
-  }
-}

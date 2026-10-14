@@ -658,13 +658,6 @@ fitness = landscape["A102G+P20Y"]`}
           keeps the single-site-only generator. The older pilot argument remains an alias for
           calibration.
         </p>
-        <p>
-          A separate study used ten independent calibration samples per protein on GB1, TrpB4, T7
-          and TEV. Calibration improved fitness-distribution agreement but did not improve
-          search-method selection. In 31 of 40 fits, the fitted distribution map left no generated
-          combination above the best starting observation. Further validation is needed before using
-          this model to recommend search methods.
-        </p>
       </section>
 
       <FigureSection

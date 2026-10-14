@@ -37,11 +37,6 @@ WT and single-site variants retain their measured fitness exactly.
 The calibration combinations fit the model but do not retain their measured fitness exactly.
 Repeated queries return the same value, irrespective of query order or batch size.
 
-Improved distribution agreement does not establish useful search-method recommendations.
-The [independent-calibration study](calibrated_method_selection_results_2026-10-14.md) found no improvement in method selection across four proteins.
-In 31 of 40 fits, no generated combination exceeded the best starting observation.
-The current quantile map can therefore remove opportunities for improvement that exist in the measured landscape.
-
 The default enumeration limit is one million variants.
 Larger search spaces raise an error before enumeration.
 A caller can set `maximum_variants` on `draw` after assessing memory and runtime.

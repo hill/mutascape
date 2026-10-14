@@ -135,11 +135,6 @@ The paired difference interval is [-0.0902, 0.0129], so it includes no improveme
 The connected libraries favour genotypes near WT and do not establish transfer across complete landscapes.
 These results support controlled synthetic benchmarks, without replacing experimentally measured combinatorial datasets.
 
-The [independent-calibration study](docs/calibrated_method_selection_results_2026-10-14.md) tests ten calibration samples per protein on GB1, TrpB4, T7 and TEV.
-Combination calibration improves fitness-distribution agreement but does not improve search-method selection in this study.
-In 31 of 40 fits, the fitted distribution map leaves no generated combination above the best starting observation.
-This limitation makes the model unsuitable for recommending search methods without further validation.
-
 The [singles study](docs/singles_only_research_results.md) reports the model comparisons.
 The [benchmark efficacy study](docs/benchmark_efficacy_results_2026-09-30.md) supplies the current search results and their limits.
 The [full-dataset C2ST report](docs/full_dataset_c2st_2026-10-06.md) gives the current distribution comparison and its limits.

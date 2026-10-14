@@ -1,22 +1,17 @@
-"""Budget-matched search methods spanning the families used in MLDE and ALDE.
+"""Search methods with matched evaluation budgets for MLDE and ALDE benchmarks.
 
-Three methods let Kendall tau take four values, which cannot separate a working
-benchmark from a broken one. Twelve give 66 ordered pairs and an interval.
-
-Every method spends the same budget through the same oracle, and at a given seed
-it makes the same opening move on every arm, so a paired comparison across arms
-sees only the landscape. Methods do not share an opening move with each other.
-The model-based methods draw ``INITIAL_DESIGN`` rows, the genetic search draws a
-smaller population, and the local searches start from wild type where the mask
-kept it.
+Model methods start with 32 new observations. Known measurements cost no budget.
+Local searches start from the supplied starting row. A recorded random fallback
+spends any remaining budget when a method stops before exhausting the library.
 """
 
 from dataclasses import dataclass
+from functools import wraps
 from itertools import combinations
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.stats import norm
+from scipy.stats import norm, rankdata
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.neural_network import MLPRegressor
@@ -25,6 +20,7 @@ from mutascape.benchmarks.library import BudgetedOracle, SearchSpace
 
 INITIAL_DESIGN = 32
 BATCH_SIZE = 32
+SEARCH_PROTOCOL_VERSION = "new-observations-v2"
 # Scoring every genotype of a 160,000-row cube at every round dominates runtime
 # and changes no ranking, so acquisition draws a fresh pool each round. The
 # incumbent's neighbours are always included, which keeps the peak reachable.
@@ -44,9 +40,14 @@ class _Features:
         return self._one_hot[rows]
 
 
-def initial_rows(space: SearchSpace, seed: int, size: int) -> NDArray[np.int64]:
-    """Random start, identical across arms at a given seed and size."""
+def initial_rows(
+    space: SearchSpace, seed: int, size: int, *, exclude: set[int] | None = None
+) -> NDArray[np.int64]:
+    """Sample initial rows without replacement, excluding known observations."""
     rng = np.random.default_rng(seed)
+    if exclude:
+        available = np.setdiff1d(np.arange(space.size), np.fromiter(exclude, dtype=int))
+        return rng.choice(available, size=min(size, len(available)), replace=False)
     take = min(size, space.size)
     return rng.choice(space.size, size=take, replace=False)
 
@@ -226,7 +227,9 @@ def _run_model_loop(
 ) -> None:
     """Random start, then repeated fit-and-select until the budget is spent."""
     rng = np.random.default_rng(seed + 7919)
-    oracle.query(initial_rows(space, seed, INITIAL_DESIGN))
+    oracle.query(
+        initial_rows(space, seed, min(INITIAL_DESIGN, oracle.remaining), exclude=oracle.seen())
+    )
     for _ in range(oracle.budget):
         if oracle.remaining <= 0:
             break
@@ -245,8 +248,7 @@ def _run_model_loop(
 
 def random_search(space, oracle, features, seed) -> None:
     """Uniform sample, the floor every other method has to beat."""
-    rng = np.random.default_rng(seed)
-    oracle.query(rng.choice(space.size, size=min(oracle.budget, space.size), replace=False))
+    oracle.query(initial_rows(space, seed, oracle.remaining, exclude=oracle.seen()))
 
 
 def greedy_search(space, oracle, features, seed) -> None:
@@ -318,7 +320,9 @@ def genetic_search(space, oracle, features, seed) -> None:
     """Directed evolution: keep the best, recombine sites, mutate one at a time."""
     rng = np.random.default_rng(seed)
     population_size = 24
-    rows = list(initial_rows(space, seed, min(population_size, oracle.budget)))
+    rows = list(
+        initial_rows(space, seed, min(population_size, oracle.remaining), exclude=oracle.seen())
+    )
     oracle.query(rows)
     while oracle.remaining > 0:
         history = oracle.rows
@@ -381,9 +385,8 @@ def _gp_acquire(kind: str):
 
 def _forest_acquire(kind: str):
     def acquire(pool, rows, values, features, rng, take):
-        order = np.argsort(values, kind="stable")
-        targets = np.empty(len(values), dtype=np.float64)
-        targets[order] = np.linspace(0.0, 1.0, len(values))
+        # Equal observations must receive equal targets on fitness plateaus.
+        targets = (rankdata(values, method="average") - 1) / max(len(values) - 1, 1)
         forest = RandomForestRegressor(
             n_estimators=32, min_samples_leaf=2, n_jobs=1, random_state=int(rng.integers(1 << 31))
         ).fit(features.one_hot(rows), targets)
@@ -471,6 +474,21 @@ def _model_method(acquire):
     return method
 
 
+def _complete_budget(method):
+    """Record random queries when the search cannot spend its remaining budget."""
+
+    @wraps(method)
+    def completed(space, oracle, features, seed):
+        method(space, oracle, features, seed)
+        if oracle.remaining > 0:
+            rows = initial_rows(space, seed + 79001, oracle.remaining, exclude=oracle.seen())
+            before = oracle.spent
+            oracle.query(rows)
+            oracle.fallback_queries += oracle.spent - before
+
+    return completed
+
+
 METHODS = {
     "random": random_search,
     "greedy": greedy_search,
@@ -485,6 +503,7 @@ METHODS = {
     "mlp_ucb": _model_method(_mlp_acquire),
     "adalead": _model_method(_adalead_acquire),
 }
+METHODS = {name: _complete_budget(method) for name, method in METHODS.items()}
 
 
 def run_method(

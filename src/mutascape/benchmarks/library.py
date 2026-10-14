@@ -89,6 +89,7 @@ class BudgetedOracle:
             raise ValueError("budget must be positive")
         self._values = np.asarray(values, dtype=np.float64)
         self.budget = int(budget)
+        self.fallback_queries = 0
         self._rows: list[int] = []
         self._observed: list[float] = []
         self._seen: dict[int, float] = {}

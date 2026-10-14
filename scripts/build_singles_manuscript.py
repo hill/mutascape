@@ -10,6 +10,7 @@ import pandas as pd
 from scipy.stats import kendalltau
 
 from mutascape.benchmarks.validity import reliable_method_pairs
+from scripts.analyse_search_selection import METHOD_NAMES, synthetic_bootstrap, trial_array
 from scripts.build_quantile_manuscript import BLUE, GREEN, PALE_BLUE, PALE_GREEN, STYLE
 from scripts.investigate_singles_only import CONFIRMATION, DEVELOPMENT, SEEDS, local_geometry
 
@@ -17,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results/singles_only_restart_20260923"
 PILOT = ROOT / "results/singles_pilot_extension_20260923"
 VALIDATION = ROOT / "src/mutascape/data/validation"
+REPEAT_SEARCH = ROOT / "results/search_selection_20260924"
 
 
 def write_table(path, headings, records, widths=None, groups=None):
@@ -76,7 +78,7 @@ def tables(study, pilot, destination):
         records.append(
             [
                 f"{name} @{citations[name]}",
-                "Develop." if name in DEVELOPMENT else "Confirm.",
+                "Model selection" if name in DEVELOPMENT else "Evaluation",
                 sites[name],
                 int(row.singles),
                 f"{int(row.declared):,}",
@@ -85,9 +87,9 @@ def tables(study, pilot, destination):
         )
     write_table(
         destination / "singles_datasets.typ",
-        ["Protein", "Use", "Sites", "Singles", "Declared", "Measured"],
+        ["Protein", "Use", "Sites", "Single-site variants", "Search space", "Measured"],
         records,
-        ["1.5fr", "0.9fr", "0.6fr", "0.7fr", "1fr", "1fr"],
+        ["1.4fr", "1fr", "0.5fr", "1fr", "1fr", "1fr"],
     )
     base = pd.DataFrame(study["fidelity_medians"]).query('model == "sigmoid"').set_index("protein")
     extension = pd.DataFrame(pilot["medians"]).set_index("protein")
@@ -125,8 +127,22 @@ def tables(study, pilot, destination):
         ["1.15fr", *["1fr"] * 6],
         groups=["Mutascape", "Combination-calibrated Mutascape"],
     )
-    warm = pd.DataFrame(study["dms_search"])
-    models = ["sigmoid", "additive", "linear", "main_singles", "fixed_ranking"]
+    facts = {
+        "pilot_auc": f"{extension.loc[list(CONFIRMATION), 'auc_sequence'].mean():.3f}",
+        "pilot_w1": f"{extension.loc[list(CONFIRMATION), 'w1'].mean():.3f}",
+        "pilot_improved": int(
+            (
+                extension.loc[list(CONFIRMATION), "auc_sequence"]
+                < base.loc[list(CONFIRMATION), "auc_sequence"]
+            ).sum()
+        ),
+        "creilov_pilot_auc": f"{extension.loc['CreiLOV', 'auc_sequence']:.3f}",
+    }
+    (destination / "singles_facts.json").write_text(json.dumps(facts, indent=2) + "\n")
+
+
+def search_table(warm, destination):
+    models = ["mutascape", "additive", "zero_pair", "fixed"]
     records = []
     for budget in (48, 96):
         for name in [*CONFIRMATION, "Mean"]:
@@ -149,28 +165,112 @@ def tables(study, pilot, destination):
     write_table(
         destination / "singles_generators.typ",
         [
-            "Protein, queries",
+            "Protein, evaluations",
             "Mutascape",
             "Additive",
-            "Linear + pairs",
-            "Empirical range",
+            "Zero-pair sigmoid",
             "Fixed rank",
         ],
         records,
-        ["1.05fr", *["1fr"] * 5],
+        ["1.05fr", *["1fr"] * 4],
     )
-    facts = {
-        "pilot_auc": f"{extension.loc[list(CONFIRMATION), 'auc_sequence'].mean():.3f}",
-        "pilot_w1": f"{extension.loc[list(CONFIRMATION), 'w1'].mean():.3f}",
-        "pilot_improved": int(
-            (
-                extension.loc[list(CONFIRMATION), "auc_sequence"]
-                < base.loc[list(CONFIRMATION), "auc_sequence"]
-            ).sum()
-        ),
-        "creilov_pilot_auc": f"{extension.loc['CreiLOV', 'auc_sequence']:.3f}",
-    }
-    (destination / "singles_facts.json").write_text(json.dumps(facts, indent=2) + "\n")
+
+
+def repeat_search_results():
+    """Verify the saved repeat study and derive conditional pair-agreement intervals."""
+    saved = pd.read_csv(REPEAT_SEARCH / "per_protein.csv").query(
+        'panel == "repeat" and subset == "all"'
+    )
+    pair_results = pd.read_csv(REPEAT_SEARCH / "pair_differences.csv")
+    means = pd.read_csv(REPEAT_SEARCH / "method_means.csv")
+    fixed = (
+        means.loc[means.protein.isin(DEVELOPMENT) & (means.model == "measured")]
+        .groupby(["budget", "method"])
+        .regret.mean()
+        .unstack()
+        .reindex(columns=METHOD_NAMES)
+    )
+    records, intervals = [], []
+    for name in CONFIRMATION:
+        table = pd.concat(
+            [pd.read_csv(path) for path in sorted((REPEAT_SEARCH / name / "trials").glob("*.csv"))],
+            ignore_index=True,
+        )
+        assert not table.duplicated(["budget", "model", "sample", "trial", "method"]).any()
+        assert (table.spent == table.budget).all()
+        for budget in (48, 96):
+            real = trial_array(table, name, budget, "measured")
+            assert real.shape == (50, len(METHOD_NAMES)) and np.isfinite(real).all()
+            all_pairs = pair_results.query("protein == @name and budget == @budget")
+            assert len(all_pairs) == 66
+            first_all = [METHOD_NAMES.index(m) for m in all_pairs["first"]]
+            second_all = [METHOD_NAMES.index(m) for m in all_pairs["second"]]
+            np.testing.assert_allclose(
+                real.mean(axis=0)[first_all] - real.mean(axis=0)[second_all],
+                all_pairs.difference,
+                atol=1e-12,
+            )
+            assert np.array_equal(
+                all_pairs.excludes_zero, (all_pairs.low > 0) | (all_pairs.high < 0)
+            )
+            pairs = all_pairs.loc[all_pairs.excludes_zero]
+            first = [METHOD_NAMES.index(m) for m in pairs["first"]]
+            second = [METHOD_NAMES.index(m) for m in pairs["second"]]
+            signs = np.sign(pairs.difference.to_numpy())
+            for model in ("mutascape", "additive", "zero_pair", "fixed"):
+                values = None if model == "fixed" else trial_array(table, name, budget, model)
+                if values is not None:
+                    assert values.shape == (100, len(METHOD_NAMES)) and np.isfinite(values).all()
+                prediction = fixed.loc[budget].to_numpy() if values is None else values.mean(axis=0)
+                tau = kendalltau(real.mean(axis=0).round(12), prediction.round(12)).statistic
+                expected = saved.query(
+                    "protein == @name and budget == @budget and model == @model"
+                ).iloc[0]
+                assert np.isclose(tau, expected.tau)
+                correct = int(np.sum(np.sign(prediction[first] - prediction[second]) == signs))
+                agreement = correct / len(pairs) if len(pairs) else np.nan
+                records.append(
+                    dict(
+                        protein=name,
+                        budget=budget,
+                        model=model,
+                        kendall_tau=tau,
+                        winner_accuracy=agreement,
+                        matching_pairs=correct,
+                        eligible_pairs=len(pairs),
+                    )
+                )
+                if model != "mutascape":
+                    continue
+                np.testing.assert_allclose(
+                    prediction[first_all] - prediction[second_all],
+                    all_pairs.mutascape_difference,
+                    atol=1e-12,
+                )
+                rng = np.random.default_rng(2026093000 + budget + CONFIRMATION.index(name))
+                boot = synthetic_bootstrap(values.reshape(5, 20, len(METHOD_NAMES)), rng)
+                agreement_boot = (
+                    np.mean(np.sign(boot[:, first] - boot[:, second]) == signs, axis=1)
+                    if len(pairs)
+                    else np.full(len(boot), np.nan)
+                )
+                for metric, point, limits in (
+                    ("kendall_tau", tau, (expected.tau_low, expected.tau_high)),
+                    ("winner_accuracy", agreement, np.nanquantile(agreement_boot, [0.025, 0.975])),
+                ):
+                    intervals.append(
+                        dict(
+                            protein=name,
+                            budget=budget,
+                            metric=metric,
+                            point=point,
+                            lower=limits[0],
+                            upper=limits[1],
+                            matching_pairs=correct,
+                            eligible_pairs=len(pairs),
+                        )
+                    )
+    return pd.DataFrame(records), pd.DataFrame(intervals)
 
 
 def search_intervals(study):
@@ -262,7 +362,14 @@ def search_figure(intervals, destination):
                 for index, row in enumerate(data.itertuples()):
                     y = index + offset
                     if not np.isfinite(row.point):
-                        ax.text(0.05, y, "no eligible pairs", va="center", fontsize=7, color=BLUE)
+                        ax.text(
+                            0.05,
+                            y,
+                            "No clear method differences",
+                            va="center",
+                            fontsize=7,
+                            color=edge,
+                        )
                         continue
                     ax.barh(
                         y,
@@ -271,8 +378,19 @@ def search_figure(intervals, destination):
                         facecolor=fill,
                         edgecolor=edge,
                         linewidth=0.85,
-                        label=f"{budget} queries" if index == 0 else None,
+                        label=f"{budget} evaluations" if index == 0 else None,
                     )
+                    if metric == "winner_accuracy":
+                        ax.text(
+                            1.05,
+                            y,
+                            f"{row.matching_pairs}/{row.eligible_pairs}",
+                            va="center",
+                            fontsize=7,
+                            color=edge,
+                        )
+                        if row.point == 0:
+                            ax.plot(0, y, "o", color=edge, ms=3, clip_on=False)
                     ax.plot([row.lower, row.upper], [y, y], color=edge, lw=0.8)
                     ax.plot([row.lower, row.lower], [y - 0.055, y + 0.055], color=edge, lw=0.8)
                     ax.plot([row.upper, row.upper], [y - 0.055, y + 0.055], color=edge, lw=0.8)
@@ -282,17 +400,17 @@ def search_figure(intervals, destination):
             ax.spines[["top", "right", "left"]].set_visible(False)
             ax.tick_params(axis="y", length=0)
             ax.axvline(0, color="#777777", lw=0.5)
-            ax.set_xlim((-0.85, 1.02) if metric == "kendall_tau" else (0, 1.04))
-            ax.set_xlabel(
-                "Kendall correlation" if metric == "kendall_tau" else "Fraction of eligible pairs"
-            )
+            ax.set_xlim((-0.85, 1.02) if metric == "kendall_tau" else (0, 1.27))
+            if metric == "winner_accuracy":
+                ax.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
+            ax.set_xlabel("Kendall correlation" if metric == "kendall_tau" else "Pair agreement")
         handles, labels = axes[0].get_legend_handles_labels()
         fig.legend(
             handles,
             labels,
             frameon=False,
             loc="upper center",
-            bbox_to_anchor=(0.5, 1.07),
+            bbox_to_anchor=(0.5, 1.05),
             ncol=2,
             fontsize=8,
         )
@@ -329,7 +447,7 @@ def creilov_figure(destination):
     }
     with plt.rc_context(STYLE):
         fig, axes = plt.subplots(1, 2, figsize=(7.1, 2.75))
-        axes[0].plot(centres, observed, color="#111111", lw=1, label="Measured")
+        axes[0].stairs(observed, bins, color="#111111", lw=1, label="Measured")
         x = np.arange(3)
         axes[1].bar(
             x - 0.23,
@@ -348,8 +466,8 @@ def creilov_figure(destination):
         ):
             hist = histograms[label]
             mid, lower, upper = np.median(hist, axis=0), hist.min(axis=0), hist.max(axis=0)
-            axes[0].plot(centres, mid, color=edge, lw=1, label=label)
-            axes[0].fill_between(centres, lower, upper, color=fill, alpha=0.65)
+            axes[0].stairs(mid, bins, color=edge, lw=1, label=label)
+            axes[0].stairs(upper, bins, baseline=lower, fill=True, color=fill, alpha=0.65)
             axes[0].errorbar(
                 centres,
                 mid,
@@ -372,7 +490,7 @@ def creilov_figure(destination):
                 yerr=[mid - spec.min(axis=0), spec.max(axis=0) - mid],
                 error_kw={"ecolor": edge, "elinewidth": 0.65, "capsize": 2},
             )
-        axes[0].set_title("(a) Fitness distributions", loc="left", fontsize=10)
+        axes[0].set_title("(a) Fluorescence distributions", loc="left", fontsize=10)
         axes[0].set_xlabel("Log fluorescence relative to WT")
         axes[0].set_ylabel("Density")
         axes[0].set_ylim(bottom=0)
@@ -403,9 +521,9 @@ def main():
     study = json.loads((VALIDATION / "singles-only-research-v1.json").read_text())
     pilot = json.loads((VALIDATION / "singles-pilot-extension-v1.json").read_text())
     tables(study, pilot, args.manuscript / "tables")
-    intervals = search_intervals(study)
-    intervals.to_csv(args.manuscript / "figures/singles_search_intervals.csv", index=False)
-    search_figure(intervals, args.manuscript / "figures")
+    from scripts.build_efficacy_manuscript import build
+
+    build(args.manuscript)
     creilov_figure(args.manuscript / "figures")
     print("Rebuilt singles-only manuscript tables and result figures.")
 

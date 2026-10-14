@@ -72,3 +72,15 @@ results/**/frame.pkl
 results/heldout_test_20260923/*/measured.csv
 results/pilot_ramp_20260923/*/measured.csv
 results/search_selection_20260924/
+
+# Per-landscape arrays, fitted models and full genotype tables written by the
+# 2026-09 result scripts. They run to hundreds of MB and the scripts rebuild them.
+results/**/*.npy
+results/**/*.log
+results/c2st_alternatives_20260923/full_predictions_*.npz
+results/pair_pilot_transfer_20260923/**/pair_fit.npz
+results/singles_only_restart_20260923/*/design.npz
+results/pair_pilot_transfer_20260923/ParB-Noc/genotypes.csv
+results/quantile_confirmation_20260923/CreiLOV/genotypes.csv
+results/quantile_confirmation_20260923/ParB-Noc/genotypes.csv
+results/quantile_confirmation_20260923/repaired_inputs/

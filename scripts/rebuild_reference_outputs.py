@@ -1,29 +1,16 @@
-"""Rebuild the frozen publication outputs from raw prepared data.
+"""Rebuild the current manuscript from saved results and prepared assay data."""
 
-This is the non-notebook smoke script for the paper pipeline. It regenerates:
-  - GB1 noise sweep CSV
-  - TrpB noise sweep CSV
-  - cross-protein headline figure set
-  - structural-prior contact map figure
-
-Run:
-    uv run python scripts/rebuild_reference_outputs.py
-"""
-
-from build_contact_map_figure import main as build_contact_map_figure_main
-from build_noise_figures import main as build_noise_figures_main
-from run_noise_sweep import run_sweep
+import subprocess
+import sys
+from pathlib import Path
 
 
 def main() -> None:
-    print("rebuilding GB1 headline sweep...")
-    run_sweep("gb1")
-    print("\nrebuilding TrpB headline sweep...")
-    run_sweep("trpb")
-    print("\nrebuilding headline figures...")
-    build_noise_figures_main()
-    print("\nrebuilding structural-prior figure...")
-    build_contact_map_figure_main()
+    subprocess.run(
+        [sys.executable, "-m", "scripts.rebuild_preprint", *sys.argv[1:]],
+        cwd=Path(__file__).resolve().parents[1],
+        check=True,
+    )
 
 
 if __name__ == "__main__":

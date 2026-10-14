@@ -40,12 +40,15 @@ The table holds WT and same-assay single mutants.
 Include a measurement for every queried substitution, or pass `complete="esm2"` to impute the rest.
 The default pair strength is 0.3 and the sigmoid extends 5% beyond the WT and singles range.
 Queries do not enumerate the library.
-`DMSLandscape.from_singles(sequence, singles, seed=42)` builds the same model from a DataFrame.
+For a DataFrame and sequence string, use `from_dms(singles, wt_sequence=sequence)`.
 See the [singles input guide](docs/singles_generator.md).
 
 [Combination-calibrated Mutascape](docs/quantile_generator.md) uses measured combinations to fit depth effects and a fitness-distribution map.
-Pass them as `from_dms(..., pilot="pilot.csv")`.
-It needs those additional measurements and currently enumerates the library.
+Pass them through the same entry point with `from_dms(singles, wt_sequence=sequence, calibration=combinations)`.
+The calibration input accepts a DataFrame or CSV path, such as `calibration="combinations.csv"`.
+Keep the same `generator.draw(seed=42)` and genotype query calls.
+This mode enumerates the search space and does not support `maximum_depth` or ESM-2 completion.
+The existing `pilot=` argument remains an alias for `calibration=`.
 
 The browser studio still uses the earlier empirical-range generator.
 Its Python form is `mutascape.legacy.from_dms`.
@@ -113,22 +116,35 @@ Scoring reads the true fitness of the variant with the best read, not the read i
 
 ## Evidence for the manuscript model
 
-Five development proteins select generator settings through distribution and local Walsh distances.
-Four further proteins test those settings without target combination fitting.
-Across those four, mean scaled Wasserstein distance is 1.116 and local Walsh distance is 0.500.
-The additive control gives 4.534 and 0.766, respectively.
-Mean sequence-aware C2ST AUC is 0.979, so the classifier readily detects mismatch.
-Combination-calibrated Mutascape reaches 0.667 with 192 separate calibration combinations per protein.
-It uses the same evaluation genotypes and excludes all spectral-test corners from its calibration set.
+Five protein datasets select the model and hyperparameters through distribution and local Walsh distances.
+Four further proteins test the generator without target combination fitting.
+Across those four, mean scaled Wasserstein distance is 1.049 and local Walsh distance is 0.500.
+Mutascape additive gives 4.501 and 0.766, respectively.
+Full-dataset sequence-aware C2ST gives mean AUC 0.982, so the classifier readily detects mismatch.
+Combination-calibrated Mutascape reaches 0.731 with 96 separate calibration genotypes per protein.
+Both generators use all remaining experimental multi-mutant genotypes, with identical classifier folds within each protein.
+The calibration set also excludes all spectral-test corners.
 
-With WT and singles already known, mean Kendall correlation across 12 methods reaches 0.207 at 48 queries and 0.582 at 96.
-The fixed ranking learned from development proteins gives 0.164 and 0.523.
-Paired protein-bootstrap intervals do not establish consistent added value over that control.
-These results support controlled synthetic benchmarks, without replacing measured search benchmarks.
+The corrected exploratory search study uses connected libraries from GB1, TrpB4, CreiLOV and eqFP611.
+Each library contains 4,096 measured genotypes, selected through genotype coverage without consulting fitness.
+WT and singles remain available before search, and model-guided methods first evaluate 32 new combinations.
+All 17,280 campaigns spend their evaluation budget without random fallback.
+At 96 evaluations, mean Spearman correlation is 0.730 for Mutascape and 0.824 for an additive control.
+Averaging three generator families lowers mean selected-method regret from 0.0448 to 0.0186.
+The paired difference interval is [-0.0902, 0.0129], so it includes no improvement.
+The connected libraries favour genotypes near WT and do not establish transfer across complete landscapes.
+These results support controlled synthetic benchmarks, without replacing experimentally measured combinatorial datasets.
+
+The [independent-calibration study](docs/calibrated_method_selection_results_2026-10-14.md) tests ten calibration samples per protein on GB1, TrpB4, T7 and TEV.
+Combination calibration improves fitness-distribution agreement but does not improve search-method selection in this study.
+In 31 of 40 fits, the fitted distribution map leaves no generated combination above the best starting observation.
+This limitation makes the model unsuitable for recommending search methods without further validation.
 
 The [singles study](docs/singles_only_research_results.md) reports the model comparisons.
-The [Combination-calibrated Mutascape report](docs/singles_pilot_extension_results.md) gives the additional experiment and its limits.
-Rebuild the current manuscript from saved results with `uv run python -m scripts.rebuild_preprint`.
+The [benchmark efficacy study](docs/benchmark_efficacy_results_2026-09-30.md) supplies the current search results and their limits.
+The [full-dataset C2ST report](docs/full_dataset_c2st_2026-10-06.md) gives the current distribution comparison and its limits.
+The [earlier calibration report](docs/singles_pilot_extension_results.md) retains the 192-genotype experiment.
+Rebuild the manuscript review from saved results with `uv run python -m scripts.build_review_manuscript`.
 
 ## Archived empirical-range reference study
 
@@ -162,8 +178,6 @@ A prospective ParB-Noc test exceeds the fixed-ranking control at all four budget
 Its median classifier AUCs remain 0.900 and 0.963, and its median spectral distance is 1.033.
 Search agreement does not imply matching landscape shape.
 
-The [review assessment](docs/review_response_2026-09-23.md) records controls, new experiments, and limits.
-The [pilot generator](docs/pilot_generator.md) uses measured combinations to fit mutation-depth effects.
 On CreiLOV, 48 calibration combinations reduce raw Wasserstein distance from 0.439 to 0.062 against a matched singles-only control.
 
 ## Reproduce the archived task-transfer result
@@ -362,17 +376,19 @@ uv run python -m scripts.rebuild_preprint
 ```
 
 This command replays saved search statistics, reruns spectral checks, rebuilds the figures, and compiles the v1 manuscript.
-See the [audit report](docs/preprint_audit_2026-09-23.md) for input paths and the distinction between replay and new search runs.
 
 ## Reproduce archival outputs
 
 ```bash
-./.venv/bin/python scripts/rebuild_reference_outputs.py
+./.venv/bin/python scripts/run_noise_sweep.py --protein gb1
+./.venv/bin/python scripts/run_noise_sweep.py --protein trpb
+./.venv/bin/python scripts/build_noise_figures.py
+./.venv/bin/python scripts/build_contact_map_figure.py
 ./.venv/bin/python scripts/run_gfp_supplemental_validation.py
 ./.venv/bin/pytest -q tests/test_reference_configs.py
 ```
 
-The rebuild script regenerates the GB1 / TrpB sweep CSVs and the headline figures under `notebooks/validation/output_*`.
+These commands regenerate the archived GB1 and TrpB CSVs and figures under `notebooks/validation/output_*`.
 
 ## Known limitations
 
@@ -385,9 +401,5 @@ The rebuild script regenerates the GB1 / TrpB sweep CSVs and the headline figure
 
 ## Docs
 
-- [Project status](docs/project_status.md)
-- [Benchmark protocol](docs/benchmark_protocol.md)
-- [CreiLOV adversarial assessment and replicate audit](docs/c2st_audit.md)
 - [Optional whole-protein ESM completion](docs/esm_completion.md)
 - [Global-epistasis design](docs/nonlinearity_design.md)
-- [Historical design document](docs/design.md)

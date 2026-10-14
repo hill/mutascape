@@ -24,7 +24,7 @@ RED = "#d84a45"
 
 
 def draw_sequence_walk(fig, colour):
-    """Show the same complete three-mutation graph in plan and fitness height."""
+    """Show the complete sequence graph and two fitness paths, plus variant C."""
     labels = ["WT", "A", "B", "C", "AB", "AC", "BC", "ABC"]
     sets = [set() if label == "WT" else set(label) for label in labels]
     points = np.array(
@@ -106,8 +106,16 @@ def draw_sequence_walk(fig, colour):
         local = (fitness[1] - 0.035) * np.maximum(1 - radius, 0) ** 4 * (1 + 4 * radius)
         return 0.035 + ridge + local
 
-    assert np.allclose(walk_hills(points[[0, 1, 2, 6, 7]]), fitness[[0, 1, 2, 6, 7]])
-    zz = walk_hills(np.column_stack([xx.ravel(), yy.ravel()])).reshape(xx.shape)
+    def walk_surface(query):
+        """Match C's fitness without changing the highlighted path endpoints."""
+        radius = np.linalg.norm(query - points[3], axis=1) / 0.45
+        envelope = np.maximum(1 - radius, 0) ** 4 * (1 + 4 * radius)
+        correction = fitness[3] - walk_hills(points[3:4])[0]
+        return walk_hills(query) + correction * envelope
+
+    shown = [0, 1, 2, 3, 6, 7]
+    assert np.allclose(walk_surface(points[shown]), fitness[shown])
+    zz = walk_surface(np.column_stack([xx.ravel(), yy.ravel()])).reshape(xx.shape)
     assert 0 <= zz.min() < zz.max() <= 1
     summit = np.array([xx.ravel()[zz.argmax()], yy.ravel()[zz.argmax()]])
     assert np.linalg.norm(summit - points[7]) < 0.05
@@ -138,6 +146,16 @@ def draw_sequence_walk(fig, colour):
         )
         for i in path:
             ax.text(*points[i], fitness[i] + 0.09, labels[i], fontsize=9, zorder=6)
+    ax.plot(
+        [points[3, 0]],
+        [points[3, 1]],
+        [fitness[3] + 0.025],
+        color="#516575",
+        marker="o",
+        ms=4,
+        zorder=5,
+    )
+    ax.text(*points[3], fitness[3] + 0.09, labels[3], fontsize=9, zorder=6)
     ax.set_proj_type("ortho")
     ax.view_init(elev=29, azim=-68)
     ax.set_box_aspect((1, 1, 0.85), zoom=1.1)
@@ -236,7 +254,7 @@ def render(output: Path) -> None:
         "(d) Narrow functional region",
     ]
     notes = [
-        "Smooth, single peak",
+        "Smooth, one peak",
         "Multiple local peaks",
         "Many variants retain function",
         "Most variants have low fitness",
@@ -290,6 +308,9 @@ def render(output: Path) -> None:
             bbox_inches="tight",
             pad_inches=0.12,
         )
+        if extension == "svg":
+            svg = output / "landscape_properties.svg"
+            svg.write_text("\n".join(line.rstrip() for line in svg.read_text().splitlines()) + "\n")
     plt.close(fig)
     np.savez_compressed(
         output / "landscape_properties.npz",

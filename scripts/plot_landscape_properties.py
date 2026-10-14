@@ -165,7 +165,7 @@ def draw_sequence_walk(fig, colour):
     fig.text(0.715, 0.455, "(d) Mutation order shapes the walk", ha="center", fontsize=13)
     fig.text(0.25, 0.015, "Each edge changes one mutation", ha="center", fontsize=10)
     fig.text(0.59, 0.015, "Local optima", color=RED, ha="center", fontsize=10)
-    fig.text(0.82, 0.015, "Mutation route to global optima", color=BLUE, ha="center", fontsize=9)
+    fig.text(0.82, 0.015, "Mutation path to the global optimum", color=BLUE, ha="center", fontsize=9)
 
 
 def landscape_surfaces(size: int = 161) -> tuple[np.ndarray, np.ndarray, list[np.ndarray]]:

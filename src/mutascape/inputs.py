@@ -120,7 +120,7 @@ def normalise_pilot(frame: pd.DataFrame, sequence: str) -> pd.DataFrame:
     frame = frame.rename(columns={column: str(column).strip().lower() for column in frame.columns})
     column = next((name for name in ("variant", "mutations") if name in frame.columns), None)
     if column is None or "fitness" not in frame.columns:
-        raise ValueError("pilot input needs variant/fitness or mutations/fitness columns")
+        raise ValueError("calibration input needs variant/fitness or mutations/fitness columns")
     rows, seen = [], set()
     for variant, fitness in frame[[column, "fitness"]].itertuples(index=False, name=None):
         mutant = parse_variant(
@@ -128,9 +128,13 @@ def normalise_pilot(frame: pd.DataFrame, sequence: str) -> pd.DataFrame:
         )
         key = tuple(sorted(mutant.items()))
         if len(key) < 2:
-            raise ValueError(f"pilot input must contain only multi-mutants, found {mutant.label}")
+            raise ValueError(
+                f"calibration input must contain only multi-mutant genotypes, found {mutant.label}"
+            )
         if key in seen:
-            raise ValueError(f"pilot input contains a duplicate measurement for {mutant.label}")
+            raise ValueError(
+                f"calibration input contains a duplicate measurement for {mutant.label}"
+            )
         seen.add(key)
         rows.append({"mutations": dict(mutant), "fitness": finite_fitness(fitness, mutant.label)})
     return pd.DataFrame(rows)

@@ -6,7 +6,14 @@ import sys
 import pandas as pd
 import pytest
 
-from mutascape import LandscapeGenerator, Oracle, from_dms, legacy, load_oracle
+from mutascape import (
+    LandscapeGenerator,
+    Oracle,
+    QuantileCalibratedLandscape,
+    from_dms,
+    legacy,
+    load_oracle,
+)
 
 SINGLES = pd.DataFrame(
     {
@@ -114,34 +121,129 @@ def test_variant_csv_and_fasta_paths_are_loaded(tmp_path):
     assert oracle.is_observed("A1G+C2D") is False
 
 
-def test_combinations_require_the_pilot_argument():
+def test_combinations_require_the_calibration_argument():
     variants = pd.DataFrame(
         {"variant": ["WT", "A1G", "C2D", "A1G+C2D"], "fitness": [1.0, 1.5, 0.5, 2.1]}
     )
 
-    with pytest.raises(ValueError, match="pilot="):
+    with pytest.raises(ValueError, match="calibration="):
         from_dms(variants, wt_sequence="AC")
 
 
-def test_pilot_calibration_keeps_measured_singles():
+@pytest.fixture
+def calibration_inputs():
     singles = pd.DataFrame(
         {
             "variant": ["WT", "A1G", "A1V", "C2D", "C2E", "D3F", "D3G"],
             "fitness": [1.0, 1.4, 0.3, 0.6, 1.1, 0.9, 0.2],
         }
     )
-    pilot = pd.DataFrame(
+    calibration = pd.DataFrame(
         {
             "variant": ["A1G+C2D", "A1V+C2E", "C2D+D3F", "A1G+D3G", "A1V+C2D+D3F"],
             "fitness": [0.8, 0.1, 0.4, 0.3, 0.0],
         }
     )
 
-    oracle = from_dms(singles, wt_sequence="ACD", pilot=pilot).draw(seed=3)
+    return singles, calibration
+
+
+@pytest.mark.parametrize("keyword", ["calibration", "pilot"])
+def test_calibration_matches_existing_model_and_keeps_measurements(calibration_inputs, keyword):
+    singles, calibration = calibration_inputs
+    original_singles, original_calibration = singles.copy(deep=True), calibration.copy(deep=True)
+    generator = from_dms(singles, wt_sequence="ACD", **{keyword: calibration})
+    reference = QuantileCalibratedLandscape.fit(
+        "ACD",
+        singles.rename(columns={"variant": "mutations"}),
+        calibration.rename(columns={"variant": "mutations"}),
+    )
+    assert generator.to_dict() == reference.to_dict()
+    oracle = generator.draw(seed=3)
+    variants = [*singles.variant, *calibration.variant, "A1G+C2E", "A1V+D3G"]
+    pd.testing.assert_series_equal(
+        oracle.score_many(variants), reference.draw(seed=3).score_many(variants)
+    )
+    pd.testing.assert_series_equal(
+        oracle.score_many(variants), generator.draw(seed=3).score_many(variants)
+    )
+    assert oracle.score_many(singles.variant.tolist()).tolist() == pytest.approx(singles.fitness)
 
     assert oracle["A1G"] == pytest.approx(1.4)
     assert oracle.is_observed("C2E") is True
     assert oracle.score_many(["A1G+C2E"]).index.tolist() == ["A1G+C2E"]
+    pd.testing.assert_frame_equal(singles, original_singles)
+    pd.testing.assert_frame_equal(calibration, original_calibration)
+
+
+def test_calibration_loads_csv_and_fasta_paths(calibration_inputs, tmp_path):
+    singles, calibration = calibration_inputs
+    singles.to_csv(tmp_path / "singles.csv", index=False)
+    calibration.to_csv(tmp_path / "combinations.csv", index=False)
+    (tmp_path / "wt.fasta").write_text(">WT\nACD\n")
+    generator = from_dms(
+        tmp_path / "singles.csv",
+        fasta=tmp_path / "wt.fasta",
+        calibration=tmp_path / "combinations.csv",
+    )
+    reference = from_dms(singles, wt_sequence="ACD", calibration=calibration)
+    assert generator.to_dict() == reference.to_dict()
+
+
+def test_calibration_accepts_mutation_mappings(calibration_inputs):
+    singles, calibration = calibration_inputs
+    mapped = calibration.drop(columns="variant").assign(
+        mutations=[
+            {1: "G", 2: "D"},
+            {1: "V", 2: "E"},
+            {2: "D", 3: "F"},
+            {1: "G", 3: "G"},
+            {1: "V", 2: "D", 3: "F"},
+        ]
+    )
+    generator = from_dms(singles, wt_sequence="ACD", calibration=mapped)
+    reference = from_dms(singles, wt_sequence="ACD", calibration=calibration)
+    assert generator.to_dict() == reference.to_dict()
+
+
+def test_calibration_cannot_be_supplied_twice(calibration_inputs):
+    singles, calibration = calibration_inputs
+    with pytest.raises(ValueError, match="only one of calibration or pilot"):
+        from_dms(singles, wt_sequence="ACD", calibration=calibration, pilot=calibration)
+
+
+@pytest.mark.parametrize("keyword", ["calibration", "pilot"])
+@pytest.mark.parametrize("options", [{"complete": "esm2"}, {"maximum_depth": 2}])
+def test_calibration_rejects_unsupported_options(calibration_inputs, keyword, options):
+    singles, calibration = calibration_inputs
+    with pytest.raises(ValueError, match="does not support complete or maximum_depth"):
+        from_dms(singles, wt_sequence="ACD", **{keyword: calibration}, **options)
+
+
+@pytest.mark.parametrize(
+    ("variants", "fitness", "error"),
+    [
+        ([], [], "must contain measurements"),
+        (["WT"], [1.0], "only multi-mutant genotypes"),
+        (["A1G"], [1.4], "only multi-mutant genotypes"),
+        (["A1G+C2D"] * 2, [0.3, 0.3], "duplicate measurement"),
+        (["A1G+C2D"], [float("nan")], "must be finite"),
+        (["A1G+C2D"], [0.3], "must identify both burden terms"),
+    ],
+)
+def test_invalid_calibration_is_not_ignored(calibration_inputs, variants, fitness, error):
+    singles, _ = calibration_inputs
+    calibration = pd.DataFrame({"variant": variants, "fitness": fitness})
+    with pytest.raises(ValueError, match=error):
+        from_dms(singles, wt_sequence="ACD", calibration=calibration)
+
+
+def test_omitting_calibration_keeps_single_site_generator():
+    original = from_dms(SINGLES, wt_sequence="AC")
+    explicit = from_dms(SINGLES, wt_sequence="AC", calibration=None)
+    assert isinstance(explicit, LandscapeGenerator)
+    assert explicit.draw(seed=42).manifest() == original.draw(seed=42).manifest()
+    assert explicit.draw(seed=42)["A1G+C2D"] == original.draw(seed=42)["A1G+C2D"]
 
 
 def test_legacy_manifest_still_loads():

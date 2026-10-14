@@ -11,19 +11,23 @@
             },
             {
               "items": [
-                "`position, wildtype, mutant, fitness` for single mutants.",
-                "`variant, fitness` for WT and singles.",
+                "`position, wildtype, mutant, fitness` for single-site variants.",
+                "`variant, fitness` for WT and single-site variants.",
                 "`mutations, fitness` where mutations contains mapping objects."
               ],
               "kind": "list"
             },
             {
               "kind": "text",
-              "text": "`complete=\"esm2\"` calibrates masked ESM scores on measured singles. It fills missing substitutions across the protein and keeps observations exact."
+              "text": "`complete=\"esm2\"` calibrates masked ESM scores on single-site measurements. It fills missing substitutions across the protein and keeps observations exact."
             },
             {
               "kind": "text",
-              "text": "`pilot` takes measured multi-mutants sampled uniformly from the library. The generator then matches their fitness distribution, and each draw enumerates the full library once."
+              "text": "`calibration` accepts a CSV path or DataFrame of measured multi-mutant genotypes sampled uniformly from the search space, using the same assay scale. Use `variant, fitness` or `mutations, fitness` columns. Every substitution must have a single-site measurement. These data fit depth effects, interaction strength and a fitness-distribution map. WT and single-site values stay exact. Calibration measurements fit the model and are not preserved as exact values."
+            },
+            {
+              "kind": "text",
+              "text": "With calibration, `generator.draw(seed=...)` enumerates the search space once, with a default limit of one million variants. This mode does not support `complete` or `maximum_depth`. Omitting calibration keeps the single-site-only generator. `pilot` remains an alias for `calibration`. Supply only one."
             }
           ],
           "parameters": [
@@ -73,12 +77,18 @@
               "annotation": "DMSInput | None",
               "default": "None",
               "keywordOnly": true,
+              "name": "calibration"
+            },
+            {
+              "annotation": "DMSInput | None",
+              "default": "None",
+              "keywordOnly": true,
               "name": "pilot"
             }
           ],
           "returns": "DMSGenerator | QuantileCalibratedLandscape",
-          "signature": "from_dms(dms: DMSInput, *, fasta: str | Path | None = None, wt_sequence: str | None = None, wild_type_fitness: float = 0.0, maximum_depth: int | None = None, complete: Literal['esm2'] | None = None, esm_model: str = 'esm2_t33_650M_UR50D', pilot: DMSInput | None = None) -> DMSGenerator | QuantileCalibratedLandscape",
-          "summary": "Build a generator from wild type, measured singles and a wild-type sequence."
+          "signature": "from_dms(dms: DMSInput, *, fasta: str | Path | None = None, wt_sequence: str | None = None, wild_type_fitness: float = 0.0, maximum_depth: int | None = None, complete: Literal['esm2'] | None = None, esm_model: str = 'esm2_t33_650M_UR50D', calibration: DMSInput | None = None, pilot: DMSInput | None = None) -> DMSGenerator | QuantileCalibratedLandscape",
+          "summary": "Build a generator from WT, single-site fitness and optional combination measurements."
         },
         {
           "name": "load_oracle",
@@ -123,74 +133,6 @@
           "returns": "DMSLandscape | DMSPairwiseLandscape",
           "signature": "load_oracle(manifest: str | Path | Mapping[str, object], *, dms: DMSInput, fasta: str | Path | None = None, wt_sequence: str | None = None, wild_type_fitness: float | None = None) -> DMSLandscape | DMSPairwiseLandscape",
           "summary": "Recreate and verify one fixed oracle from its saved manifest."
-        },
-        {
-          "name": "DMSLandscape.from_singles",
-          "notes": [
-            {
-              "kind": "text",
-              "text": "Strength scales unit-variance pair effects by the standard deviation of the measured single effects. Contacts restrict which site pairs can interact. A frozen `completion` adds imputed singles, which share the readout fitted to measured singles."
-            }
-          ],
-          "parameters": [
-            {
-              "annotation": "str",
-              "default": "",
-              "keywordOnly": false,
-              "name": "sequence"
-            },
-            {
-              "annotation": "DataFrame",
-              "default": "",
-              "keywordOnly": false,
-              "name": "singles"
-            },
-            {
-              "annotation": "int",
-              "default": "0",
-              "keywordOnly": true,
-              "name": "seed"
-            },
-            {
-              "annotation": "float",
-              "default": "0.3",
-              "keywordOnly": true,
-              "name": "strength"
-            },
-            {
-              "annotation": "Literal['linear', 'sigmoid', 'pool']",
-              "default": "'sigmoid'",
-              "keywordOnly": true,
-              "name": "mode"
-            },
-            {
-              "annotation": "float",
-              "default": "0.05",
-              "keywordOnly": true,
-              "name": "margin"
-            },
-            {
-              "annotation": "set[tuple[int, int]] | None",
-              "default": "None",
-              "keywordOnly": true,
-              "name": "contacts"
-            },
-            {
-              "annotation": "int | None",
-              "default": "None",
-              "keywordOnly": true,
-              "name": "maximum_depth"
-            },
-            {
-              "annotation": "Mapping | None",
-              "default": "None",
-              "keywordOnly": true,
-              "name": "completion"
-            }
-          ],
-          "returns": "Self",
-          "signature": "DMSLandscape.from_singles(sequence: str, singles: DataFrame, *, seed: int = 0, strength: float = 0.3, mode: Literal['linear', 'sigmoid', 'pool'] = 'sigmoid', margin: float = 0.05, contacts: set[tuple[int, int]] | None = None, maximum_depth: int | None = None, completion: Mapping | None = None) -> Self",
-          "summary": "Construct a landscape from WT and singles without enumerating variants."
         }
       ],
       "title": "Load data"
@@ -417,6 +359,79 @@
         }
       ],
       "title": "Run a campaign"
+    },
+    {
+      "entries": [
+        {
+          "name": "DMSLandscape.from_singles",
+          "notes": [
+            {
+              "kind": "text",
+              "text": "Strength scales unit-variance pair effects by the standard deviation of the measured single effects. Contacts restrict which site pairs can interact. A frozen `completion` adds imputed singles, which share the readout fitted to measured singles."
+            }
+          ],
+          "parameters": [
+            {
+              "annotation": "str",
+              "default": "",
+              "keywordOnly": false,
+              "name": "sequence"
+            },
+            {
+              "annotation": "DataFrame",
+              "default": "",
+              "keywordOnly": false,
+              "name": "singles"
+            },
+            {
+              "annotation": "int",
+              "default": "0",
+              "keywordOnly": true,
+              "name": "seed"
+            },
+            {
+              "annotation": "float",
+              "default": "0.3",
+              "keywordOnly": true,
+              "name": "strength"
+            },
+            {
+              "annotation": "Literal['linear', 'sigmoid', 'pool']",
+              "default": "'sigmoid'",
+              "keywordOnly": true,
+              "name": "mode"
+            },
+            {
+              "annotation": "float",
+              "default": "0.05",
+              "keywordOnly": true,
+              "name": "margin"
+            },
+            {
+              "annotation": "set[tuple[int, int]] | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "contacts"
+            },
+            {
+              "annotation": "int | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "maximum_depth"
+            },
+            {
+              "annotation": "Mapping | None",
+              "default": "None",
+              "keywordOnly": true,
+              "name": "completion"
+            }
+          ],
+          "returns": "Self",
+          "signature": "DMSLandscape.from_singles(sequence: str, singles: DataFrame, *, seed: int = 0, strength: float = 0.3, mode: Literal['linear', 'sigmoid', 'pool'] = 'sigmoid', margin: float = 0.05, contacts: set[tuple[int, int]] | None = None, maximum_depth: int | None = None, completion: Mapping | None = None) -> Self",
+          "summary": "Construct a landscape from WT and singles without enumerating variants."
+        }
+      ],
+      "title": "Advanced construction"
     }
   ],
   "c2st": [

@@ -1,42 +1,56 @@
 # Combination-calibrated Mutascape
 
 Combination-calibrated Mutascape uses measured combinations to fit depth effects, interaction strength and a fitness-distribution map.
-Its Python class is `QuantileCalibratedLandscape`.
-It uses measured combinations from a uniform sample of the intended library.
-The wild type and singles must come from the same assay.
+Pass the combination measurements to the optional `calibration` argument of `from_dms`.
+Use a uniform sample of the intended search space, with WT and single-site measurements from the same assay.
 
 ```python
 from mutascape import from_dms
 
-model = from_dms("singles.csv", fasta="wt.fasta", pilot="pilot.csv")
-landscape = model.draw(seed=42)
+generator = from_dms(
+    "singles.csv", fasta="wt.fasta", calibration="combinations.csv",
+)
+landscape = generator.draw(seed=42)
 fitness = landscape["A102G+P20Y"]
 ```
 
-The singles file follows the `from_dms` formats.
-The pilot file has `variant` and `fitness` columns.
-`QuantileCalibratedLandscape.fit(sequence, singles, pilot)` accepts DataFrames with `mutations` dictionaries instead.
-The pilot contains distinct combinations with at least two substitutions.
-Each substitution needs a measured single.
+Both inputs accept a DataFrame or CSV path.
+For tables and a sequence string, use `from_dms(singles, wt_sequence=sequence, calibration=combinations)`.
+The single-site file follows the `from_dms` formats.
+The calibration table has `variant` and `fitness` columns, or `mutations` and `fitness` columns with mutation labels or dictionaries.
+Each calibration genotype must contain at least two substitutions, and every substitution needs a single-site measurement.
+Supply at least three distinct calibration genotypes with enough variation to fit both mutation-depth terms.
+The loader rejects invalid measurements and duplicate genotypes.
+
+Omitting `calibration` returns the single-site-only generator.
+The older `pilot` argument remains an alias. Supplying both arguments raises an error.
+Combination calibration does not support `complete="esm2"` or `maximum_depth`.
 
 The model fits the mutation-depth terms and sigmoid used by `PilotCalibratedLandscape`.
-For each landscape sample, it enumerates the supported combination library and records the generated fitness ranks.
-It maps those ranks to quantiles of the measured pilot distribution.
+For each landscape sample, it enumerates the supported combinations and records the generated fitness ranks.
+It maps those ranks to quantiles of the measured calibration distribution.
 Repeated measured values retain their empirical probability mass.
 Linear interpolation handles other values, with linear extrapolation through the extreme intervals.
 
 The map preserves ordering among combinations except where a repeated measured value creates ties.
-Wild type and singles retain their measured fitness exactly.
+WT and single-site variants retain their measured fitness exactly.
 The calibration combinations fit the model but do not retain their measured fitness exactly.
 Repeated queries return the same value, irrespective of query order or batch size.
 
+Improved distribution agreement does not establish useful search-method recommendations.
+The [independent-calibration study](calibrated_method_selection_results_2026-10-14.md) found no improvement in method selection across four proteins.
+In 31 of 40 fits, no generated combination exceeded the best starting observation.
+The current quantile map can therefore remove opportunities for improvement that exist in the measured landscape.
+
 The default enumeration limit is one million variants.
-Larger libraries raise an error before enumeration.
+Larger search spaces raise an error before enumeration.
 A caller can set `maximum_variants` on `draw` after assessing memory and runtime.
 The enumeration uses generated scores and genotype identities. It does not need unknown measured fitness.
 
 ```python
-saved = model.to_dict()
+from mutascape import QuantileCalibratedLandscape
+
+saved = generator.to_dict()
 restored = QuantileCalibratedLandscape.from_dict(saved)
 landscape = restored.draw(seed=42)
 ```

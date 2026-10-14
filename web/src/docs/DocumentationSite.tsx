@@ -253,18 +253,24 @@ function OverviewPage({ onNavigate }: { onNavigate: (page: DocsPage) => void }) 
       <section className="docs-section">
         <h2>The manuscript model</h2>
         <p>
-          from_dms needs a WT sequence and measured WT and singles from the same assay. It requires
-          no combination pilot or protein structure. Each queried substitution needs a measured
-          single effect. DMSLandscape.from_singles builds the same model from a table with mutations
-          and fitness columns, with WT represented by an empty dictionary.
+          from_dms needs a WT sequence and measured WT and singles from the same assay. It accepts
+          files or tables and requires no combination measurements or protein structure. By default,
+          each queried substitution needs a measured single effect. Optional ESM-2 completion
+          estimates missing effects through the same interface.
         </p>
         <CodeBlock
           label="Python"
-          code={`from mutascape import DMSLandscape
+          code={`from mutascape import from_dms
 
-landscape = DMSLandscape.from_singles(sequence, singles, seed=42)
+generator = from_dms(singles, wt_sequence=sequence)
+landscape = generator.draw(seed=42)
 fitness = landscape["A102G+P20Y"]`}
         />
+        <p>
+          For combination calibration, pass a multi-mutant table or CSV path as{" "}
+          <InlineCode>calibration=combinations</InlineCode> in the same call to{" "}
+          <InlineCode>from_dms</InlineCode>. The sampling and query calls stay the same.
+        </p>
       </section>
 
       <section className="docs-section" id="quick-start">
@@ -562,7 +568,7 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
           <ProtocolItem
             number="04"
             title="Repeat methods and oracle samples"
-            text="Run ten search trials on three matched oracle samples."
+            text="Repeat searches across landscape samples. The current study uses five samples with six repeats each."
           />
         </ol>
       </section>
@@ -591,44 +597,73 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
       </section>
 
       <section className="docs-section">
-        <h2>Current singles-only evaluation</h2>
+        <h2>Current single-site-only evaluation</h2>
         <p>
-          Five development proteins select settings. GB1, TrpB4, T7 and TEV test those settings.
-          Mean scaled Wasserstein distance is 1.116 and local Walsh distance is 0.500. The additive
-          control gives 4.534 and 0.766. Local spectra use 256 complete three-site subcubes per
-          protein, with no missing-value filling.
+          Five protein datasets select the model and hyperparameters. GB1, TrpB4, T7 and TEV test
+          the generator. Mean scaled Wasserstein distance is 1.049 and local Walsh distance is
+          0.500. Mutascape additive gives 4.501 and 0.766. Local spectra use 256 complete three-site
+          subcubes per protein, with no missing-value filling.
         </p>
         <p>
-          Mean sequence-aware C2ST AUC is 0.979, which exposes substantial distribution mismatch.
-          Combination-calibrated Mutascape reaches 0.667 using 192 measured combinations per
-          protein. It fits none of the 1,000 evaluation genotypes or spectral-test corners. All four
-          confirmation proteins improve, but classifiers still detect differences.
+          Full-dataset sequence-aware C2ST gives mean AUC 0.982, which exposes substantial
+          distribution mismatch. Combination-calibrated Mutascape reaches 0.731 using 96
+          experimental multi-mutant genotypes per protein. Both generators use all remaining
+          experimental multi-mutant genotypes, with identical classifier folds within each protein.
+          Calibration excludes the evaluation genotypes and spectral-test corners. All four
+          evaluation proteins give lower AUC after calibration, but classifiers still detect
+          differences.
         </p>
         <p>
-          With WT and singles known before search, mean Kendall correlation reaches 0.207 at 48 new
-          queries and 0.582 at 96. The fixed ranking from development proteins gives 0.164 and
-          0.523. Paired protein-bootstrap intervals do not establish consistent added value over
-          that control.
+          A separate exploratory search study uses connected libraries from GB1, TrpB4, CreiLOV and
+          eqFP611. Each contains 4,096 measured genotypes, chosen through coverage without
+          consulting fitness. WT and singles remain known before search. Model-guided methods first
+          evaluate 32 new combinations. All 17,280 campaigns spend their budget without random
+          fallback.
+        </p>
+        <p>
+          At 96 evaluations, mean Spearman correlation is 0.730 for Mutascape and 0.824 for an
+          additive control. Averaging three generator families lowers mean selected-method regret
+          from 0.0448 to 0.0186. The paired difference interval is [-0.0902, 0.0129], which includes
+          no improvement. These libraries favour genotypes near WT. The results do not establish
+          transfer across complete landscapes or reliable method selection for a new protein.
+        </p>
+        <p>
+          This study uses corrected forest targets and counts only new initial measurements. Before
+          comparing methods, check candidate connectivity and the opportunity to improve beyond
+          known observations. Report absolute performance discrepancy and selected-method regret
+          alongside rank correlation. Historical studies retain their original protocols.
         </p>
         <h2>Combination-calibrated Mutascape</h2>
         <p>
-          QuantileCalibratedLandscape fits depth effects and an interaction scale from a random
-          pilot. It maps generated score percentiles to the pilot's empirical fitness quantiles. WT
-          and singles remain exact. The cost is the additional combination measurements.
+          Pass a uniform sample of measured combinations through the calibration argument of{" "}
+          <InlineCode>from_dms</InlineCode>. These measurements fit depth effects, interaction
+          strength and a map from generated score percentiles to measured fitness quantiles. WT and
+          single-site measurements remain exact. The cost is the additional combination data.
         </p>
         <CodeBlock
           label="Python"
           code={`from mutascape import from_dms
 
-model = from_dms("singles.csv", fasta="wt.fasta", pilot="pilot.csv")
-oracle = model.draw(seed=42)
-fitness = oracle["A102G+P20Y"]`}
+generator = from_dms(
+    "singles.csv", fasta="wt.fasta", calibration="combinations.csv",
+)
+landscape = generator.draw(seed=42)
+fitness = landscape["A102G+P20Y"]`}
         />
         <p>
-          Combination-calibrated Mutascape currently enumerates the supported library, with a
-          default limit of one million variants. The pilot table needs variant and fitness columns
-          and holds multi-mutants only. The matched test uses one pilot per protein, shared across
-          landscape samples.
+          Combination-calibrated Mutascape enumerates the supported search space, with a default
+          limit of one million variants. The calibration table needs variant and fitness columns and
+          holds multi-mutant genotypes only. Every substitution needs a single-site measurement.
+          This mode does not support ESM-2 completion or a maximum-depth limit. Omitting calibration
+          keeps the single-site-only generator. The older pilot argument remains an alias for
+          calibration.
+        </p>
+        <p>
+          A separate study used ten independent calibration samples per protein on GB1, TrpB4, T7
+          and TEV. Calibration improved fitness-distribution agreement but did not improve
+          search-method selection. In 31 of 40 fits, the fitted distribution map left no generated
+          combination above the best starting observation. Further validation is needed before using
+          this model to recommend search methods.
         </p>
       </section>
 

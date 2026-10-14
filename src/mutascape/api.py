@@ -28,23 +28,35 @@ def from_dms(
     maximum_depth: int | None = None,
     complete: Literal["esm2"] | None = None,
     esm_model: str = DEFAULT_ESM_MODEL,
+    calibration: DMSInput | None = None,
     pilot: DMSInput | None = None,
 ) -> DMSGenerator | QuantileCalibratedLandscape:
-    """Build a generator from wild type, measured singles and a wild-type sequence.
+    """Build a generator from WT, single-site fitness and optional combination measurements.
 
     ``dms`` accepts a CSV path or a DataFrame. Supported forms follow.
 
-    - ``position, wildtype, mutant, fitness`` for single mutants.
-    - ``variant, fitness`` for WT and singles.
+    - ``position, wildtype, mutant, fitness`` for single-site variants.
+    - ``variant, fitness`` for WT and single-site variants.
     - ``mutations, fitness`` where mutations contains mapping objects.
 
-    ``complete="esm2"`` calibrates masked ESM scores on measured singles.
+    ``complete="esm2"`` calibrates masked ESM scores on single-site measurements.
     It fills missing substitutions across the protein and keeps observations exact.
 
-    ``pilot`` takes measured multi-mutants sampled uniformly from the library.
-    The generator then matches their fitness distribution, and each draw
-    enumerates the full library once.
+    ``calibration`` accepts a CSV path or DataFrame of measured multi-mutant
+    genotypes sampled uniformly from the search space, using the same assay scale.
+    Use ``variant, fitness`` or ``mutations, fitness`` columns. Every substitution
+    must have a single-site measurement. These data fit depth effects, interaction
+    strength and a fitness-distribution map. WT and single-site values stay exact.
+    Calibration measurements fit the model and are not preserved as exact values.
+
+    With calibration, ``generator.draw(seed=...)`` enumerates the search space
+    once, with a default limit of one million variants. This mode does not support
+    ``complete`` or ``maximum_depth``. Omitting calibration keeps the single-site-only
+    generator. ``pilot`` remains an alias for ``calibration``. Supply only one.
     """
+    if calibration is not None and pilot is not None:
+        raise ValueError("provide only one of calibration or pilot")
+    calibration_data = calibration if calibration is not None else pilot
     if complete not in (None, "esm2"):
         raise ValueError("complete must be None or esm2")
     sequence = load_sequence(fasta=fasta, wt_sequence=wt_sequence)
@@ -53,13 +65,14 @@ def from_dms(
     )
     if (observations.depth > 1).any():
         raise ValueError(
-            "from_dms takes wild type and singles only. Pass measured combinations with pilot="
+            "from_dms takes WT and single-site measurements in dms. "
+            "Pass measured combinations with calibration="
         )
-    if pilot is not None:
+    if calibration_data is not None:
         if complete is not None or maximum_depth is not None:
-            raise ValueError("pilot calibration does not support complete or maximum_depth")
+            raise ValueError("combination calibration does not support complete or maximum_depth")
         return QuantileCalibratedLandscape.fit(
-            sequence, observations, normalise_pilot(load_dms_frame(pilot), sequence)
+            sequence, observations, normalise_pilot(load_dms_frame(calibration_data), sequence)
         )
     completion = None
     if complete == "esm2":

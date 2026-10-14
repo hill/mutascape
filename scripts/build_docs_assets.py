@@ -146,7 +146,6 @@ def _api_reference() -> list[dict[str, object]]:
             [
                 ("from_dms", from_dms),
                 ("load_oracle", load_oracle),
-                ("DMSLandscape.from_singles", DMSLandscape.from_singles),
             ],
         ),
         (
@@ -173,6 +172,10 @@ def _api_reference() -> list[dict[str, object]]:
                 ("Campaign.encode", Campaign.encode),
                 ("CampaignResult.to_dict", CampaignResult.to_dict),
             ],
+        ),
+        (
+            "Advanced construction",
+            [("DMSLandscape.from_singles", DMSLandscape.from_singles)],
         ),
     ]
     return [

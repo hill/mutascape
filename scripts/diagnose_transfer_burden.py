@@ -9,12 +9,13 @@ from assess_creilov_pilot import fit_pilot, pair_design, pair_noise
 from run_creilov_combinatorial_validation import parse_mutant
 from scipy.stats import wasserstein_distance
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.datasets import load_combingym_landscapes, load_ssmula_landscapes
 from mutascape.benchmarks.evaluation import classifier_two_sample_test, completion_fidelity_features
 
 
 def main():
-    root = Path(".mutascape/benchmark-data")
+    root = roots.data_root()
     datasets = [
         *load_ssmula_landscapes(root / "ssmula", strict=False),
         *load_combingym_landscapes(root / "combingym", strict=False),

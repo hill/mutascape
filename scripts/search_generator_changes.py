@@ -12,6 +12,7 @@ from Bio.Seq import Seq
 from joblib import Parallel, delayed
 from scipy.stats import kendalltau
 
+from mutascape.benchmarks import roots
 from mutascape.model import DMSLandscape
 from mutascape.nonlinearity import GlobalEpistasisSigmoid
 from scripts.investigate_singles_only import DEVELOPMENT, SEEDS, data, diagnostics
@@ -19,7 +20,7 @@ from scripts.investigate_singles_only import OUT as PREPARED
 from scripts.singles_warm_start import warm_rows
 
 OUT = Path("results/generator_search_20260923")
-SSMULA = Path(".mutascape/benchmark-data/ssmula/data")
+SSMULA = roots.ssmula() / "data"
 BUDGET = 96
 CONTACT_PROBABILITY = 0.5
 ESM_MODEL = "esm2_t33_650M_UR50D"

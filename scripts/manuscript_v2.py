@@ -33,6 +33,7 @@ from joblib import Parallel, delayed, parallel_config
 from scipy.linalg import hadamard
 from scipy.stats import kendalltau, wasserstein_distance
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.datasets import (
     COMBINGYM_MANIFEST,
     SSMULA_MANIFEST,
@@ -53,9 +54,9 @@ from mutascape.contacts import ContactMap
 from mutascape.model import DMSLandscape
 
 OUT = Path("results/manuscript_v2_20261015")
-SSMULA = Path(".mutascape/benchmark-data/ssmula")
-COMBINGYM = Path(".mutascape/benchmark-data/combingym")
-GRAPHFLA = Path(".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla")
+SSMULA = roots.ssmula()
+COMBINGYM = roots.combingym()
+GRAPHFLA = roots.graphfla()
 CREILOV_RAW = COMBINGYM / "Data/DMS/Raw/CreiLOV_raw.xlsx"
 
 MODEL_SELECTION = ("DHFR", "eqFP611", "ParB-Noc", "ParD2", "CreiLOV")

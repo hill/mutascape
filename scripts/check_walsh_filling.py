@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.datasets import load_combingym_landscapes, load_ssmula_landscapes
 from mutascape.benchmarks.generators import dms_pairwise_readout_tensor
 from mutascape.benchmarks.splits import mutation_order_split
@@ -17,8 +18,8 @@ from scripts.run_creilov_shape_validation import _binary_indices, _full_dms_obse
 
 def main():
     datasets = load_ssmula_landscapes(
-        ".mutascape/benchmark-data/ssmula", strict=False
-    ) + load_combingym_landscapes(".mutascape/benchmark-data/combingym", strict=False)
+        str(roots.ssmula()), strict=False
+    ) + load_combingym_landscapes(str(roots.combingym()), strict=False)
     target = next(d for d in datasets if d.name == "CreiLOV_fluorescence")
     train = mutation_order_split(target.variants, max_train_depth=1).train
     cube = supported_cube(target, train)

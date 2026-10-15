@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pandas as pd
 from joblib import Parallel, delayed
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.datasets import (
     load_combingym_landscapes,
     load_graphfla_landscapes,
@@ -50,8 +51,8 @@ def main():
     output = Path("results/review_response_20260923/readout_ablation")
     output.mkdir(parents=True, exist_ok=True)
     training = load_ssmula_landscapes(
-        ".mutascape/benchmark-data/ssmula", strict=False
-    ) + load_combingym_landscapes(".mutascape/benchmark-data/combingym", strict=False)
+        str(roots.ssmula()), strict=False
+    ) + load_combingym_landscapes(str(roots.combingym()), strict=False)
     targets = []
     # Reproduce original collection-specific indices, including both GB1 assays.
     for source in ("ssmula", "combingym"):
@@ -64,7 +65,7 @@ def main():
             selected = [d for d in fold.test if d.name in eligible]
             targets.extend((d, index, j) for j, d in enumerate(selected))
     graph = load_graphfla_landscapes(
-        ".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla",
+        str(roots.graphfla()),
         strict=True,
     )
     targets.extend((d, index, 0) for index, d in enumerate(graph))

@@ -100,6 +100,10 @@ Random pairwise couplings are **off by default** (`sigma = 0`). Setting `sigma >
 
 `prepare_*.py` scripts convert raw upstream data into the tracked CSVs. They do not download anything, they raise with the source URL.
 
+External benchmark corpora live outside git under `.mutascape/benchmark-data/`: `ssmula`, `combingym`, `graphfla` and `nn4dms`. `just benchmark-data` fetches all four, each pinned to a Zenodo record with an MD5 or to a git revision, and writes a `source.json` beside the data recording that pin. GraphFLA supplies the RBD and PhoQ landscapes.
+
+Resolve a corpus through `mutascape.benchmarks.roots` rather than a literal path, so the location is defined once and a missing corpus names the command that fetches it. `MUTASCAPE_DATA_ROOT` moves the whole set.
+
 Generated outputs under `notebooks/validation/output_*` and `notebooks/benchmark_pilot/` are ignored. Rebuild them rather than committing them.
 
 ## Notebooks

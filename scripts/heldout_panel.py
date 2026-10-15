@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.datasets import (
     COMBINGYM_MANIFEST,
     SSMULA_MANIFEST,
@@ -16,9 +17,9 @@ from mutascape.benchmarks.datasets import (
 from scripts.investigate_singles_only import digest, sample_cubes
 
 OUT = Path("results/heldout_panel_20260923")
-SSMULA = Path(".mutascape/benchmark-data/ssmula")
-COMBINGYM = Path(".mutascape/benchmark-data/combingym")
-GRAPHFLA = Path(".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla")
+SSMULA = roots.ssmula()
+COMBINGYM = roots.combingym()
+GRAPHFLA = roots.graphfla()
 TEST_SIZE = 1000
 CUBES = 256
 SEED_BASE = 2026092400

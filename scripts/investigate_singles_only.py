@@ -14,6 +14,7 @@ from joblib import Parallel, delayed
 from scipy.linalg import hadamard
 from scipy.stats import kendalltau, spearmanr, wasserstein_distance
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.datasets import SSMULA_MANIFEST, load_landscape
 from mutascape.benchmarks.evaluation import classifier_two_sample_test, completion_fidelity_features
 from mutascape.benchmarks.library import SearchSpace
@@ -45,7 +46,7 @@ def load(name):
         spec = next((s for s in SSMULA_MANIFEST if s.name == name), None)
     else:
         spec = next(s for s in SSMULA_MANIFEST if s.name == name)
-        source = Path(".mutascape/benchmark-data/ssmula") / spec.relative_path
+        source = roots.ssmula() / spec.relative_path
         data = load_landscape(source.parents[3], spec)
         sequence = data.wild_type_sequence
         frame = data.variants.reset_index(drop=True)
@@ -73,7 +74,7 @@ def contact_mask(name, spec):
     if spec is None:
         return None, {"available": False, "reason": "No verified residue mapping in this study"}
     stem = "TrpB" if name == "TrpB4" else name
-    source = Path(f".mutascape/benchmark-data/ssmula/data/{stem}/{stem}.pdb")
+    source = roots.ssmula() / "data" / stem / f"{stem}.pdb"
     structure = PDBParser(QUIET=True).get_structure(name, source)[0]
     for chain in structure:
         letters = "".join(

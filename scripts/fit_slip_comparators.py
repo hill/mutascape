@@ -10,6 +10,8 @@ from pathlib import Path
 import numpy as np
 from Bio import SeqIO
 
+from mutascape.benchmarks import roots
+
 CACHE = Path(".mutascape/external_comparison_20261006")
 MSAS = {
     "GB1": "GB1_b0.4.a2m",
@@ -21,7 +23,7 @@ ALPHABET = "ARNDCQEGHILKMFPSTWYV"
 
 def read_msa(protein):
     """Retain match columns and map them to original sequence positions."""
-    path = Path(".mutascape/benchmark-data/combingym/Data/MSA") / MSAS[protein]
+    path = roots.combingym() / "Data/MSA" / MSAS[protein]
     records = list(SeqIO.parse(path, "fasta"))
     query = str(records[0].seq)
     positions = [i + 1 for i, residue in enumerate(query) if residue.isupper()]

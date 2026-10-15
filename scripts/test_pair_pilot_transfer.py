@@ -13,6 +13,7 @@ from joblib import Parallel, delayed
 from scipy.stats import spearmanr, wasserstein_distance
 from sklearn.linear_model import BayesianRidge
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.datasets import (
     COMBINGYM_MANIFEST,
     SSMULA_MANIFEST,
@@ -39,10 +40,10 @@ def digest(path):
 
 def load_protein(name):
     if name == "DHFR":
-        root = Path(".mutascape/benchmark-data/ssmula")
+        root = roots.ssmula()
         spec = next(s for s in SSMULA_MANIFEST if s.name == "DHFR")
     elif name == "eqFP611":
-        root = Path(".mutascape/benchmark-data/combingym")
+        root = roots.combingym()
         spec = next(s for s in COMBINGYM_MANIFEST if s.name == "eqFP611_red")
     elif name == "ParB-Noc":
         root = GRAPH

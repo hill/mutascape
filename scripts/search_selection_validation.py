@@ -17,6 +17,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from sklearn.exceptions import ConvergenceWarning
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.library import SearchSpace
 from mutascape.benchmarks.methods import METHODS, make_features
 from mutascape.model import DMSLandscape
@@ -24,7 +25,7 @@ from scripts.investigate_singles_only import CONFIRMATION, DEVELOPMENT, data
 from scripts.singles_warm_start import DMSOracle
 
 OUT = Path("results/search_selection_20260924")
-SOURCE = Path(".mutascape/benchmark-data/nn4dms-434e354")
+SOURCE = roots.nn4dms(require=False)
 REVISION = "434e354828f306cbb6796033ef1169cbe5207350"
 BASE_URL = f"https://raw.githubusercontent.com/gitter-lab/nn4dms/{REVISION}/"
 NEW = {"Pab1": "pab1", "Ube4b": "ube4b", "Bgl3": "bgl3", "avGFP": "avgfp"}

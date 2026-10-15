@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.datasets import SSMULA_MANIFEST, load_landscape
 from mutascape.calibrated import QuantileCalibratedLandscape, empirical_quantiles
 from mutascape.validation.fourier import binary_cube_spectral_metrics, walsh_l1_distance
@@ -55,8 +56,8 @@ def load(name):
         )
     if name == "ParD2":
         spec = next(s for s in SSMULA_MANIFEST if s.name == name)
-        source = Path(".mutascape/benchmark-data/ssmula") / spec.relative_path
-        dataset = load_landscape(".mutascape/benchmark-data/ssmula", spec)
+        source = roots.ssmula() / spec.relative_path
+        dataset = load_landscape(str(roots.ssmula()), spec)
     else:
         dataset, source = load_protein(name)
     frame = dataset.variants.reset_index(drop=True)

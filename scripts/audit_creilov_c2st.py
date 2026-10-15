@@ -13,6 +13,7 @@ from run_creilov_combinatorial_validation import parse_mutant
 from run_creilov_shape_validation import _full_dms_observations
 from sklearn.model_selection import GroupKFold
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.datasets import load_combingym_landscapes, load_ssmula_landscapes
 from mutascape.benchmarks.evaluation import classifier_two_sample_test, completion_fidelity_features
 from mutascape.benchmarks.splits import mutation_order_split
@@ -21,7 +22,7 @@ from mutascape.completion import LandscapePrior, PosteriorLandscape
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-root", type=Path, default=Path(".mutascape/benchmark-data"))
+    parser.add_argument("--data-root", type=Path, default=roots.data_root())
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--samples", type=int, default=2000)
     parser.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44])

@@ -10,6 +10,7 @@ from types import SimpleNamespace
 import pandas as pd
 from joblib import Parallel, delayed
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.datasets import (
     _graphfla_spec,
     load_combingym_landscapes,
@@ -20,7 +21,7 @@ from mutascape.completion import LandscapePrior
 from scripts.run_search_transfer import _score_landscape, _validate_scores, _write_results
 
 ROOT = Path("results/review_response_20260923")
-GRAPH = Path(".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla")
+GRAPH = roots.graphfla()
 
 
 def settings(budget, output):
@@ -67,8 +68,8 @@ def main():
         if hashlib.sha256(Path(path).read_bytes()).hexdigest() != digest:
             raise ValueError(f"Frozen model code changed: {path}")
     training = load_ssmula_landscapes(
-        ".mutascape/benchmark-data/ssmula", strict=False
-    ) + load_combingym_landscapes(".mutascape/benchmark-data/combingym", strict=False)
+        str(roots.ssmula()), strict=False
+    ) + load_combingym_landscapes(str(roots.combingym()), strict=False)
     tasks = []
     models = [
         "measured",

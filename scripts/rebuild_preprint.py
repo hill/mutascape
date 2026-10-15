@@ -10,6 +10,7 @@ import sys
 from importlib.metadata import version
 from pathlib import Path
 
+from mutascape.benchmarks import roots
 from scripts.build_review_tables import build_control_tables, build_search_table
 from scripts.plot_benchmark_validity import plot_budget_curve, plot_landscapes, plot_summary
 
@@ -32,7 +33,12 @@ def main() -> None:
     parser.add_argument(
         "--archive",
         type=Path,
-        default=ROOT / ".mutascape/worktrees/posterior-landscapes-v1/notebooks/iclr",
+        required=True,
+        help=(
+            "Directory of archived output_validity_* runs from the ICLR preprint. "
+            "Those outputs were never tracked and no longer exist on disk; recover "
+            "them by rebuilding branch research/benchmark-validity-v1."
+        ),
     )
     parser.add_argument(
         "--legacy-reference",
@@ -68,9 +74,9 @@ def main() -> None:
         sys.executable,
         "scripts/run_creilov_shape_validation.py",
         "--ssmula-root",
-        ".mutascape/benchmark-data/ssmula",
+        str(roots.ssmula()),
         "--combingym-root",
-        ".mutascape/benchmark-data/combingym",
+        str(roots.combingym()),
         "--output",
         str(args.results / "creilov"),
     )

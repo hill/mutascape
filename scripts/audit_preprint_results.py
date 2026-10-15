@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.datasets import load_combingym_landscapes, load_ssmula_landscapes
 from mutascape.benchmarks.generators import dms_pairwise_readout_tensor
 from mutascape.benchmarks.splits import mutation_order_split
@@ -141,8 +142,8 @@ def _spectrum(tensor: np.ndarray) -> dict[int, float]:
 
 def audit_spectra(output: Path) -> None:
     datasets = [
-        *load_ssmula_landscapes(Path(".mutascape/benchmark-data/ssmula"), strict=False),
-        *load_combingym_landscapes(Path(".mutascape/benchmark-data/combingym"), strict=False),
+        *load_ssmula_landscapes(roots.ssmula(), strict=False),
+        *load_combingym_landscapes(roots.combingym(), strict=False),
     ]
     inventory = []
     for dataset in datasets:
@@ -302,7 +303,12 @@ def main() -> None:
     parser.add_argument(
         "--archive",
         type=Path,
-        default=Path(".mutascape/worktrees/posterior-landscapes-v1/notebooks/iclr"),
+        required=True,
+        help=(
+            "Directory of archived output_validity_* runs from the ICLR preprint. "
+            "Those outputs were never tracked and no longer exist on disk; recover "
+            "them by rebuilding branch research/benchmark-validity-v1."
+        ),
     )
     parser.add_argument("--output", type=Path, default=Path("results/preprint_audit_20260923"))
     parser.add_argument("--spectra-only", action="store_true")

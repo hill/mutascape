@@ -11,6 +11,7 @@ from types import SimpleNamespace
 
 import pandas as pd
 
+from mutascape.benchmarks import roots
 from mutascape.benchmarks.datasets import (
     load_combingym_landscapes,
     load_graphfla_landscapes,
@@ -25,19 +26,22 @@ def main() -> None:
     parser.add_argument(
         "--archive",
         type=Path,
-        default=Path(".mutascape/worktrees/posterior-landscapes-v1/notebooks/iclr"),
+        required=True,
+        help=(
+            "Directory of archived output_validity_* runs from the ICLR preprint. "
+            "Those outputs were never tracked and no longer exist on disk; recover "
+            "them by rebuilding branch research/benchmark-validity-v1."
+        ),
     )
     parser.add_argument(
         "--graphfla-root",
         type=Path,
-        default=Path(
-            ".mutascape/worktrees/posterior-landscapes-v1/.mutascape/benchmark-data/graphfla"
-        ),
+        default=Path(str(roots.graphfla())),
     )
     parser.add_argument("--rerun", action="store_true")
     args = parser.parse_args()
-    training = load_ssmula_landscapes(".mutascape/benchmark-data/ssmula", strict=False)
-    training += load_combingym_landscapes(".mutascape/benchmark-data/combingym", strict=False)
+    training = load_ssmula_landscapes(str(roots.ssmula()), strict=False)
+    training += load_combingym_landscapes(str(roots.combingym()), strict=False)
     targets = load_graphfla_landscapes(args.graphfla_root, strict=True)
     overlap = [d.name for d in targets if d.protein in {t.protein for t in training}]
     if overlap != ["GraphFLA_Poelwijk2019"]:
@@ -54,9 +58,9 @@ def main() -> None:
                     sys.executable,
                     "scripts/run_search_transfer.py",
                     "--ssmula-root",
-                    ".mutascape/benchmark-data/ssmula",
+                    str(roots.ssmula()),
                     "--combingym-root",
-                    ".mutascape/benchmark-data/combingym",
+                    str(roots.combingym()),
                     "--graphfla-root",
                     str(args.graphfla_root),
                     "--only",

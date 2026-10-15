@@ -79,7 +79,7 @@ Invariants worth knowing before you touch any of it:
 
 `src/mutascape/validation/reference_configs.py` holds the older `GB1_HEADLINE` and `TRPB_HEADLINE` pipelines. `tests/test_reference_configs.py` checks their regression metrics within tolerance bands.
 
-Those tests are the tripwire for any change to `landscape.py`, `epistasis.py`, `nonlinearity.py` or `validation/fourier.py`. A failure is either a real regression or a deliberate recalibration. If deliberate, the numbers appear in three places and all three need updating, the test, `docs/project_status.md`, and the README.
+Those tests are the tripwire for any change to `landscape.py`, `epistasis.py`, `nonlinearity.py` or `validation/fourier.py`. A failure is either a real regression or a deliberate recalibration. If deliberate, update the numbers in both the test and the README.
 
 Random pairwise couplings are **off by default** (`sigma = 0`). Setting `sigma > 0` measurably worsened headline metrics on both GB1 and TrpB, so a change that turns them on needs validation evidence, not just passing tests.
 
@@ -108,4 +108,4 @@ Not the source of truth. Per `notebooks/validation/README.md`, do not cite a not
 
 ## Prose
 
-A style hook lints markdown on edit and blocks on hard violations, so editing a doc can surface pre-existing problems in it. `docs/design.md` and `docs/references.md` are both non-compliant and deliberately left that way. Do not get pulled into fixing them while doing unrelated work.
+A style hook lints markdown on edit and blocks on hard violations, so editing a doc can surface pre-existing problems in it. `docs/references.md` is non-compliant and deliberately left that way. Do not get pulled into fixing it while doing unrelated work.

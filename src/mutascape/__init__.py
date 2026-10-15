@@ -24,12 +24,6 @@ from mutascape.landscape import Landscape, Variant
 from mutascape.model import DMSLandscape, SimpleLandscape
 from mutascape.mutant import Mutant, VariantLike, parse_variant
 from mutascape.nonlinearity import GlobalEpistasisSigmoid, Identity, NonLinearity
-from mutascape.plotting import (
-    plot_alpha_sweep,
-    plot_contact_map,
-    plot_epistasis_scatter,
-    plot_fitness_distribution,
-)
 from mutascape.scoring import ESM2Scorer, PLMScorer
 
 __all__ = [
@@ -63,10 +57,6 @@ __all__ = [
     "load_oracle",
     "morphing_landscape",
     "run_campaign",
-    "plot_alpha_sweep",
-    "plot_contact_map",
-    "plot_epistasis_scatter",
-    "plot_fitness_distribution",
     "parse_variant",
 ]
 

@@ -19,26 +19,6 @@ def profile_rmse(
     return float(np.sqrt(np.mean(np.array(diffs) ** 2)))
 
 
-def distributional_comparison(
-    real_values: np.ndarray,
-    synth_values: np.ndarray,
-) -> dict[str, float]:
-    """Compare two distributions using multiple statistics.
-
-    Returns dict with ks_statistic, ks_pvalue, wasserstein, mean_diff, std_diff.
-    """
-    ks_stat, ks_p = sp_stats.ks_2samp(real_values, synth_values)
-    wasserstein = float(sp_stats.wasserstein_distance(real_values, synth_values))
-
-    return {
-        "ks_statistic": float(ks_stat),
-        "ks_pvalue": float(ks_p),
-        "wasserstein": wasserstein,
-        "mean_diff": float(np.mean(synth_values) - np.mean(real_values)),
-        "std_diff": float(np.std(synth_values) - np.std(real_values)),
-    }
-
-
 def tensor_pearson_r(
     real_tensor: np.ndarray,
     synth_tensor: np.ndarray,

@@ -24,8 +24,6 @@ from numpy.typing import NDArray
 
 from mutascape.landscape import Landscape
 
-from .real_data import parse_proteingym_mutant
-
 
 def observed_alphabets(
     df: pd.DataFrame,
@@ -412,37 +410,3 @@ def binary_cube_spectral_metrics(
         "order_w1": order_wasserstein(real_t, synth_t),
         "walsh_l1": walsh_l1_distance(real_t, synth_t),
     }
-
-
-def proteingym_to_mutations_df(
-    combinatorial_csv,
-    positions: Sequence[int],
-    wt_fitness: float = 1.0,
-) -> tuple[pd.DataFrame, dict[int, str]]:
-    """Load a prepared combinatorial CSV into the standard validation schema.
-
-    Expects columns `mutant`, `fitness`, `depth` as written by prepare_gb1.py
-    (mutation strings already in domain numbering, fitness relative to WT).
-    Returns (DataFrame with mutations dict, fitness, depth; wt_aa_at_position).
-    """
-    raw = pd.read_csv(combinatorial_csv)
-    rows = []
-    wt_aa: dict[int, str] = {}
-    for _, row in raw.iterrows():
-        parsed = parse_proteingym_mutant(row["mutant"])
-        mutations = {}
-        for pos, (wt, mut) in parsed.items():
-            wt_aa.setdefault(pos, wt)
-            mutations[pos] = mut
-        rows.append(
-            {
-                "mutations": mutations,
-                "fitness": float(row["fitness"]),
-                "depth": int(row["depth"]),
-            }
-        )
-    df = pd.DataFrame(rows)
-    # Filter to variants strictly within the requested positions
-    pos_set = set(positions)
-    df = df[df["mutations"].apply(lambda m: set(m.keys()).issubset(pos_set))].reset_index(drop=True)
-    return df, wt_aa

@@ -1,5 +1,6 @@
 """Task-relative checks for synthetic search benchmarks."""
 
+from collections.abc import Hashable
 from itertools import combinations
 
 import numpy as np
@@ -7,7 +8,7 @@ import pandas as pd
 from scipy.stats import kendalltau
 
 
-def _mean_regret(scores: pd.DataFrame, dataset: str | int, arm: str) -> pd.Series:
+def _mean_regret(scores: pd.DataFrame, dataset: Hashable, arm: str) -> pd.Series:
     selected = scores.loc[(scores["dataset"] == dataset) & (scores["arm"] == arm)]
     return selected.groupby("method")["regret"].mean()
 

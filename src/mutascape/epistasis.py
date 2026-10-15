@@ -474,7 +474,7 @@ class ContactNKTensor:
 
 
 @dataclass
-class ContactNKEpistasis(EpistasisModel):
+class ContactNKEpistasis:
     """Position-centric NK-style couplings informed by the contact map.
 
     Classic NK (Kauffman) defines each position's fitness contribution as a
@@ -488,6 +488,10 @@ class ContactNKEpistasis(EpistasisModel):
     neighbours (capped at `max_neighbours` closest contacts if specified).
     The function is pinned so f_i(all wildtype) = 0, preserving the DMS
     single-site identity when this model is combined with `h_i`.
+
+    This is not an `EpistasisModel`. It produces a `ContactNKTensor` over
+    position neighbourhoods rather than a pairwise `CouplingTensor`, and it
+    feeds `Landscape.higher_order` rather than `Landscape.couplings`.
 
     Because f_i is drawn over the (1 + K_i)-tuple of AAs, it contributes
     variance at every Walsh order from 1 through 1 + K_i. In practice the

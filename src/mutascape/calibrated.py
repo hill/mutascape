@@ -5,7 +5,7 @@ each draw onto the measured combination-fitness distribution. The burden model
 underneath it fits depth terms to the same pilot.
 """
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from itertools import combinations, islice, product
 from typing import Literal, Self
@@ -207,7 +207,7 @@ class PilotLandscapeDraw:
     def domain(self) -> MutationDomain:
         return self.generator.domain
 
-    def evaluate_batch(self, variants: list[VariantLike]) -> NDArray[np.float64]:
+    def evaluate_batch(self, variants: Sequence[VariantLike]) -> NDArray[np.float64]:
         """Evaluate supported variants in input order, preserving measured singles."""
         g = self.generator
         keys = [tuple(sorted(g.domain.parse(v).items())) for v in variants]
@@ -486,7 +486,7 @@ class QuantileLandscapeDraw:
         g = self.generator.reference
         return g.anchors[()] + g.readout.forward(self.latent_values(variants))
 
-    def evaluate_batch(self, variants: list[VariantLike]) -> NDArray[np.float64]:
+    def evaluate_batch(self, variants: Sequence[VariantLike]) -> NDArray[np.float64]:
         """Evaluate variants without changing the draw or its calibration map."""
         g = self.generator.reference
         keys = [tuple(sorted(g.domain.parse(v).items())) for v in variants]
@@ -510,7 +510,7 @@ class QuantileLandscapeDraw:
         """Score one variant supplied as a label, mapping, or ``Mutant``."""
         return self.evaluate(variant)
 
-    def score_many(self, variants: list[VariantLike]) -> pd.Series:
+    def score_many(self, variants: Sequence[VariantLike]) -> pd.Series:
         """Score variants and return values indexed by canonical mutation labels."""
         mutants = [self.domain.parse(variant) for variant in variants]
         return pd.Series(

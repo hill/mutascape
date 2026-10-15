@@ -154,14 +154,14 @@ class _PairwiseLinear:
         self.singles = []
         for site, size in enumerate(self.sizes):
             indices = codes[:, site].astype(np.int64)
-            weights = np.bincount(indices, weights=dual, minlength=size)
+            weights = np.bincount(indices, weights=dual, minlength=size).astype(np.float64)
             self.singles.append(weights)
             self.intercept -= float(np.mean(weights[indices]))
         self.couples = {}
         for first, second in self.pairs:
             size = self.sizes[first] * self.sizes[second]
             indices = codes[:, first].astype(np.int64) * self.sizes[second] + codes[:, second]
-            weights = np.bincount(indices, weights=dual, minlength=size)
+            weights = np.bincount(indices, weights=dual, minlength=size).astype(np.float64)
             self.couples[first, second] = weights.reshape(self.sizes[first], self.sizes[second])
             self.intercept -= float(np.mean(weights[indices]))
         return self
@@ -206,6 +206,8 @@ class _OverlapGP:
         return self
 
     def predict(self, codes: NDArray[np.int16]) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        if self.codes is None:
+            raise RuntimeError("fit must run before predict")
         means = np.empty(len(codes), dtype=np.float64)
         deviations = np.empty(len(codes), dtype=np.float64)
         for start in range(0, len(codes), 8192):

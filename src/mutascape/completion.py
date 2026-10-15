@@ -8,6 +8,7 @@ for every genotype in the target mutation domain.
 
 import hashlib
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
 from functools import cached_property
 from importlib.metadata import PackageNotFoundError, version
@@ -15,13 +16,14 @@ from itertools import combinations
 from math import sqrt
 from os import PathLike
 from pathlib import Path
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
 from mutascape.domain import MutationDomain
+from mutascape.inputs import Manifest
 from mutascape.mutant import VariantLike
 from mutascape.nonlinearity import GlobalEpistasisSigmoid, NonLinearity
 
@@ -170,7 +172,7 @@ def _training_readout(
     centred_fitness: NDArray[np.float64],
     *,
     margin: float = 0.05,
-) -> NonLinearity | None:
+) -> GlobalEpistasisSigmoid | None:
     """Fit a readout for a training landscape from its full observed range.
 
     A training landscape is measured everywhere, so its own combinations give
@@ -567,7 +569,7 @@ class LandscapePrior:
             n_proteins=len({dataset.protein for dataset in datasets}),
         )
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """Return JSON-compatible prior parameters."""
         return {
             "order_location": {str(k): v for k, v in self.order_location.items()},
@@ -593,7 +595,7 @@ class LandscapePrior:
         }
 
     @classmethod
-    def from_dict(cls, values: dict[str, object]) -> Self:
+    def from_dict(cls, values: Manifest) -> Self:
         """Restore a prior written by :meth:`to_dict`."""
         locations = dict(values["order_location"])
         scales = dict(values["order_scale"])
@@ -1073,7 +1075,10 @@ class CompletedLandscape:
         readout = posterior.nonlinearity
         if readout is None or prior.texture_scale <= 0.0 or self.roughness <= 0.0:
             return 0.0
-        floor_hard = getattr(readout, "floor_hard", None)
+        # Only the sigmoid readout defines a floor, and the band needs its ceiling too.
+        if not isinstance(readout, GlobalEpistasisSigmoid):
+            return 0.0
+        floor_hard = readout.floor_hard
         if floor_hard is None:
             return 0.0
         band = _FLOOR_BAND * (float(readout.ceiling) - float(floor_hard))
@@ -1095,7 +1100,7 @@ class CompletedLandscape:
         blended = ((1.0 - mix) * ordered + mix * iid) / denominator if denominator else 0.0
         return self.roughness * prior.texture_scale * posterior.target_scale * blended
 
-    def evaluate_batch(self, variants: list[VariantLike]) -> NDArray[np.float64]:
+    def evaluate_batch(self, variants: Sequence[VariantLike]) -> NDArray[np.float64]:
         """Evaluate a sequence of genotypes."""
         return np.asarray([self.evaluate(variant) for variant in variants], dtype=np.float64)
 
@@ -1103,7 +1108,7 @@ class CompletedLandscape:
         """Score one variant supplied as a label, mapping, or ``Mutant``."""
         return self.evaluate(variant)
 
-    def score_many(self, variants: list[VariantLike]) -> pd.Series:
+    def score_many(self, variants: Sequence[VariantLike]) -> pd.Series:
         """Score variants and return values indexed by canonical mutation labels."""
         mutants = [self.domain.parse(variant) for variant in variants]
         return pd.Series(
@@ -1176,7 +1181,7 @@ class DMSPairwiseLandscape:
         centred = float(readout.forward(latent)) if readout is not None else float(latent)
         return float(generator.observations[()] + centred)
 
-    def evaluate_batch(self, variants: list[VariantLike]) -> NDArray[np.float64]:
+    def evaluate_batch(self, variants: Sequence[VariantLike]) -> NDArray[np.float64]:
         """Evaluate genotypes in input order."""
         return np.asarray([self.evaluate(variant) for variant in variants], dtype=np.float64)
 
@@ -1184,7 +1189,7 @@ class DMSPairwiseLandscape:
         """Score one variant supplied as a label, mapping, or ``Mutant``."""
         return self.evaluate(variant)
 
-    def score_many(self, variants: list[VariantLike]) -> pd.Series:
+    def score_many(self, variants: Sequence[VariantLike]) -> pd.Series:
         """Score variants and return values indexed by canonical mutation labels."""
         mutants = [self.domain.parse(variant) for variant in variants]
         return pd.Series(
@@ -1198,7 +1203,7 @@ class DMSPairwiseLandscape:
         mutant = self.domain.parse(variant)
         return _key(mutant, self.generator.wild_type_sequence) in self.generator.observations
 
-    def manifest(self) -> dict[str, object]:
+    def manifest(self) -> dict[str, Any]:
         """Return the fixed settings required to identify this benchmark oracle."""
         try:
             package_version = version("mutascape")

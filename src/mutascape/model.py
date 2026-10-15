@@ -2,14 +2,14 @@
 
 import hashlib
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from importlib.metadata import PackageNotFoundError, version
 from itertools import combinations
 from os import PathLike
 from pathlib import Path
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 import numpy as np
 import pandas as pd
@@ -31,7 +31,7 @@ def _pair(first: tuple[int, str], second: tuple[int, str], sequence: str, seed: 
 
 def source_digest(sequence: str, observations: Mapping[tuple, float], completion: Mapping) -> str:
     """Return a stable digest of the sequence, observations and frozen completion."""
-    payload: dict[str, object] = {
+    payload: dict[str, Any] = {
         "wild_type_sequence": sequence,
         "observations": [
             {"mutations": list(genotype), "fitness": fitness}
@@ -133,7 +133,7 @@ class DMSLandscape:
         domain = MutationDomain(sequence, tuple(effects), maximum_depth=maximum_depth)
         mask = None
         if contacts is not None:
-            mask = frozenset(tuple(sorted((int(a), int(b)))) for a, b in contacts)
+            mask = frozenset((min(int(a), int(b)), max(int(a), int(b))) for a, b in contacts)
             if any(
                 a == b or a not in domain.positions or b not in domain.positions for a, b in mask
             ):
@@ -171,7 +171,7 @@ class DMSLandscape:
             return 0.0
         return self.strength * self.scale
 
-    def evaluate_batch(self, variants: list[VariantLike]) -> NDArray[np.float64]:
+    def evaluate_batch(self, variants: Sequence[VariantLike]) -> NDArray[np.float64]:
         """Score supported variants with the same pair effects in every query."""
         parsed = [self.domain.parse(v) for v in variants]
         if not parsed:
@@ -231,7 +231,7 @@ class DMSLandscape:
         """Score one variant supplied as a label, mapping, or ``Mutant``."""
         return self.evaluate(variant)
 
-    def score_many(self, variants: list[VariantLike]) -> pd.Series:
+    def score_many(self, variants: Sequence[VariantLike]) -> pd.Series:
         """Score variants and return values indexed by canonical mutation labels."""
         mutants = [self.domain.parse(variant) for variant in variants]
         return pd.Series(
@@ -253,7 +253,7 @@ class DMSLandscape:
             return "imputed"
         return "synthetic"
 
-    def manifest(self) -> dict[str, object]:
+    def manifest(self) -> dict[str, Any]:
         """Return the fixed settings required to recreate this oracle."""
         try:
             package_version = version("mutascape")

@@ -12,9 +12,9 @@ that chases assay noise is penalised for it.
 """
 
 import hashlib
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, cast
 
 import numpy as np
 import pandas as pd
@@ -201,8 +201,10 @@ class Campaign:
         return np.asarray(reads, dtype=np.float64)
 
     def _as_list(self, variants: VariantLike | Iterable[VariantLike]) -> list[Mutant]:
-        if isinstance(variants, str | dict):
-            return [self._parse(variants)]
+        # A single variant may itself be a Mapping, which is also an iterable of
+        # its own positions, so it has to be matched before the iterable branch.
+        if isinstance(variants, str | Mapping):
+            return [self._parse(cast(VariantLike, variants))]
         return [self._parse(variant) for variant in variants]
 
     def _noise_for(self, label: str) -> float:

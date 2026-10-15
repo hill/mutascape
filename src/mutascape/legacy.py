@@ -17,7 +17,13 @@ from mutascape.completion import (
     PosteriorLandscape,
 )
 from mutascape.imputation import complete_singles, restore_completion
-from mutascape.inputs import DMSInput, load_dms_frame, load_sequence, normalise_observations
+from mutascape.inputs import (
+    DMSInput,
+    Manifest,
+    load_dms_frame,
+    load_sequence,
+    normalise_observations,
+)
 from mutascape.priors import DEFAULT_PRIOR_ID, load_prior_bundle
 
 __all__ = [
@@ -75,7 +81,7 @@ def from_dms(
 
 
 def load_oracle(
-    manifest: str | Path | Mapping[str, object],
+    manifest: str | Path | Manifest,
     *,
     dms: DMSInput,
     fasta: str | Path | None = None,

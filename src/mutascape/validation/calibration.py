@@ -256,57 +256,6 @@ def find_optimal_alpha(sweep_df: pd.DataFrame) -> float:
     return float(sweep_df.loc[best_idx, "alpha"])
 
 
-def global_epistasis_sweep(
-    real_metrics: dict,
-    single_site_effects: dict[int, dict[str, float]],
-    build_fn,
-    alphas: list[float],
-    scales: list[float],
-    depths: list[int] | None = None,
-    n_per_depth: int = 3000,
-) -> pd.DataFrame:
-    """Joint 2D sweep over (alpha, sigmoid_scale) for global-epistasis function.
-
-    Parameters
-    build_fn : callable(alpha, scale) -> Landscape
-        Builds a landscape with the given alpha and sigmoid scale. The
-        caller is responsible for setting floor/ceiling (usually via
-        GlobalEpistasisSigmoid.fit_from_singles once, then varying scale).
-
-    Returns DataFrame with columns: alpha, scale, composite_score, and
-    per-depth additive_corr_d{d} / sign_epi_d{d} for d in depths.
-    """
-    if depths is None:
-        depths = list(range(2, 8))
-
-    rows = []
-    for alpha in alphas:
-        for scale in scales:
-            print(f"  alpha={alpha:.2f} scale={scale:.3f}", end="", flush=True)
-            landscape = build_fn(alpha, scale)
-            synth_df = sample_synthetic_data(landscape, depths, n_per_depth=n_per_depth)
-            synth_metrics = compute_all_metrics(synth_df, single_site_effects, depths)
-            score = composite_validation_score(real_metrics, synth_metrics)
-
-            row = {"alpha": alpha, "scale": scale, "composite_score": score}
-            for d in depths:
-                if d in synth_metrics["additive_correlation"]:
-                    row[f"additive_corr_d{d}"] = synth_metrics["additive_correlation"][d]
-                if d in synth_metrics["sign_epistasis"]:
-                    row[f"sign_epi_d{d}"] = synth_metrics["sign_epistasis"][d]
-            rows.append(row)
-            print(f" -> score={score:.4f}")
-
-    return pd.DataFrame(rows)
-
-
-def find_optimal_global_epistasis(sweep_df: pd.DataFrame) -> tuple[float, float]:
-    """Return (alpha, scale) with the lowest composite score."""
-    best_idx = sweep_df["composite_score"].idxmin()
-    row = sweep_df.loc[best_idx]
-    return float(row["alpha"]), float(row["scale"])
-
-
 def refine_alpha(
     real_metrics: dict,
     single_site_effects: dict[int, dict[str, float]],

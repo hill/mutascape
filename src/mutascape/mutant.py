@@ -3,6 +3,10 @@
 import re
 from collections.abc import Collection, Mapping
 
+# Mapping is invariant in its key type, so a union of concrete key types is the only
+# annotation a caller holding a plain dict[int, str] can satisfy.
+type MutationMapping = Mapping[int, str] | Mapping[str, str]
+
 
 class Mutant(dict[int, str]):
     """A set of amino acid substitutions relative to wild type.
@@ -25,8 +29,8 @@ class Mutant(dict[int, str]):
 
     def __init__(
         self,
-        mutations: str | Mapping[int | str, str] = "",
-        wild_type: Mapping[int | str, str] | None = None,
+        mutations: str | MutationMapping = "",
+        wild_type: MutationMapping | None = None,
     ) -> None:
         super().__init__()
         self._wild_type = {}
@@ -119,7 +123,7 @@ class Mutant(dict[int, str]):
         return self.label
 
 
-type VariantLike = str | Mapping[int | str, str] | Mutant
+type VariantLike = str | MutationMapping | Mutant
 
 
 def parse_variant(

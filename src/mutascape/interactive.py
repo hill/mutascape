@@ -3,6 +3,8 @@
 Uses Plotly for 3D surfaces, animations, and hover interactivity.
 """
 
+from typing import Any
+
 import numpy as np
 import plotly.graph_objects as go
 from numpy.typing import NDArray
@@ -274,8 +276,8 @@ def morphing_landscape(
     zmin = global_zmin - z_pad
     zmax = global_zmax + z_pad
 
-    surface_kw = dict(colorscale=colorscale, cmin=global_zmin, cmax=global_zmax)
-    scatter_kw = dict(colorscale=colorscale, cmin=global_zmin, cmax=global_zmax)
+    surface_kw: dict[str, Any] = dict(colorscale=colorscale, cmin=global_zmin, cmax=global_zmax)
+    scatter_kw: dict[str, Any] = dict(colorscale=colorscale, cmin=global_zmin, cmax=global_zmax)
 
     # Build animation frames
     frames = []

@@ -13,9 +13,16 @@ never the target, so it stays inside the protein holdout.
 from dataclasses import replace
 
 import numpy as np
+from numpy.typing import NDArray
 
-from mutascape.benchmarks.splits import has_informative_singles, mutation_order_split
+from mutascape.benchmarks.datasets import LandscapeDataset
+from mutascape.benchmarks.splits import (
+    MutationOrderSplit,
+    has_informative_singles,
+    mutation_order_split,
+)
 from mutascape.benchmarks.topology import (
+    CubeSpec,
     measured_tensor,
     posterior_tensors,
     summarise,
@@ -44,7 +51,8 @@ def _usable(datasets, *, max_cube: int, max_landscapes: int, min_coverage: float
     one. At most one library per protein enters, and proteins are taken in
     coverage order.
     """
-    candidates: list[tuple[float, object]] = []
+    type Entry = tuple[LandscapeDataset, CubeSpec, NDArray[np.float64], MutationOrderSplit]
+    candidates: list[tuple[float, Entry]] = []
     for dataset in datasets:
         split = mutation_order_split(dataset.variants, max_train_depth=1)
         if not has_informative_singles(split.train):
@@ -58,7 +66,7 @@ def _usable(datasets, *, max_cube: int, max_landscapes: int, min_coverage: float
         candidates.append((coverage, (dataset, cube, measured, split)))
 
     candidates.sort(key=lambda item: (-item[0], item[1][0].name))
-    chosen: list[tuple] = []
+    chosen: list[Entry] = []
     proteins: set[str] = set()
     for _, entry in candidates:
         if len(chosen) >= max_landscapes:

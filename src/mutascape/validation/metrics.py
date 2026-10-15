@@ -13,6 +13,7 @@ as returned by fourier.fitness_tensor_from_real / _from_landscape.
 """
 
 from itertools import combinations, permutations
+from typing import TypedDict
 
 import numpy as np
 import pandas as pd
@@ -156,56 +157,6 @@ def epistatic_deviation_distributions(
     return result
 
 
-def pairwise_decomposition(
-    df: pd.DataFrame,
-    single_site_effects: dict[int, dict[str, float]],
-    pairwise_deviations: dict[tuple[int, int], dict[tuple[str, str], float]] | None = None,
-    depths: list[int] | None = None,
-) -> dict[int, float]:
-    """Fraction of total epistasis variance explained by pairwise terms.
-
-    If pairwise_deviations is None, estimates pairwise effects from the
-    doubles in the dataset (depth=2 variants).
-
-    Returns dict[depth, fraction_explained].
-    """
-    if depths is None:
-        depths = [d for d in sorted(df["depth"].unique()) if d >= 3]
-
-    # Estimate pairwise epistasis from doubles if not provided
-    if pairwise_deviations is None:
-        pairwise_deviations = _estimate_pairwise_from_doubles(df, single_site_effects)
-
-    result = {}
-    for d in depths:
-        sub = df[df["depth"] == d]
-        if len(sub) < 30:
-            continue
-
-        total_deviations = sub["epistatic_deviation"].values
-        pairwise_predictions = np.zeros(len(sub))
-
-        for i, (_, row) in enumerate(sub.iterrows()):
-            mutations = row["mutations"]
-            positions = sorted(mutations.keys())
-            pw_sum = 0.0
-            for j, p1 in enumerate(positions):
-                for p2 in positions[j + 1 :]:
-                    key = (min(p1, p2), max(p1, p2))
-                    aa_key = (mutations[p1], mutations[p2])
-                    pw_sum += pairwise_deviations.get(key, {}).get(aa_key, 0.0)
-            pairwise_predictions[i] = pw_sum
-
-        total_var = np.var(total_deviations)
-        if total_var > 0:
-            residual_var = np.var(total_deviations - pairwise_predictions)
-            result[d] = 1.0 - residual_var / total_var
-        else:
-            result[d] = 1.0
-
-    return result
-
-
 def _estimate_pairwise_from_doubles(
     df: pd.DataFrame,
     single_site_effects: dict[int, dict[str, float]],
@@ -277,9 +228,32 @@ def _neighbours_of(idx: tuple[int, ...], shape: tuple[int, ...]):
             yield tuple(new)
 
 
+class LocalOptima(TypedDict):
+    """Peak and basin structure of a complete fitness tensor."""
+
+    n_optima: int
+    peak_fraction: float
+    peak_indices: list[tuple[int, ...]]
+    peak_fitnesses: list[float]
+    global_peak: tuple[int, ...] | None
+    basin_sizes: list[int]
+    largest_basin_fraction: float
+    basin_entropy: float
+    n_variants: int
+
+
+class AccessiblePaths(TypedDict):
+    """Monotonic-path accessibility of a complete fitness tensor."""
+
+    mean_accessible_fraction: float
+    reciprocal_sign_frac: float
+    n_sources: int
+    peak_idx: tuple[int, ...]
+
+
 def local_optima_from_tensor(
     tensor: NDArray[np.float64],
-) -> dict[str, object]:
+) -> LocalOptima:
     """Count local optima of a complete fitness tensor.
 
     A local optimum is a cell whose fitness is strictly greater than all of
@@ -441,67 +415,6 @@ def sampled_neighbourhood_ruggedness(
     }
 
 
-def sampled_landscape_neighbourhoods(
-    landscape,
-    n_samples: int = 256,
-    n_mutations: int | tuple[int, int] = (1, 5),
-    max_neighbours: int | None = 5000,
-    seed: int = 42,
-) -> dict[str, float]:
-    """Estimate optima and uphill-move structure on a full mutascape oracle.
-
-    Exact `N_optima` requires enumerating the full Cartesian product and is only
-    feasible for small complete factorial libraries. This function samples
-    source variants from a live landscape, evaluates their Hamming-1
-    neighbourhoods, and reports scale-free topology diagnostics:
-
-    - `local_optimum_rate`: sampled analogue of `peak_fraction`.
-    - `mean_uphill_fraction`: how much of the local neighbourhood is uphill.
-    - `mean_best_step`: average best single-step improvement.
-    - `mean_neighbour_count`: average number of neighbours considered.
-
-    When a neighbourhood is too large, neighbours are subsampled uniformly.
-    """
-    rng = np.random.default_rng(seed)
-    variants = [
-        dict(v.mutations)
-        for v in landscape.generate(n_mutations=n_mutations, n=n_samples, seed=seed)
-    ]
-    positions = tuple(int(p) for p in landscape.positions)
-
-    n_local = 0
-    uphill_fracs = []
-    best_steps = []
-    neighbour_counts = []
-
-    for mutations in variants:
-        fitness = float(landscape.evaluate(mutations))
-        neighbours = _landscape_neighbours(landscape, mutations, positions)
-        if max_neighbours is not None and len(neighbours) > max_neighbours:
-            pick = rng.choice(len(neighbours), size=max_neighbours, replace=False)
-            neighbours = [neighbours[int(i)] for i in pick]
-        if not neighbours:
-            continue
-
-        neighbour_fitness = landscape.evaluate_batch(neighbours)
-        gains = neighbour_fitness - fitness
-        uphill = gains > 0
-        if not np.any(uphill):
-            n_local += 1
-        uphill_fracs.append(float(uphill.mean()))
-        best_steps.append(float(max(0.0, gains.max())))
-        neighbour_counts.append(float(len(neighbours)))
-
-    n_counted = len(uphill_fracs)
-    return {
-        "local_optimum_rate": n_local / n_counted if n_counted else float("nan"),
-        "mean_uphill_fraction": float(np.mean(uphill_fracs)) if n_counted else float("nan"),
-        "mean_best_step": float(np.mean(best_steps)) if n_counted else float("nan"),
-        "mean_neighbour_count": (float(np.mean(neighbour_counts)) if n_counted else float("nan")),
-        "n_sampled": float(n_counted),
-    }
-
-
 def _landscape_neighbours(landscape, mutations: dict[int, str], positions: tuple[int, ...]):
     """Construct Hamming-1 neighbours for a mutascape genotype."""
     neighbours = []
@@ -539,7 +452,7 @@ def accessible_paths(
     n_sources: int | None = None,
     n_rsign_samples: int = 20000,
     seed: int = 42,
-) -> dict[str, float]:
+) -> AccessiblePaths:
     """Fraction of monotonic single-step paths from each variant to the global peak.
 
     For each source variant at Hamming distance d from the peak, there are d!
@@ -555,7 +468,7 @@ def accessible_paths(
     rng = np.random.default_rng(seed)
 
     if peak_idx is None:
-        peak_idx = np.unravel_index(int(np.argmax(tensor)), shape)
+        peak_idx = tuple(int(x) for x in np.unravel_index(int(np.argmax(tensor)), shape))
 
     all_sources = list(np.ndindex(*shape))
     if n_sources is not None and n_sources < len(all_sources):
@@ -646,7 +559,7 @@ def fitness_distance_correlation_from_tensor(
     tensor = np.where(np.isnan(tensor), np.nanmean(tensor), tensor)
     shape = tensor.shape
     if peak_idx is None:
-        peak_idx = np.unravel_index(int(np.argmax(tensor)), shape)
+        peak_idx = tuple(int(x) for x in np.unravel_index(int(np.argmax(tensor)), shape))
 
     distances = np.empty(shape, dtype=int)
     for idx in np.ndindex(*shape):

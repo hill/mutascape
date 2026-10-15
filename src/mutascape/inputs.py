@@ -1,6 +1,8 @@
 """Parse DMS tables and wild-type sequences into canonical observations."""
 
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -8,6 +10,10 @@ import pandas as pd
 from mutascape.mutant import Mutant, parse_variant
 
 type DMSInput = str | Path | pd.DataFrame
+
+# Decoded JSON carries no static type. Manifest readers narrow each field as they
+# read it, so the boundary is annotated rather than statically checked.
+type Manifest = Mapping[str, Any]
 
 
 def load_sequence(*, fasta: str | Path | None, wt_sequence: str | None) -> str:
@@ -105,7 +111,7 @@ def normalise_observations(
     return pd.DataFrame(rows)
 
 
-def finite_fitness(value: object, label: str) -> float:
+def finite_fitness(value: Any, label: str) -> float:
     try:
         fitness = float(value)
     except (TypeError, ValueError) as exc:

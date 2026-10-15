@@ -27,7 +27,7 @@ explicit rather than implicit.
 import hashlib
 import math
 import warnings
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import combinations, product
 from pathlib import Path
@@ -328,7 +328,7 @@ class Landscape:
                     )
         return self.evaluate(mutations)
 
-    def evaluate(self, mutations: dict[int, str]) -> float:
+    def evaluate(self, mutations: Mapping[int, str]) -> float:
         """Compute fitness of a variant specified by its mutations.
 
         Fitness is relative to wild type: 0.0 means wild-type fitness,
@@ -474,7 +474,7 @@ class Landscape:
         rng = np.random.default_rng(normal_seed)
         return float(rng.normal())
 
-    def evaluate_batch(self, variants: list[dict[int, str]]) -> NDArray[np.float64]:
+    def evaluate_batch(self, variants: Sequence[Mapping[int, str]]) -> NDArray[np.float64]:
         """Evaluate fitness for a batch of variants.
 
         Parameters
@@ -884,12 +884,13 @@ class Landscape:
         for idx, f in zip(indices, fitness):
             tensor[idx] = f
 
-        result = local_optima_from_tensor(tensor)
-        result["positions"] = positions
-        result["alphabets"] = alphabets
-        result["tensor"] = tensor
-        result["n_variants"] = n
-        return result
+        return {
+            **local_optima_from_tensor(tensor),
+            "positions": positions,
+            "alphabets": alphabets,
+            "tensor": tensor,
+            "n_variants": n,
+        }
 
     def plot_epistasis(
         self,

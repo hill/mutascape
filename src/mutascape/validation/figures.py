@@ -4,7 +4,6 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import seaborn as sns
 from matplotlib.figure import Figure
 
@@ -105,109 +104,6 @@ def fig_alpha_calibration(sweep_df) -> Figure:
     ax.set_ylabel("Composite validation score (lower = better)")
     ax.set_title("Alpha calibration")
     ax.legend()
-    fig.tight_layout()
-    return fig
-
-
-def fig_cross_protein_summary(proteins: list[dict]) -> Figure:
-    """N x 4 cross-protein figure (one row per protein).
-
-    Each entry of `proteins` is a dict with the keys:
-        name : str -- protein label shown in titles
-        real_metrics : dict -- from compute_all_metrics
-        synth_metrics : dict -- from compute_all_metrics
-        alpha : float -- calibrated epistatic strength
-        depths : list[int] -- mutation depths to plot
-        walsh_real, walsh_synth : dict[int, float] | None --
-            order -> variance fraction. Pass None for both when the protein's
-            combinatorial space is too sparse to support a Walsh decomposition
-            (GFP-style sparse random sampling); that subplot shows a placeholder.
-
-    Columns: additive correlation, sign epistasis, Walsh decomposition bar
-    chart, epistatic deviation MAE.
-    """
-    n = len(proteins)
-    if n == 0:
-        raise ValueError("proteins must be non-empty")
-    fig, axes = plt.subplots(n, 4, figsize=(16, 4 * n))
-    if n == 1:
-        axes = axes.reshape(1, -1)
-    palette = sns.color_palette()
-
-    for row, entry in enumerate(proteins):
-        name = entry["name"]
-        real_m = entry["real_metrics"]
-        synth_m = entry["synth_metrics"]
-        alpha = entry["alpha"]
-        depths = entry["depths"]
-        walsh_r = entry.get("walsh_real")
-        walsh_s = entry.get("walsh_synth")
-        synth_label = f"mutascape \u03b1={alpha:.2f}"
-
-        ax = axes[row, 0]
-        real_y = _get_profile(real_m, "additive_correlation", depths)
-        synth_y = _get_profile(synth_m, "additive_correlation", depths)
-        ax.plot(depths, real_y, "o-", **REAL_STYLE, label=f"real {name}")
-        ax.plot(depths, synth_y, "s--", color=palette[0], lw=2, label=synth_label)
-        ax.set_ylabel("Pearson r")
-        ax.set_title(f"{name} additive correlation")
-        ax.set_xlabel("Mutation depth")
-        ax.set_ylim(0, 1.05)
-        ax.legend(fontsize=8)
-
-        ax = axes[row, 1]
-        real_y = _get_profile(real_m, "sign_epistasis", depths)
-        synth_y = _get_profile(synth_m, "sign_epistasis", depths)
-        ax.plot(depths, real_y, "o-", **REAL_STYLE)
-        ax.plot(depths, synth_y, "s--", color=palette[0], lw=2)
-        ax.set_ylabel("Fraction")
-        ax.set_title(f"{name} sign epistasis")
-        ax.set_xlabel("Mutation depth")
-        ax.set_ylim(0, 1.05)
-
-        ax = axes[row, 2]
-        if walsh_r is not None and walsh_s is not None:
-            orders = sorted(walsh_r.keys())
-            x = np.arange(len(orders))
-            ax.bar(x - 0.18, [walsh_r[o] for o in orders], width=0.36, color="black", label="real")
-            ax.bar(
-                x + 0.18,
-                [walsh_s[o] for o in orders],
-                width=0.36,
-                color=palette[0],
-                label="mutascape",
-            )
-            ax.set_xticks(x)
-            ax.set_xticklabels([f"order {o}" for o in orders])
-            ax.set_ylabel("Variance fraction")
-            ax.set_title(f"{name} Walsh decomposition")
-            ax.legend(fontsize=8)
-            ax.set_ylim(0, 1.0)
-        else:
-            ax.text(
-                0.5,
-                0.5,
-                "Complete space\nnot tractable",
-                ha="center",
-                va="center",
-                fontsize=11,
-                transform=ax.transAxes,
-            )
-            ax.set_title(f"{name} Walsh decomposition")
-            ax.set_xticks([])
-            ax.set_yticks([])
-
-        ax = axes[row, 3]
-        real_y = [real_m["deviation_stats"].get(d, {}).get("mae", np.nan) for d in depths]
-        synth_y = [synth_m["deviation_stats"].get(d, {}).get("mae", np.nan) for d in depths]
-        ax.plot(depths, real_y, "o-", **REAL_STYLE)
-        ax.plot(depths, synth_y, "s--", color=palette[0], lw=2)
-        ax.set_ylabel("MAE")
-        ax.set_xlabel("Mutation depth")
-        ax.set_title(f"{name} epistatic deviation")
-
-    names = " vs ".join(p["name"] for p in proteins)
-    fig.suptitle(f"mutascape validation: {names}", fontsize=14, y=1.02)
     fig.tight_layout()
     return fig
 
@@ -382,7 +278,7 @@ def fig_fitness_distribution(
         if arr.size:
             lo = min(lo, float(arr.min()))
             hi = max(hi, float(arr.max()))
-    edges = np.linspace(lo, hi, bins + 1)
+    edges = np.linspace(lo, hi, bins + 1).tolist()
 
     ax.hist(real_finite, bins=edges, density=True, color="black", alpha=0.4, label="real")
     for i, (label, values) in enumerate(synth_values_by_label.items()):
@@ -438,115 +334,5 @@ def fig_tensor_scatter(
     cb = fig.colorbar(hb, ax=ax)
     cb.set_label(r"$\log_{10}$ count")
     ax.legend(fontsize=8, loc="upper left")
-    fig.tight_layout()
-    return fig
-
-
-def fig_parameter_trajectory(
-    sweep_df,
-    metric_cols: list[str],
-    real_values: dict[str, float],
-    sweep_col: str = "sigma_nk",
-    protein_name: str = "real",
-    log_y: bool = False,
-) -> Figure:
-    """Plot each metric as a function of the ruggedness parameter, with real
-    landscape values as horizontal reference lines.
-
-    `sweep_df` has one row per parameter value; `metric_cols` picks which columns
-    to plot; `real_values` supplies the dashed reference line per metric.
-    The subplot per metric makes it easy to see where the sweep crosses real.
-    """
-    n = len(metric_cols)
-    cols = min(n, 3)
-    rows = (n + cols - 1) // cols
-    fig, axes = plt.subplots(rows, cols, figsize=(4.5 * cols, 3.2 * rows), squeeze=False)
-    palette = sns.color_palette()
-
-    xs = sweep_df[sweep_col].values
-
-    for i, metric in enumerate(metric_cols):
-        r, c = divmod(i, cols)
-        ax = axes[r][c]
-        ys = sweep_df[metric].values
-        ax.plot(xs, ys, "o-", color=palette[0], linewidth=2, label="synthetic")
-        if metric in real_values and real_values[metric] is not None:
-            ax.axhline(
-                real_values[metric],
-                color="black",
-                linestyle="--",
-                linewidth=1.5,
-                label=f"real {protein_name}",
-            )
-        ax.set_xlabel(sweep_col)
-        ax.set_ylabel(metric)
-        ax.set_title(metric)
-        ax.legend(fontsize=8)
-        if log_y and (ys > 0).all():
-            ax.set_yscale("log")
-
-    for j in range(n, rows * cols):
-        axes[j // cols][j % cols].axis("off")
-
-    fig.suptitle(f"Ruggedness parameter trajectory: {protein_name}", y=1.02)
-    fig.tight_layout()
-    return fig
-
-
-def fig_cross_protein_nk(
-    sweeps: dict[str, pd.DataFrame],
-    real_values: dict[str, dict[str, float]],
-    metric_cols: list[str],
-    sweep_col: str = "sigma_nk",
-) -> Figure:
-    """One subplot per metric; each subplot overlays the per-protein sweep
-    against that protein's real-landscape value (coloured by protein).
-
-    `sweeps`: {protein_name: DataFrame with sweep_col and metric_cols}.
-    `real_values`: {protein_name: {metric: real_value}}.
-
-    This is the "cross-protein generalisation" figure: does the same parameter
-    behave qualitatively the same way on multiple proteins?
-    """
-    n = len(metric_cols)
-    cols = min(n, 3)
-    rows = (n + cols - 1) // cols
-    fig, axes = plt.subplots(rows, cols, figsize=(5 * cols, 3.5 * rows), squeeze=False)
-    palette = sns.color_palette()
-
-    protein_colors = {name: palette[i % len(palette)] for i, name in enumerate(sweeps)}
-
-    for i, metric in enumerate(metric_cols):
-        r, c = divmod(i, cols)
-        ax = axes[r][c]
-        for name, df in sweeps.items():
-            col = protein_colors[name]
-            ax.plot(
-                df[sweep_col].values,
-                df[metric].values,
-                "o-",
-                color=col,
-                linewidth=2,
-                label=f"{name} synth",
-            )
-            real_v = real_values.get(name, {}).get(metric)
-            if real_v is not None:
-                ax.axhline(
-                    real_v,
-                    color=col,
-                    linestyle="--",
-                    linewidth=1.5,
-                    alpha=0.7,
-                    label=f"{name} real",
-                )
-        ax.set_xlabel(sweep_col)
-        ax.set_ylabel(metric)
-        ax.set_title(metric)
-        ax.legend(fontsize=7, ncol=2)
-
-    for j in range(n, rows * cols):
-        axes[j // cols][j % cols].axis("off")
-
-    fig.suptitle("Cross-protein ruggedness parameter behaviour", y=1.02)
     fig.tight_layout()
     return fig

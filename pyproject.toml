@@ -28,6 +28,7 @@ dev = [
     "httpx>=0.28",
     "pytest>=8.0",
     "ruff>=0.4",
+    "ty>=0.0.1a21",
 ]
 web = [
     "fastapi>=0.110",
@@ -45,8 +46,13 @@ target-version = "py314"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 
+[tool.ty.src]
+include = ["src/mutascape"]
+
+[tool.ty.rules]
+# Annotations the package ships behind py.typed must be checked, not assumed.
+possibly-unresolved-reference = "error"
+unused-ignore-comment = "error"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
-[dependency-groups]
-dev = []

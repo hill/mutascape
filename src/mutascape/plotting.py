@@ -149,14 +149,14 @@ def plot_contact_map(
         step = max(1, n // max_labels)
         tick_indices = list(range(0, n, step))
         ax.set_xticks(tick_indices)
-        ax.set_xticklabels([positions[i] for i in tick_indices], fontsize=8, rotation=45)
+        ax.set_xticklabels([str(positions[i]) for i in tick_indices], fontsize=8, rotation=45)
         ax.set_yticks(tick_indices)
-        ax.set_yticklabels([positions[i] for i in tick_indices], fontsize=8)
+        ax.set_yticklabels([str(positions[i]) for i in tick_indices], fontsize=8)
     else:
         ax.set_xticks(range(n))
-        ax.set_xticklabels(positions, fontsize=8, rotation=45)
+        ax.set_xticklabels([str(p) for p in positions], fontsize=8, rotation=45)
         ax.set_yticks(range(n))
-        ax.set_yticklabels(positions, fontsize=8)
+        ax.set_yticklabels([str(p) for p in positions], fontsize=8)
 
     ax.set_xlabel("Position")
     ax.set_ylabel("Position")

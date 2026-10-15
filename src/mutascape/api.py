@@ -11,6 +11,7 @@ from mutascape.completion import DMSPairwiseLandscape
 from mutascape.imputation import DEFAULT_ESM_MODEL, esm2_completion
 from mutascape.inputs import (
     DMSInput,
+    Manifest,
     load_dms_frame,
     load_sequence,
     normalise_observations,
@@ -94,7 +95,7 @@ def from_dms(
 
 
 def load_oracle(
-    manifest: str | Path | Mapping[str, object],
+    manifest: str | Path | Manifest,
     *,
     dms: DMSInput,
     fasta: str | Path | None = None,

@@ -8,6 +8,7 @@ notebooks and ad hoc scripts.
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from mutascape.epistasis import MSACouplingsEpistasis
 from mutascape.nonlinearity import GlobalEpistasisSigmoid
@@ -92,7 +93,7 @@ class ReferenceConfig:
     def build_landscape(self, **overrides):
         """Build the named landscape through the shared validation API."""
         nonlinearity = overrides.pop("nonlinearity", "fit")
-        params = {
+        params: dict[str, Any] = {
             "alpha": self.alpha,
             "sigma": self.sigma,
             "noise_sigma": self.noise_sigma,
@@ -260,16 +261,6 @@ def get_reference_config(name: str) -> ReferenceConfig:
     except KeyError as exc:
         known = ", ".join(sorted(REFERENCE_CONFIGS))
         raise KeyError(f"Unknown reference config {name!r}. Known: {known}") from exc
-
-
-def build_gb1_headline_landscape(**overrides):
-    """Named builder for the GB1 publication reference configuration."""
-    return GB1_HEADLINE.build_landscape(**overrides)
-
-
-def build_trpb_headline_landscape(**overrides):
-    """Named builder for the TrpB publication reference configuration."""
-    return TRPB_HEADLINE.build_landscape(**overrides)
 
 
 def evaluate_reference_config(config: ReferenceConfig) -> ReferenceEvaluation:

@@ -20,6 +20,7 @@ import hashlib
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -111,9 +112,10 @@ class ESM2Scorer(PLMScorer):
         self.batch_size = batch_size
         self.cache_dir = cache_dir or Path.home() / ".cache" / "mutascape" / "scores"
 
-        self._model = None
-        self._alphabet = None
-        self._batch_converter = None
+        # Loaded on first use, so every attribute starts empty.
+        self._model: Any = None
+        self._alphabet: Any = None
+        self._batch_converter: Any = None
 
         # Device selection (same logic as mutantopt)
         if device == "auto":

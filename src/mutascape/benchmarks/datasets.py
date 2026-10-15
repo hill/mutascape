@@ -382,7 +382,7 @@ def _normalise_graphfla(
         )
 
     variants = pd.DataFrame(rows)
-    alphabets = {
+    alphabets: dict[int, tuple[str, ...]] = {
         position: tuple(symbols[: len(encoding)])
         for position, encoding in enumerate(encodings, start=1)
     }

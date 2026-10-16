@@ -26,6 +26,7 @@ from Bio import SeqIO
 from numpy.typing import NDArray
 
 from mutascape.contacts import ContactMap
+from mutascape.mutant import AA_INDEX, AMINO_ACIDS
 
 
 @dataclass(frozen=True)
@@ -92,9 +93,9 @@ class CouplingTensor:
         return float(np.mean(magnitudes))
 
 
-# Standard amino acid alphabet
-AMINO_ACIDS = tuple("ACDEFGHIKLMNPQRSTVWY")
-AA_INDEX = {aa: i for i, aa in enumerate(AMINO_ACIDS)}
+# Re-exported here because the legacy model and its tests import them from this
+# module. The definitions live in mutant.py.
+__all__ = ["AA_INDEX", "AMINO_ACIDS"]
 
 
 class EpistasisModel(ABC):
@@ -285,7 +286,7 @@ class MSACouplingsEpistasis(EpistasisModel):
         additive h_i from DMS.
     alphabet : str
         20-letter AA alphabet; order must match the last two axes of
-        coupling_matrix. Default "ACDEFGHIKLMNPQRSTVWY".
+        coupling_matrix. Defaults to the twenty standard residues.
     restrict_to_contacts : bool
         If True (default), only contacting pairs from the contact map get
         non-zero couplings. If False, all precomputed MSA couplings are used
@@ -295,7 +296,7 @@ class MSACouplingsEpistasis(EpistasisModel):
     coupling_matrix: NDArray[np.float64]
     position_order: tuple[int, ...]
     scale: float = 1.0
-    alphabet: str = "ACDEFGHIKLMNPQRSTVWY"
+    alphabet: str = "".join(AMINO_ACIDS)
     restrict_to_contacts: bool = True
 
     def __post_init__(self):
@@ -347,7 +348,7 @@ class MSACouplingsEpistasis(EpistasisModel):
         cls,
         path,
         scale: float = 1.0,
-        alphabet: str = "ACDEFGHIKLMNPQRSTVWY",
+        alphabet: str = "".join(AMINO_ACIDS),
         restrict_to_contacts: bool = True,
     ) -> MSACouplingsEpistasis:
         """Load from an .npz with keys `coupling_matrix` (L,L,20,20 float) and
@@ -368,7 +369,7 @@ class MSACouplingsEpistasis(EpistasisModel):
         positions: tuple[int, ...],
         reference_id: str | None = None,
         pseudocount: float = 0.5,
-        alphabet: str = "ACDEFGHIKLMNPQRSTVWY",
+        alphabet: str = "".join(AMINO_ACIDS),
         scale: float = 1.0,
         restrict_to_contacts: bool = True,
     ) -> MSACouplingsEpistasis:

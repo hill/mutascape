@@ -115,25 +115,28 @@ def load_proteingym_multimutant(
     return df
 
 
-def load_gb1_combinatorial(
+def load_combinatorial_csv(
     combinatorial_csv: str | Path,
     dms_csv: str | Path,
-    positions: tuple[int, ...] = (39, 40, 41, 54),
+    positions: tuple[int, ...] | None = None,
     min_depth: int = 1,
     max_depth: int = 4,
 ) -> pd.DataFrame:
-    """Load the prepared GB1 combinatorial CSV into the standard schema.
+    """Load a prepared combinatorial CSV into the standard schema.
 
-    The CSV is the output of data/gb1/prepare_gb1.py and has columns
-    (mutant, fitness, depth) where fitness is already relative to WT=0.
-    Keeps only variants whose mutated positions are a subset of `positions`.
+    The CSV is the output of a ``data/<protein>/prepare_*.py`` script and has
+    columns (mutant, fitness, depth), with fitness already relative to WT=0.
+
+    ``positions`` keeps only variants whose mutated sites are a subset of the
+    given ones. It defaults to every position the single-site data covers,
+    which is the whole library for a combinatorial screen.
 
     Returns DataFrame with columns: mutations (dict), fitness, additive_prediction,
     depth, epistatic_deviation.
     """
     raw = pd.read_csv(combinatorial_csv)
     effects = load_single_site_effects(dms_csv)
-    pos_set = set(positions)
+    pos_set = set(effects) if positions is None else set(positions)
 
     rows = []
     n_skipped = 0
@@ -199,3 +202,7 @@ def sample_synthetic_data(
                 }
             )
     return pd.DataFrame(rows)
+
+
+# The TrpB and GB1 notebooks both reach for this name; it was never GB1-specific.
+load_gb1_combinatorial = load_combinatorial_csv

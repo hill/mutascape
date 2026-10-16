@@ -6,6 +6,7 @@ default for a checkout that keeps the downloads elsewhere.
 """
 
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 DEFAULT_DATA_ROOT = Path(".mutascape/benchmark-data")
@@ -16,6 +17,52 @@ SSMULA_DIRECTORY = "ssmula"
 COMBINGYM_DIRECTORY = "combingym"
 GRAPHFLA_DIRECTORY = "graphfla"
 NN4DMS_DIRECTORY = "nn4dms"
+
+
+@dataclass(frozen=True)
+class Corpus:
+    """One pinned external collection, and where it comes from.
+
+    The pin is the provenance claim a dataset carries, and the thing the
+    fetcher downloads, so both read it from here.
+    """
+
+    directory: str
+    url: str
+    revision: str = ""
+    md5: str = ""
+
+    @property
+    def archive_url(self) -> str:
+        """Pinned tarball for a repository snapshot."""
+        if not self.revision:
+            raise ValueError(f"{self.directory} is not pinned to a revision")
+        return f"{self.url}/archive/{self.revision}.tar.gz"
+
+
+SSMULA = Corpus(
+    directory=SSMULA_DIRECTORY,
+    url="https://zenodo.org/records/15203754",
+    revision="4926b8e614d426ca567159988834482c23da13a3",
+    md5="d94418e5865949b1e2bf9af49fe9438a",
+)
+COMBINGYM = Corpus(
+    directory=COMBINGYM_DIRECTORY,
+    url="https://github.com/sitonglab/CombinGym",
+    revision="e635a959731d2a14f90269245ccbec4bf2645324",
+)
+GRAPHFLA = Corpus(
+    directory=GRAPHFLA_DIRECTORY,
+    url="https://github.com/COLA-Laboratory/GraphFLA",
+    revision="9f86def1a12db76d26af16077ba28cb61ee0af5f",
+)
+NN4DMS = Corpus(
+    directory=NN4DMS_DIRECTORY,
+    url="https://github.com/gitter-lab/nn4dms",
+    revision="434e354828f306cbb6796033ef1169cbe5207350",
+)
+
+CORPORA = (SSMULA, COMBINGYM, GRAPHFLA, NN4DMS)
 
 _SOURCE_FLAGS = {
     SSMULA_DIRECTORY: "ssmula",

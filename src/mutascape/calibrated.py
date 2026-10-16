@@ -20,11 +20,14 @@ from sklearn.preprocessing import StandardScaler
 from mutascape.completion import dms_pairwise_unit_coefficient
 from mutascape.domain import MutationDomain
 from mutascape.mutant import VariantLike, parse_variant
-from mutascape.nonlinearity import GlobalEpistasisSigmoid
+from mutascape.nonlinearity import DEFAULT_SIGMOID_MARGIN, GlobalEpistasisSigmoid
+from mutascape.schemas import AnchorRow, EffectRow, PilotModel, QuantileModel, ReadoutSpec
 
 DEFAULT_REFERENCE_SIZE = 100_000
-# Share of the calibration sample whose upper quantiles set the slope of the latent tail.
-TAIL_FRACTION = 0.1
+# Share of the calibration sample whose upper quantiles set the slope of the
+# latent tail. A random sample rarely holds the fittest combinations, so the
+# tail decides how far generated fitness may rise above the best one measured.
+DEFAULT_TAIL_FRACTION = 0.1
 
 
 def _sample_reference_batches(
@@ -57,6 +60,23 @@ def _sample_reference_batches(
             yield batch
 
 
+def _check_integer(name: str, value: object, *, minimum: int, optional: bool) -> None:
+    """Reject anything that is not an integer at or above ``minimum``.
+
+    ``bool`` is an ``int`` subclass, so ``True`` would otherwise pass as 1.
+    """
+    if value is None:
+        if optional:
+            return
+        raise ValueError(f"{name} must not be None")
+    if (
+        isinstance(value, bool | np.bool_)
+        or not isinstance(value, int | np.integer)
+        or value < minimum
+    ):
+        raise ValueError(f"{name} must be an integer greater than or equal to {minimum}")
+
+
 def _design(keys, effects):
     depth = np.asarray([len(key) for key in keys])
     additive = np.asarray([sum(effects[k] for k in key) for key in keys])
@@ -81,8 +101,17 @@ class PilotCalibratedLandscape:
     calibration_keys: tuple
 
     @classmethod
-    def fit(cls, wild_type_sequence: str, singles: pd.DataFrame, pilot: pd.DataFrame) -> Self:
+    def fit(
+        cls,
+        wild_type_sequence: str,
+        singles: pd.DataFrame,
+        pilot: pd.DataFrame,
+        *,
+        margin: float = DEFAULT_SIGMOID_MARGIN,
+    ) -> Self:
         """Fit using only the supplied wild type, singles, and calibration variants."""
+        if not np.isfinite(margin) or margin <= 0:
+            raise ValueError("margin must be finite and positive")
         if singles.empty or pilot.empty:
             raise ValueError("singles and pilot must contain measurements")
         anchors = {}
@@ -117,8 +146,8 @@ class PilotCalibratedLandscape:
         if span <= 1e-12:
             raise ValueError("calibration fitness has no variation")
         readout = GlobalEpistasisSigmoid(
-            floor=float(observed.min() - 0.05 * span),
-            ceiling=float(observed.max() + 0.05 * span),
+            floor=float(observed.min() - margin * span),
+            ceiling=float(observed.max() + margin * span),
             scale=1.0,
         )
         effects = {k: float(readout.inverse(v)) for k, v in single_effects.items()}
@@ -134,62 +163,50 @@ class PilotCalibratedLandscape:
             domain, anchors, effects, model[-1].coef_ / model[0].scale_, scale, readout, keys
         )
 
-    def to_dict(self) -> dict:
+    def to_payload(self) -> PilotModel:
         """Return fitted parameters and input identities for model restoration."""
-        return {
-            "model": "pilot-burden-v1",
-            "wild_type_sequence": self.domain.wild_type_sequence,
-            "anchors": [
-                {"mutations": list(key), "fitness": value} for key, value in self.anchors.items()
+        return PilotModel(
+            wild_type_sequence=self.domain.wild_type_sequence,
+            anchors=[
+                AnchorRow(mutations=list(key), fitness=value) for key, value in self.anchors.items()
             ],
-            "effects": [
-                {"position": p, "residue": aa, "effect": value}
-                for (p, aa), value in self.effects.items()
+            effects=[
+                EffectRow(position=position, residue=residue, effect=value)
+                for (position, residue), value in self.effects.items()
             ],
-            "coefficients": self.coefficients.tolist(),
-            "pair_scale": self.pair_scale,
-            "readout": {
-                "floor": self.readout.floor,
-                "ceiling": self.readout.ceiling,
-                "scale": self.readout.scale,
-            },
-            "calibration_keys": [list(key) for key in self.calibration_keys],
-        }
+            coefficients=self.coefficients.tolist(),
+            pair_scale=self.pair_scale,
+            readout=ReadoutSpec(
+                floor=self.readout.floor,
+                ceiling=self.readout.ceiling,
+                scale=self.readout.scale,
+            ),
+            calibration_keys=[list(key) for key in self.calibration_keys],
+        )
+
+    def to_dict(self) -> dict:
+        """Return the payload as JSON-compatible data."""
+        return self.to_payload().model_dump(mode="json")
+
+    @classmethod
+    def from_payload(cls, payload: PilotModel) -> Self:
+        """Restore a fitted model without refitting calibration data."""
+        anchors = {tuple(row.mutations): row.fitness for row in payload.anchors}
+        effects = {(row.position, row.residue): row.effect for row in payload.effects}
+        return cls(
+            MutationDomain(payload.wild_type_sequence, tuple(effects)),
+            anchors,
+            effects,
+            np.asarray(payload.coefficients, dtype=float),
+            payload.pair_scale,
+            GlobalEpistasisSigmoid(**payload.readout.model_dump()),
+            tuple(tuple(key) for key in payload.calibration_keys),
+        )
 
     @classmethod
     def from_dict(cls, payload: dict) -> Self:
-        """Restore a fitted model without refitting calibration data."""
-        if payload.get("model") != "pilot-burden-v1":
-            raise ValueError("unsupported pilot model version")
-        anchors = {
-            tuple((int(p), aa) for p, aa in row["mutations"]): float(row["fitness"])
-            for row in payload["anchors"]
-        }
-        effects = {
-            (int(row["position"]), row["residue"]): float(row["effect"])
-            for row in payload["effects"]
-        }
-        coefficients = np.asarray(payload["coefficients"], dtype=float)
-        pair_scale = float(payload["pair_scale"])
-        if (
-            coefficients.shape != (2,)
-            or not np.isfinite(coefficients).all()
-            or not np.isfinite(pair_scale)
-            or pair_scale < 0
-            or () not in anchors
-        ):
-            raise ValueError("invalid pilot model parameters")
-        domain = MutationDomain(payload["wild_type_sequence"], tuple(effects))
-        keys = tuple(tuple((int(p), aa) for p, aa in key) for key in payload["calibration_keys"])
-        return cls(
-            domain,
-            anchors,
-            effects,
-            coefficients,
-            pair_scale,
-            GlobalEpistasisSigmoid(**payload["readout"]),
-            keys,
-        )
+        """Restore a fitted model from decoded JSON."""
+        return cls.from_payload(PilotModel.model_validate(payload))
 
     def draw(self, seed: int) -> PilotLandscapeDraw:
         """Return a reproducible oracle with one shared pair field."""
@@ -289,6 +306,7 @@ class QuantileCalibratedLandscape:
     reference: PilotCalibratedLandscape
     pilot_fitness: NDArray[np.float64]
     upper_tail: Literal["latent", "linear"] = "latent"
+    tail_fraction: float = DEFAULT_TAIL_FRACTION
 
     @classmethod
     def fit(
@@ -298,46 +316,48 @@ class QuantileCalibratedLandscape:
         pilot: pd.DataFrame,
         *,
         upper_tail: Literal["latent", "linear"] = "latent",
+        margin: float = DEFAULT_SIGMOID_MARGIN,
+        tail_fraction: float = DEFAULT_TAIL_FRACTION,
     ) -> Self:
         """Fit using measured wild type, singles, and a uniform combination pilot."""
         if upper_tail not in ("latent", "linear"):
             raise ValueError("upper_tail must be latent or linear")
+        if not 0.0 < tail_fraction <= 1.0:
+            raise ValueError("tail_fraction must fall in (0, 1]")
         return cls(
-            PilotCalibratedLandscape.fit(wild_type_sequence, singles, pilot),
+            PilotCalibratedLandscape.fit(wild_type_sequence, singles, pilot, margin=margin),
             np.sort(pilot.fitness.to_numpy(dtype=float)),
             upper_tail,
+            tail_fraction,
+        )
+
+    def to_payload(self) -> QuantileModel:
+        """Return the fitted model without its generated score distributions."""
+        return QuantileModel(
+            reference=self.reference.to_payload(),
+            pilot_fitness=self.pilot_fitness.tolist(),
+            upper_tail=self.upper_tail,
+            tail_fraction=self.tail_fraction,
         )
 
     def to_dict(self) -> dict:
-        """Return the fitted model without its generated score distributions."""
-        return {
-            "model": "quantile-pilot-v2",
-            "reference": self.reference.to_dict(),
-            "pilot_fitness": self.pilot_fitness.tolist(),
-            "upper_tail": self.upper_tail,
-        }
+        """Return the payload as JSON-compatible data."""
+        return self.to_payload().model_dump(mode="json")
+
+    @classmethod
+    def from_payload(cls, payload: QuantileModel) -> Self:
+        """Restore a fitted model without calibration refits."""
+        return cls(
+            PilotCalibratedLandscape.from_payload(payload.reference),
+            np.sort(np.asarray(payload.pilot_fitness, dtype=float)),
+            payload.resolved_upper_tail,
+            payload.tail_fraction,
+        )
 
     @classmethod
     def from_dict(cls, payload: dict) -> Self:
-        """Restore a fitted model without calibration refits.
-
-        Version 1 payloads predate the latent tail and restore with the linear tail.
-        """
-        version = payload.get("model")
-        if version == "quantile-pilot-v1":
-            upper_tail = "linear"
-        elif version == "quantile-pilot-v2":
-            upper_tail = payload.get("upper_tail")
-        else:
-            raise ValueError("unsupported quantile model version")
-        if upper_tail not in ("latent", "linear"):
-            raise ValueError("invalid upper tail")
-        values = np.asarray(payload["pilot_fitness"], dtype=float)
-        if values.ndim != 1 or len(values) < 3 or not np.isfinite(values).all():
-            raise ValueError("invalid calibration fitness")
-        return cls(
-            PilotCalibratedLandscape.from_dict(payload["reference"]), np.sort(values), upper_tail
-        )
+        """Restore a fitted model from decoded JSON."""
+        return cls.from_payload(QuantileModel.model_validate(payload))
 
     def _latent_tail(
         self, score_knots: NDArray[np.float64], probabilities: NDArray[np.float64]
@@ -345,7 +365,7 @@ class QuantileCalibratedLandscape:
         """Return the latent score, fitness and slope where the latent tail begins."""
         n = len(self.pilot_fitness)
         top = (n - 0.5) / n
-        low = (n - 0.5 - max(1, round(TAIL_FRACTION * n))) / n
+        low = (n - 0.5 - max(1, round(self.tail_fraction * n))) / n
         value_low, value_top = empirical_quantiles(self.pilot_fitness, np.array([low, top]))
         score_low, score_top = np.interp([low, top], probabilities, score_knots)
         slope = (value_top - value_low) / (score_top - score_low) if score_top > score_low else 0.0
@@ -372,19 +392,9 @@ class QuantileCalibratedLandscape:
         There is no default search-space limit. ``maximum_variants`` remains an
         optional caller-specified limit for compatibility with earlier code.
         """
-        for name, value, minimum in (
-            ("reference_size", reference_size, 2),
-            ("reference_seed", reference_seed, 0),
-            ("maximum_variants", maximum_variants, 1),
-        ):
-            if value is None and name != "reference_seed":
-                continue
-            if (
-                isinstance(value, (bool, np.bool_))
-                or not isinstance(value, (int, np.integer))
-                or value < minimum
-            ):
-                raise ValueError(f"{name} must be an integer greater than or equal to {minimum}")
+        _check_integer("reference_size", reference_size, minimum=2, optional=True)
+        _check_integer("reference_seed", reference_seed, minimum=0, optional=False)
+        _check_integer("maximum_variants", maximum_variants, minimum=1, optional=True)
         g = self.reference
         total = g.domain.count()
         if maximum_variants is not None and total > maximum_variants:

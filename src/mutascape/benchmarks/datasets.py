@@ -23,6 +23,9 @@ from typing import Literal
 
 import pandas as pd
 
+from mutascape.benchmarks import roots
+from mutascape.mutant import AMINO_ACIDS
+
 Source = Literal["ssmula", "combingym", "graphfla"]
 
 
@@ -68,11 +71,6 @@ class LandscapeDataset:
         return len(self.variants)
 
 
-_SSMULA_REVISION = "4926b8e614d426ca567159988834482c23da13a3"
-_COMBINGYM_REVISION = "e635a959731d2a14f90269245ccbec4bf2645324"
-_GRAPHFLA_REVISION = "9f86def1a12db76d26af16077ba28cb61ee0af5f"
-
-
 def _ssmula_spec(
     name: str,
     protein: str,
@@ -90,8 +88,8 @@ def _ssmula_spec(
         depth_column="n_mut",
         positions=positions,
         wild_type=wild_type,
-        source_url="https://zenodo.org/records/15203754",
-        source_revision=_SSMULA_REVISION,
+        source_url=roots.SSMULA.url,
+        source_revision=roots.SSMULA.revision,
     )
 
 
@@ -132,8 +130,8 @@ def _combingym_spec(
         sequence_column="genotype",
         depth_column=depth_column,
         phenotype=phenotype,
-        source_url="https://github.com/sitonglab/CombinGym",
-        source_revision=_COMBINGYM_REVISION,
+        source_url=roots.COMBINGYM.url,
+        source_revision=roots.COMBINGYM.revision,
     )
 
 
@@ -193,8 +191,8 @@ def _graphfla_spec(filename: str, protein: str, reference_sequence: str) -> Land
         sequence_column="sequences",
         depth_column=None,
         reference_sequence=reference_sequence,
-        source_url="https://github.com/COLA-Laboratory/GraphFLA",
-        source_revision=_GRAPHFLA_REVISION,
+        source_url=roots.GRAPHFLA.url,
+        source_revision=roots.GRAPHFLA.revision,
     )
 
 
@@ -348,7 +346,7 @@ def _normalise_graphfla(
     if int(reference_mask.sum()) != 1:
         raise ValueError(f"{spec.name} reference genotype is not unique")
 
-    symbols = "ACDEFGHIKLMNPQRSTVWY"
+    symbols = "".join(AMINO_ACIDS)
     encodings: list[dict[object, str]] = []
     kept_columns: list[str] = []
     for column, reference in zip(position_columns, reference_values):

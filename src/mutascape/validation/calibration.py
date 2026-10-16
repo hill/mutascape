@@ -12,6 +12,7 @@ from mutascape.epistasis import (
     EpistasisModel,
     MSACouplingsEpistasis,
 )
+from mutascape.landscape import ReadoutTexture
 from mutascape.nonlinearity import GlobalEpistasisSigmoid, Identity, NonLinearity
 
 from .comparisons import composite_validation_score
@@ -94,12 +95,7 @@ def build_landscape(
     floor_hard: float | None = None,
     combinatorial_upside: float = 1.0,
     noise_sigma: float = 0.0,
-    readout_texture_sigma: float = 0.0,
-    readout_texture_order: int = 0,
-    readout_texture_iid_fraction: float = 0.0,
-    readout_texture_floor: float | None = None,
-    readout_texture_floor_band: float = 1e-9,
-    readout_texture_seed: int | None = None,
+    readout_texture: ReadoutTexture | None = None,
     sigma_nk: float = 0.0,
     alpha_ho: float = 1.0,
     max_neighbours: int | None = None,
@@ -161,12 +157,7 @@ def build_landscape(
         alpha=alpha,
         noise_sigma=noise_sigma,
         seed=seed,
-        readout_texture_sigma=readout_texture_sigma,
-        readout_texture_order=readout_texture_order,
-        readout_texture_iid_fraction=readout_texture_iid_fraction,
-        readout_texture_floor=readout_texture_floor,
-        readout_texture_floor_band=readout_texture_floor_band,
-        readout_texture_seed=readout_texture_seed,
+        readout_texture=readout_texture or ReadoutTexture(),
         wt_sequence=wt_seq,
         nonlinearity=nl,
     )
@@ -189,12 +180,7 @@ def build_landscape(
             noise_sigma=landscape.noise_sigma,
             seed=landscape.seed,
             deterministic_noise=landscape.deterministic_noise,
-            readout_texture_sigma=landscape.readout_texture_sigma,
-            readout_texture_order=landscape.readout_texture_order,
-            readout_texture_iid_fraction=landscape.readout_texture_iid_fraction,
-            readout_texture_floor=landscape.readout_texture_floor,
-            readout_texture_floor_band=landscape.readout_texture_floor_band,
-            readout_texture_seed=landscape.readout_texture_seed,
+            readout_texture=landscape.readout_texture,
             wt_sequence=landscape.wt_sequence,
             nonlinearity=landscape.nonlinearity,
             higher_order=nk_tensor,

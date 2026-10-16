@@ -28,6 +28,9 @@ import numpy as np
 from Bio.PDB import MMCIFParser, PDBParser
 from numpy.typing import NDArray
 
+ESMFOLD_API_URL = "https://api.esmatlas.com/foldSequence/v1/pdb/"
+ESMFOLD_TIMEOUT_SECONDS = 120
+
 
 @dataclass(frozen=True)
 class ContactMap:
@@ -217,6 +220,8 @@ class ContactMap:
         sequence: str,
         threshold: float = 8.0,
         cache_dir: Path | None = None,
+        api_url: str = ESMFOLD_API_URL,
+        timeout: float = ESMFOLD_TIMEOUT_SECONDS,
     ) -> ContactMap:
         """Predict structure with ESMFold and extract a contact map.
 
@@ -235,6 +240,11 @@ class ContactMap:
         cache_dir : Path or None
             Directory for cached PDB files. Defaults to
             ~/.cache/mutascape/structures/.
+        api_url : str
+            Folding endpoint. Point this at a self-hosted service to avoid the
+            public one.
+        timeout : float
+            Seconds to wait for the folding response.
 
         Returns:
             ContactMap
@@ -249,7 +259,7 @@ class ContactMap:
         cached_pdb = cache_dir / f"esmfold_{seq_hash}.pdb"
 
         if not cached_pdb.exists():
-            pdb_string = _predict_esmfold(sequence)
+            pdb_string = _predict_esmfold(sequence, api_url=api_url, timeout=timeout)
             cached_pdb.write_text(pdb_string)
 
         # Use 1-indexed positions matching the sequence
@@ -257,16 +267,18 @@ class ContactMap:
         return cls.from_pdb(cached_pdb, threshold=threshold, positions=positions)
 
 
-ESMFOLD_API_URL = "https://api.esmatlas.com/foldSequence/v1/pdb/"
-
-
-def _predict_esmfold(sequence: str) -> str:
-    """Predict structure via the public ESMFold API. Returns PDB-format string."""
-    req = Request(ESMFOLD_API_URL, data=sequence.encode(), method="POST")
-    resp = urlopen(req, timeout=120)
+def _predict_esmfold(
+    sequence: str,
+    *,
+    api_url: str = ESMFOLD_API_URL,
+    timeout: float = ESMFOLD_TIMEOUT_SECONDS,
+) -> str:
+    """Predict structure via a folding API. Returns PDB-format string."""
+    req = Request(api_url, data=sequence.encode(), method="POST")
+    resp = urlopen(req, timeout=timeout)
 
     if resp.status != 200:
-        raise RuntimeError(f"ESMFold API returned status {resp.status}")
+        raise RuntimeError(f"folding API returned status {resp.status}")
 
     return resp.read().decode()
 

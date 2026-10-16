@@ -3,6 +3,11 @@
 import re
 from collections.abc import Collection, Mapping
 
+# The twenty residues a standard protein assay reports. Callers working on a
+# different alphabet pass their own; nothing below assumes a length of twenty.
+AMINO_ACIDS = tuple("ACDEFGHIKLMNPQRSTVWY")
+AA_INDEX = {residue: index for index, residue in enumerate(AMINO_ACIDS)}
+
 # Mapping is invariant in its key type, so a union of concrete key types is the only
 # annotation a caller holding a plain dict[int, str] can satisfy.
 type MutationMapping = Mapping[int, str] | Mapping[str, str]
@@ -65,7 +70,8 @@ class Mutant(dict[int, str]):
             match = re.fullmatch(r"([A-Z])(\d+)([A-Z])", part)
             if not match:
                 raise ValueError(
-                    f"Cannot parse mutation '{part}'. Expected a label such as 'A5G' or 'A5G+L10V'"
+                    f"Cannot parse mutation '{part}'. Expected a label such as "
+                    f"'A5G' or 'A5G+L10V', with one-based positions"
                 )
             wt_aa, pos_str, mut_aa = match.groups()
             pos = _position(pos_str)

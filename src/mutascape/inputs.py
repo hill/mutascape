@@ -1,13 +1,13 @@
 """Parse DMS tables and wild-type sequences into canonical observations."""
 
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
-from mutascape.mutant import Mutant, parse_variant
+from mutascape.mutant import AMINO_ACIDS, Mutant, parse_variant
 
 type DMSInput = str | Path | pd.DataFrame
 
@@ -16,7 +16,17 @@ type DMSInput = str | Path | pd.DataFrame
 type Manifest = Mapping[str, Any]
 
 
-def load_sequence(*, fasta: str | Path | None, wt_sequence: str | None) -> str:
+def load_sequence(
+    *,
+    fasta: str | Path | None,
+    wt_sequence: str | None,
+    alphabet: Collection[str] = AMINO_ACIDS,
+) -> str:
+    """Read the wild-type sequence and check it against the supported residues.
+
+    ``alphabet`` defaults to the twenty standard residues. Pass a different
+    collection for a non-canonical or non-protein alphabet.
+    """
     if (fasta is None) == (wt_sequence is None):
         raise ValueError("provide exactly one of fasta or wt_sequence")
     if fasta is not None:
@@ -32,7 +42,7 @@ def load_sequence(*, fasta: str | Path | None, wt_sequence: str | None) -> str:
     sequence = sequence.upper()
     if not sequence:
         raise ValueError("wild-type sequence is empty")
-    invalid = sorted(set(sequence) - set("ACDEFGHIKLMNPQRSTVWY"))
+    invalid = sorted(set(sequence) - set(alphabet))
     if invalid:
         raise ValueError(f"wild-type sequence contains unsupported residues: {', '.join(invalid)}")
     return sequence

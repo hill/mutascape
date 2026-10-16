@@ -25,7 +25,12 @@ from numpy.typing import NDArray
 from mutascape.domain import MutationDomain
 from mutascape.inputs import Manifest
 from mutascape.mutant import VariantLike
-from mutascape.nonlinearity import GlobalEpistasisSigmoid, NonLinearity
+from mutascape.nonlinearity import (
+    DEFAULT_SIGMOID_MARGIN,
+    GlobalEpistasisSigmoid,
+    NonLinearity,
+)
+from mutascape.schemas import LegacyOracleManifest, PriorPayload
 
 if TYPE_CHECKING:
     from mutascape.benchmarks.datasets import LandscapeDataset
@@ -171,7 +176,7 @@ def _training_readout(
     single_effects: dict[tuple[int, str], float],
     centred_fitness: NDArray[np.float64],
     *,
-    margin: float = 0.05,
+    margin: float = DEFAULT_SIGMOID_MARGIN,
 ) -> GlobalEpistasisSigmoid | None:
     """Fit a readout for a training landscape from its full observed range.
 
@@ -210,7 +215,7 @@ def _refit_scale(readout, centred_fitness: NDArray[np.float64], *, cap: int = 50
     values = {0: {str(index): float(value) for index, value in enumerate(finite)}}
     try:
         refitted = GlobalEpistasisSigmoid.fit_from_singles(
-            values, margin=0.05, floor=readout.floor, ceiling=readout.ceiling
+            values, margin=DEFAULT_SIGMOID_MARGIN, floor=readout.floor, ceiling=readout.ceiling
         )
     except ValueError, RuntimeError:
         return None
@@ -597,39 +602,7 @@ class LandscapePrior:
     @classmethod
     def from_dict(cls, values: Manifest) -> Self:
         """Restore a prior written by :meth:`to_dict`."""
-        locations = dict(values["order_location"])
-        scales = dict(values["order_scale"])
-        depth_locations = dict(values.get("depth_location", {}))
-        depth_scales = dict(values.get("depth_scale", {}))
-        return cls(
-            order_location={int(k): float(v) for k, v in locations.items()},
-            order_scale={int(k): float(v) for k, v in scales.items()},
-            depth_location={int(k): float(v) for k, v in depth_locations.items()},
-            depth_scale={int(k): float(v) for k, v in depth_scales.items()},
-            depth_between={
-                int(k): float(v) for k, v in dict(values.get("depth_between", {})).items()
-            },
-            depth_shrinkage={
-                int(k): float(v) for k, v in dict(values.get("depth_shrinkage", {})).items()
-            },
-            lower_bound=float(values["lower_bound"]),
-            upper_bound=float(values["upper_bound"]),
-            order_shape={
-                int(k): [float(x) for x in v]
-                for k, v in dict(values.get("order_shape", {})).items()
-            },
-            readout_scale_ratio=float(values.get("readout_scale_ratio", 1.0)),
-            combinatorial_upside=float(values.get("combinatorial_upside", 1.0)),
-            combinatorial_downside=float(values.get("combinatorial_downside", 1.0)),
-            magnitude_edges=[float(x) for x in values.get("magnitude_edges", [])],
-            magnitude_scale=[float(x) for x in values.get("magnitude_scale", [])],
-            texture_scale=float(values.get("texture_scale", 0.0)),
-            texture_order=int(values.get("texture_order", 3)),
-            texture_iid_fraction=float(values.get("texture_iid_fraction", 0.3)),
-            degrees_of_freedom=float(values.get("degrees_of_freedom", 5.0)),
-            n_landscapes=int(values.get("n_landscapes", 0)),
-            n_proteins=int(values.get("n_proteins", 0)),
-        )
+        return cls(**PriorPayload.model_validate(values).model_dump())
 
 
 def _fit_readout(
@@ -637,7 +610,7 @@ def _fit_readout(
     prior: LandscapePrior,
     target_scale: float,
     *,
-    margin: float = 0.05,
+    margin: float = DEFAULT_SIGMOID_MARGIN,
     floor_policy: str = "censored",
 ) -> NonLinearity | None:
     """Fit a saturating readout for one target from its singles.
@@ -1203,30 +1176,35 @@ class DMSPairwiseLandscape:
         mutant = self.domain.parse(variant)
         return _key(mutant, self.generator.wild_type_sequence) in self.generator.observations
 
-    def manifest(self) -> dict[str, Any]:
+    def to_payload(self) -> LegacyOracleManifest:
         """Return the fixed settings required to identify this benchmark oracle."""
         try:
             package_version = version("mutascape")
         except PackageNotFoundError:
             package_version = "unknown"
-        return {
-            "mutascape_version": package_version,
-            "generator": "dms-pairwise-v1",
-            "prior": self.generator.prior_id or "custom",
-            "seed": self.seed,
-            "coupling": self.coupling,
-            "source_digest": self.generator.source_digest,
-            "observations": len(self.generator.observations),
-            "wild_type_fitness": self.generator.observations[()],
-            "positions": list(self.domain.positions),
-            "substitutions": len(self.domain.substitutions),
-            "maximum_depth": self.domain.maximum_depth,
-            **(
-                {"completion": self.generator.completion_metadata}
-                if self.generator.completion_metadata
-                else {}
-            ),
-        }
+        return LegacyOracleManifest(
+            mutascape_version=package_version,
+            generator="dms-pairwise-v1",
+            prior=self.generator.prior_id or "custom",
+            seed=self.seed,
+            coupling=self.coupling,
+            source_digest=self.generator.source_digest,
+            observations=len(self.generator.observations),
+            wild_type_fitness=self.generator.observations[()],
+            positions=list(self.domain.positions),
+            substitutions=len(self.domain.substitutions),
+            maximum_depth=self.domain.maximum_depth,
+            completion=dict(self.generator.completion_metadata)
+            if self.generator.completion_metadata
+            else None,
+        )
+
+    def manifest(self) -> dict[str, Any]:
+        """Return the manifest as JSON-compatible data."""
+        payload = self.to_payload().model_dump(mode="json")
+        if payload["completion"] is None:
+            del payload["completion"]
+        return payload
 
     def provenance(self, variant: VariantLike) -> str:
         """Return measured, imputed, or synthetic for a supported query."""

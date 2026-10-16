@@ -42,6 +42,11 @@ class NonLinearity(Protocol):
         ...
 
 
+# Fraction of the observed range added beyond each supplied extreme. Without it
+# the smallest and largest measurements would need infinite latent effects.
+DEFAULT_SIGMOID_MARGIN = 0.05
+
+
 @dataclass(frozen=True)
 class Identity:
     """Passthrough. Recovers the original pre-readout Landscape behaviour."""
@@ -122,7 +127,7 @@ class GlobalEpistasisSigmoid:
     def fit_from_singles(
         cls,
         single_site_effects: dict[int, dict[str, float]],
-        margin: float = 0.05,
+        margin: float = DEFAULT_SIGMOID_MARGIN,
         prior_std: float = 1.0,
         floor: float | None = None,
         ceiling: float | None = None,

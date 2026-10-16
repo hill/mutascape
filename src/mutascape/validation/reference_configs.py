@@ -6,11 +6,12 @@ publication-critical parameter sets in one place instead of re-encoding them in
 notebooks and ad hoc scripts.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
 from mutascape.epistasis import MSACouplingsEpistasis
+from mutascape.landscape import ReadoutTexture
 from mutascape.nonlinearity import GlobalEpistasisSigmoid
 
 from .calibration import build_landscape
@@ -26,7 +27,7 @@ from .fourier import (
     walsh_signed_effects,
 )
 from .metrics import accessible_paths, local_optima_from_tensor, ssmula_attributes
-from .real_data import load_gb1_combinatorial, load_single_site_effects
+from .real_data import load_combinatorial_csv, load_single_site_effects
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_REFERENCE_SEED = 42
@@ -54,11 +55,7 @@ class ReferenceConfig:
     alpha: float = 1.5
     sigma: float = 0.0
     noise_sigma: float = 0.3
-    readout_texture_sigma: float = 0.0
-    readout_texture_order: int = 0
-    readout_texture_iid_fraction: float = 0.0
-    readout_texture_floor_band: float = 1e-9
-    readout_texture_seed: int | None = None
+    readout_texture: ReadoutTexture = field(default_factory=ReadoutTexture)
     combinatorial_upside: float = 3.0
     scale: float | None = None
     floor_hard: float | None = None
@@ -97,12 +94,7 @@ class ReferenceConfig:
             "alpha": self.alpha,
             "sigma": self.sigma,
             "noise_sigma": self.noise_sigma,
-            "readout_texture_sigma": self.readout_texture_sigma,
-            "readout_texture_order": self.readout_texture_order,
-            "readout_texture_iid_fraction": self.readout_texture_iid_fraction,
-            "readout_texture_floor": self.resolved_floor_hard(),
-            "readout_texture_floor_band": self.readout_texture_floor_band,
-            "readout_texture_seed": self.readout_texture_seed,
+            "readout_texture": replace(self.readout_texture, floor=self.resolved_floor_hard()),
             "seed": self.seed,
             "nonlinearity": nonlinearity,
         }
@@ -129,7 +121,7 @@ class ReferenceConfig:
 
     def load_real_dataframe(self):
         """Load the prepared real combinatorial dataset for this protein."""
-        return load_gb1_combinatorial(
+        return load_combinatorial_csv(
             self.combinatorial_csv,
             self.dms_csv,
             positions=self.positions,
@@ -174,9 +166,7 @@ GB1_HEADLINE = ReferenceConfig(
     alpha=1.5,
     sigma=0.0,
     noise_sigma=0.3,
-    readout_texture_sigma=0.005,
-    readout_texture_order=3,
-    readout_texture_iid_fraction=0.3,
+    readout_texture=ReadoutTexture(sigma=0.005, order=3, iid_fraction=0.3),
     combinatorial_upside=3.0,
     scale=1.0,
     floor_hard=-1.0,
@@ -194,8 +184,7 @@ TRPB_HEADLINE = ReferenceConfig(
     alpha=1.5,
     sigma=0.0,
     noise_sigma=0.3,
-    readout_texture_sigma=0.003,
-    readout_texture_order=4,
+    readout_texture=ReadoutTexture(sigma=0.003, order=4),
     combinatorial_upside=3.0,
     scale=None,
     floor_hard=None,
@@ -214,9 +203,7 @@ GB1_V2 = ReferenceConfig(
     alpha=1.5,
     sigma=0.0,
     noise_sigma=0.3,
-    readout_texture_sigma=0.005,
-    readout_texture_order=3,
-    readout_texture_iid_fraction=0.3,
+    readout_texture=ReadoutTexture(sigma=0.005, order=3, iid_fraction=0.3),
     combinatorial_upside=3.0,
     scale=1.0,
     floor_hard=-1.0,
@@ -236,8 +223,7 @@ TRPB_V2 = ReferenceConfig(
     alpha=1.5,
     sigma=0.0,
     noise_sigma=0.3,
-    readout_texture_sigma=0.003,
-    readout_texture_order=4,
+    readout_texture=ReadoutTexture(sigma=0.003, order=4),
     combinatorial_upside=3.0,
     scale=None,
     floor_hard=None,

@@ -18,6 +18,8 @@ from mutascape.inputs import (
     normalise_pilot,
 )
 from mutascape.model import GENERATOR_ID, DMSGenerator, DMSLandscape
+from mutascape.nonlinearity import DEFAULT_SIGMOID_MARGIN
+from mutascape.schemas import OracleManifest, generator_id
 
 
 def from_dms(
@@ -30,7 +32,7 @@ def from_dms(
     complete: Literal["esm2"] | None = None,
     esm_model: str = DEFAULT_ESM_MODEL,
     calibration: DMSInput | None = None,
-    pilot: DMSInput | None = None,
+    margin: float = DEFAULT_SIGMOID_MARGIN,
 ) -> DMSGenerator | QuantileCalibratedLandscape:
     """Build a generator from WT, single-site fitness and optional combination measurements.
 
@@ -55,12 +57,11 @@ def from_dms(
     fewer exist. The search space has no default size limit. Pass
     ``reference_size=None`` to ``draw`` for exact enumeration. This mode does not
     support ``complete`` or ``maximum_depth``. Omitting calibration keeps the
-    single-site-only generator. ``pilot`` remains an alias for ``calibration``.
-    Supply only one.
+    single-site-only generator.
+
+    ``margin`` pads the sigmoid beyond the supplied range, as a fraction of that
+    range, so every measurement sits strictly inside the limits.
     """
-    if calibration is not None and pilot is not None:
-        raise ValueError("provide only one of calibration or pilot")
-    calibration_data = calibration if calibration is not None else pilot
     if complete not in (None, "esm2"):
         raise ValueError("complete must be None or esm2")
     sequence = load_sequence(fasta=fasta, wt_sequence=wt_sequence)
@@ -72,11 +73,14 @@ def from_dms(
             "from_dms takes WT and single-site measurements in dms. "
             "Pass measured combinations with calibration="
         )
-    if calibration_data is not None:
+    if calibration is not None:
         if complete is not None or maximum_depth is not None:
             raise ValueError("combination calibration does not support complete or maximum_depth")
         return QuantileCalibratedLandscape.fit(
-            sequence, observations, normalise_pilot(load_dms_frame(calibration_data), sequence)
+            sequence,
+            observations,
+            normalise_pilot(load_dms_frame(calibration), sequence),
+            margin=margin,
         )
     completion = None
     if complete == "esm2":
@@ -89,7 +93,11 @@ def from_dms(
         completion = esm2_completion(sequence, measured, model_name=esm_model)
     return DMSGenerator(
         DMSLandscape.from_singles(
-            sequence, observations, maximum_depth=maximum_depth, completion=completion
+            sequence,
+            observations,
+            maximum_depth=maximum_depth,
+            completion=completion,
+            margin=margin,
         )
     )
 
@@ -110,7 +118,7 @@ def load_oracle(
         settings = dict(manifest)
     else:
         settings = json.loads(Path(manifest).read_text())
-    generator = settings.get("generator")
+    generator = generator_id(settings)
     if generator == "dms-pairwise-v1":
         return legacy.load_oracle(
             settings,
@@ -121,26 +129,25 @@ def load_oracle(
         )
     if generator != GENERATOR_ID:
         raise ValueError(f"unsupported oracle generator {generator!r}")
+    saved = OracleManifest.model_validate(settings)
     if wild_type_fitness is None:
-        wild_type_fitness = float(settings.get("wild_type_fitness", 0.0))
+        wild_type_fitness = saved.wild_type_fitness
     sequence = load_sequence(fasta=fasta, wt_sequence=wt_sequence)
     observations = normalise_observations(
         load_dms_frame(dms), sequence, wild_type_fitness=float(wild_type_fitness)
     )
-    contacts = settings.get("contacts")
-    maximum_depth = settings.get("maximum_depth")
     oracle = DMSLandscape.from_singles(
         sequence,
         observations,
-        seed=int(settings["seed"]),
-        strength=float(settings["strength"]),
-        mode=settings["mode"],
-        margin=float(settings["margin"]),
-        contacts={tuple(pair) for pair in contacts} if contacts is not None else None,
-        maximum_depth=int(maximum_depth) if maximum_depth is not None else None,
-        completion=settings.get("completion"),
+        seed=saved.seed,
+        strength=saved.strength,
+        mode=saved.mode,
+        margin=saved.margin,
+        contacts=set(saved.contacts) if saved.contacts is not None else None,
+        maximum_depth=saved.maximum_depth,
+        completion=saved.completion,
     )
-    if oracle.source_digest != settings.get("source_digest"):
+    if oracle.source_digest != saved.source_digest:
         raise ValueError("DMS data and wild-type sequence do not match the oracle manifest")
     return oracle
 

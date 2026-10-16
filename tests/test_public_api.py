@@ -148,11 +148,10 @@ def calibration_inputs():
     return singles, calibration
 
 
-@pytest.mark.parametrize("keyword", ["calibration", "pilot"])
-def test_calibration_matches_existing_model_and_keeps_measurements(calibration_inputs, keyword):
+def test_calibration_matches_existing_model_and_keeps_measurements(calibration_inputs):
     singles, calibration = calibration_inputs
     original_singles, original_calibration = singles.copy(deep=True), calibration.copy(deep=True)
-    generator = from_dms(singles, wt_sequence="ACD", **{keyword: calibration})
+    generator = from_dms(singles, wt_sequence="ACD", calibration=calibration)
     reference = QuantileCalibratedLandscape.fit(
         "ACD",
         singles.rename(columns={"variant": "mutations"}),
@@ -206,18 +205,25 @@ def test_calibration_accepts_mutation_mappings(calibration_inputs):
     assert generator.to_dict() == reference.to_dict()
 
 
-def test_calibration_cannot_be_supplied_twice(calibration_inputs):
+def test_the_removed_pilot_alias_is_rejected(calibration_inputs):
     singles, calibration = calibration_inputs
-    with pytest.raises(ValueError, match="only one of calibration or pilot"):
-        from_dms(singles, wt_sequence="ACD", calibration=calibration, pilot=calibration)
+    with pytest.raises(TypeError):
+        from_dms(singles, wt_sequence="ACD", pilot=calibration)
 
 
-@pytest.mark.parametrize("keyword", ["calibration", "pilot"])
 @pytest.mark.parametrize("options", [{"complete": "esm2"}, {"maximum_depth": 2}])
-def test_calibration_rejects_unsupported_options(calibration_inputs, keyword, options):
+def test_calibration_rejects_unsupported_options(calibration_inputs, options):
     singles, calibration = calibration_inputs
     with pytest.raises(ValueError, match="does not support complete or maximum_depth"):
-        from_dms(singles, wt_sequence="ACD", **{keyword: calibration}, **options)
+        from_dms(singles, wt_sequence="ACD", calibration=calibration, **options)
+
+
+def test_margin_widens_the_generated_range(calibration_inputs):
+    singles, calibration = calibration_inputs
+    narrow = from_dms(singles, wt_sequence="ACD", calibration=calibration, margin=0.05)
+    wide = from_dms(singles, wt_sequence="ACD", calibration=calibration, margin=0.40)
+    assert wide.reference.readout.ceiling > narrow.reference.readout.ceiling
+    assert wide.reference.readout.floor < narrow.reference.readout.floor
 
 
 @pytest.mark.parametrize(

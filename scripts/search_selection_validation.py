@@ -26,8 +26,9 @@ from scripts.singles_warm_start import DMSOracle
 
 OUT = Path("results/search_selection_20260924")
 SOURCE = roots.nn4dms(require=False)
-REVISION = "434e354828f306cbb6796033ef1169cbe5207350"
-BASE_URL = f"https://raw.githubusercontent.com/gitter-lab/nn4dms/{REVISION}/"
+REVISION = roots.NN4DMS.revision
+_RAW = roots.NN4DMS.url.replace("github.com", "raw.githubusercontent.com")
+BASE_URL = f"{_RAW}/{REVISION}/"
 NEW = {"Pab1": "pab1", "Ube4b": "ube4b", "Bgl3": "bgl3", "avGFP": "avgfp"}
 SAMPLE_SEEDS = tuple(2026092411 + i for i in range(5))
 SEED_BASES = {"development": 240910000, "evaluation": 240920000, "synthetic": 240930000}

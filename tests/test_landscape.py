@@ -16,6 +16,7 @@ from mutascape.epistasis import (
 )
 from mutascape.landscape import (
     Landscape,
+    ReadoutTexture,
     Variant,
     _impute_missing_single_sites,
     _pin_nk_wildtype,
@@ -213,40 +214,44 @@ class TestLandscapeEvaluation:
         second = noisy.evaluate({10: "G", 20: "I"})
         assert second != pytest.approx(first)
 
-    def test_readout_texture_is_genotype_stable(self, landscape):
-        textured = Landscape(
+    def _landscape(self, landscape, **overrides):
+        return Landscape(
             wild_type=landscape.wild_type,
             single_site_effects=landscape.single_site_effects,
             contact_map=landscape.contact_map,
             couplings=landscape.couplings,
-            alpha=1.0,
             seed=123,
-            readout_texture_sigma=0.1,
-            readout_texture_order=0,
+            **overrides,
         )
+
+    def test_readout_texture_is_genotype_stable(self, landscape):
+        textured = self._landscape(landscape, alpha=1.0, readout_texture=ReadoutTexture(sigma=0.1))
         first = textured.evaluate({10: "G", 20: "I"})
         second = textured.evaluate({10: "G", 20: "I"})
         assert second == pytest.approx(first)
 
-    def test_readout_texture_floor_gate_skips_high_fitness(self, landscape):
-        base = Landscape(
-            wild_type=landscape.wild_type,
-            single_site_effects=landscape.single_site_effects,
-            contact_map=landscape.contact_map,
-            couplings=landscape.couplings,
+    def test_readout_texture_moves_variants_on_the_floor(self, landscape):
+        # A floor above every fitness puts all variants inside the gate, so the
+        # texture has to change them. Without this the gate tests below pass
+        # for a texture that never fires.
+        base = self._landscape(landscape, alpha=0.0)
+        textured = self._landscape(
+            landscape,
             alpha=0.0,
-            seed=123,
+            readout_texture=ReadoutTexture(sigma=0.1, floor=float("inf")),
         )
-        textured = Landscape(
-            wild_type=landscape.wild_type,
-            single_site_effects=landscape.single_site_effects,
-            contact_map=landscape.contact_map,
-            couplings=landscape.couplings,
+        moved = [
+            textured.evaluate(variant) != pytest.approx(base.evaluate(variant))
+            for variant in ({10: "G"}, {20: "I"}, {10: "G", 20: "I"})
+        ]
+        assert all(moved)
+
+    def test_readout_texture_floor_gate_skips_high_fitness(self, landscape):
+        base = self._landscape(landscape, alpha=0.0)
+        textured = self._landscape(
+            landscape,
             alpha=0.0,
-            seed=123,
-            readout_texture_sigma=0.1,
-            readout_texture_order=0,
-            readout_texture_floor=-1.0,
+            readout_texture=ReadoutTexture(sigma=0.1, floor=-1.0),
         )
         assert textured.evaluate({10: "G"}) == pytest.approx(base.evaluate({10: "G"}))
 

@@ -19,7 +19,8 @@ from mutascape.completion import dms_pairwise_unit_coefficient
 from mutascape.domain import MutationDomain
 from mutascape.imputation import completion_effects
 from mutascape.mutant import VariantLike, parse_variant
-from mutascape.nonlinearity import GlobalEpistasisSigmoid
+from mutascape.nonlinearity import DEFAULT_SIGMOID_MARGIN, GlobalEpistasisSigmoid
+from mutascape.schemas import OracleManifest
 
 GENERATOR_ID = "dms-sigmoid-v1"
 
@@ -62,10 +63,10 @@ class DMSLandscape:
     scale: float
     seed: int
     strength: float
-    mode: str
+    mode: Literal["linear", "sigmoid", "pool"]
     readout: GlobalEpistasisSigmoid | None
     contacts: frozenset[tuple[int, int]] | None
-    margin: float = 0.05
+    margin: float = DEFAULT_SIGMOID_MARGIN
     imputed: dict[tuple[int, str], float] = field(default_factory=dict)
     completion: dict = field(default_factory=dict)
 
@@ -78,7 +79,7 @@ class DMSLandscape:
         seed: int = 0,
         strength: float = 0.3,
         mode: Literal["linear", "sigmoid", "pool"] = "sigmoid",
-        margin: float = 0.05,
+        margin: float = DEFAULT_SIGMOID_MARGIN,
         contacts: set[tuple[int, int]] | None = None,
         maximum_depth: int | None = None,
         completion: Mapping | None = None,
@@ -253,30 +254,37 @@ class DMSLandscape:
             return "imputed"
         return "synthetic"
 
-    def manifest(self) -> dict[str, Any]:
+    def to_payload(self) -> OracleManifest:
         """Return the fixed settings required to recreate this oracle."""
         try:
             package_version = version("mutascape")
         except PackageNotFoundError:
             package_version = "unknown"
-        return {
-            "mutascape_version": package_version,
-            "generator": GENERATOR_ID,
-            "seed": self.seed,
-            "strength": self.strength,
-            "mode": self.mode,
-            "margin": self.margin,
-            "lower": self.readout.floor if self.readout is not None else None,
-            "upper": self.readout.ceiling if self.readout is not None else None,
-            "contacts": sorted(map(list, self.contacts)) if self.contacts is not None else None,
-            "source_digest": self.source_digest,
-            "observations": len(self.observations),
-            "wild_type_fitness": self.wild_type_fitness,
-            "positions": list(self.domain.positions),
-            "substitutions": len(self.domain.substitutions),
-            "maximum_depth": self.domain.maximum_depth,
-            **({"completion": self.completion} if self.completion else {}),
-        }
+        return OracleManifest(
+            mutascape_version=package_version,
+            generator=GENERATOR_ID,
+            seed=self.seed,
+            strength=self.strength,
+            mode=self.mode,
+            margin=self.margin,
+            lower=self.readout.floor if self.readout is not None else None,
+            upper=self.readout.ceiling if self.readout is not None else None,
+            contacts=sorted(self.contacts) if self.contacts is not None else None,
+            source_digest=self.source_digest,
+            observations=len(self.observations),
+            wild_type_fitness=self.wild_type_fitness,
+            positions=list(self.domain.positions),
+            substitutions=len(self.domain.substitutions),
+            maximum_depth=self.domain.maximum_depth,
+            completion=dict(self.completion) if self.completion else None,
+        )
+
+    def manifest(self) -> dict[str, Any]:
+        """Return the manifest as JSON-compatible data."""
+        payload = self.to_payload().model_dump(mode="json")
+        if payload["completion"] is None:
+            del payload["completion"]
+        return payload
 
     def save_manifest(self, path: str | PathLike[str]) -> None:
         """Write the oracle manifest as formatted JSON."""

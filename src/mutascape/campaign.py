@@ -23,7 +23,9 @@ from numpy.typing import NDArray
 from mutascape.mutant import Mutant, VariantLike, parse_variant
 
 DEFAULT_BATCH_SIZE = 96
-"""One microplate, which is the unit a campaign actually measures."""
+"""One microplate. A suggested plate size for a method to read off
+``campaign.batch_size``; the campaign does not enforce it, because a method is
+free to spend its budget in whatever shape it likes."""
 
 
 def _noise_draw(label: str, seed: int) -> float:

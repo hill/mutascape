@@ -8,22 +8,11 @@ import tarfile
 import urllib.request
 from pathlib import Path
 
-from mutascape.benchmarks.roots import (
-    COMBINGYM_DIRECTORY,
-    GRAPHFLA_DIRECTORY,
-    NN4DMS_DIRECTORY,
-    SSMULA_DIRECTORY,
-    data_root,
-)
+from mutascape.benchmarks import roots
+from mutascape.benchmarks.roots import SSMULA_DIRECTORY, data_root
 
-SSMULA_URL = "https://zenodo.org/api/records/15203754/files/data.tar.gz/content"
-SSMULA_MD5 = "d94418e5865949b1e2bf9af49fe9438a"
-COMBINGYM_REVISION = "e635a959731d2a14f90269245ccbec4bf2645324"
-COMBINGYM_URL = f"https://github.com/sitonglab/CombinGym/archive/{COMBINGYM_REVISION}.tar.gz"
-GRAPHFLA_REVISION = "9f86def1a12db76d26af16077ba28cb61ee0af5f"
-GRAPHFLA_URL = f"https://github.com/COLA-Laboratory/GraphFLA/archive/{GRAPHFLA_REVISION}.tar.gz"
-NN4DMS_REVISION = "434e354828f306cbb6796033ef1169cbe5207350"
-NN4DMS_URL = f"https://github.com/gitter-lab/nn4dms/archive/{NN4DMS_REVISION}.tar.gz"
+# SSMuLA ships one archive per Zenodo record rather than a repository snapshot.
+SSMULA_ARCHIVE_URL = "https://zenodo.org/api/records/15203754/files/data.tar.gz/content"
 
 
 def _parse_args() -> argparse.Namespace:
@@ -35,7 +24,7 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--source",
-        choices=["all", "ssmula", "combingym", "graphfla", "nn4dms"],
+        choices=["all", *(corpus.directory for corpus in roots.CORPORA)],
         default="all",
     )
     return parser.parse_args()
@@ -90,53 +79,40 @@ def _fetch_ssmula(destination: Path) -> None:
         return
     archive = destination / "downloads" / "ssmula-data.tar.gz"
     if not archive.exists():
-        _download(SSMULA_URL, archive)
+        _download(SSMULA_ARCHIVE_URL, archive)
     checksum = _md5(archive)
-    if checksum != SSMULA_MD5:
+    if checksum != roots.SSMULA.md5:
         raise ValueError(f"SSMuLA checksum mismatch: {checksum}")
     _safe_extract(archive, root)
     marker.write_text(
-        json.dumps({"url": SSMULA_URL, "md5": checksum, "record": "15203754"}, indent=2) + "\n"
+        json.dumps(
+            {"url": roots.SSMULA.url, "md5": checksum, "revision": roots.SSMULA.revision},
+            indent=2,
+        )
+        + "\n"
     )
 
 
-def _fetch_combingym(destination: Path) -> None:
-    root = destination / COMBINGYM_DIRECTORY
-    marker = root / "source.json"
-    if marker.exists():
-        return
-    archive = destination / "downloads" / f"combingym-{COMBINGYM_REVISION}.tar.gz"
-    if not archive.exists():
-        _download(COMBINGYM_URL, archive)
-    _safe_extract(archive, root, strip_first=True)
-    marker.write_text(
-        json.dumps({"url": COMBINGYM_URL, "revision": COMBINGYM_REVISION}, indent=2) + "\n"
-    )
-
-
-def _fetch_repository(destination: Path, name: str, url: str, revision: str) -> None:
+def _fetch_repository(destination: Path, corpus: roots.Corpus) -> None:
     """Unpack one pinned GitHub snapshot, skipping work that already succeeded."""
-    root = destination / name
+    root = destination / corpus.directory
     marker = root / "source.json"
     if marker.exists():
         return
-    archive = destination / "downloads" / f"{name}-{revision}.tar.gz"
+    archive = destination / "downloads" / f"{corpus.directory}-{corpus.revision}.tar.gz"
     if not archive.exists():
-        _download(url, archive)
+        _download(corpus.archive_url, archive)
     _safe_extract(archive, root, strip_first=True)
-    marker.write_text(json.dumps({"url": url, "revision": revision}, indent=2) + "\n")
+    marker.write_text(json.dumps({"url": corpus.url, "revision": corpus.revision}, indent=2) + "\n")
 
 
 def main() -> None:
     args = _parse_args()
-    if args.source in {"all", "ssmula"}:
+    if args.source in {"all", SSMULA_DIRECTORY}:
         _fetch_ssmula(args.destination)
-    if args.source in {"all", "combingym"}:
-        _fetch_combingym(args.destination)
-    if args.source in {"all", "graphfla"}:
-        _fetch_repository(args.destination, GRAPHFLA_DIRECTORY, GRAPHFLA_URL, GRAPHFLA_REVISION)
-    if args.source in {"all", "nn4dms"}:
-        _fetch_repository(args.destination, NN4DMS_DIRECTORY, NN4DMS_URL, NN4DMS_REVISION)
+    for corpus in (roots.COMBINGYM, roots.GRAPHFLA, roots.NN4DMS):
+        if args.source in {"all", corpus.directory}:
+            _fetch_repository(args.destination, corpus)
 
 
 if __name__ == "__main__":

@@ -25,6 +25,7 @@ from mutascape.inputs import (
     normalise_observations,
 )
 from mutascape.priors import DEFAULT_PRIOR_ID, load_prior_bundle
+from mutascape.schemas import LegacyOracleManifest, generator_id
 
 __all__ = [
     "CompletedLandscape",
@@ -93,29 +94,23 @@ def load_oracle(
         settings = dict(manifest)
     else:
         settings = json.loads(Path(manifest).read_text())
-    if settings.get("generator") != "dms-pairwise-v1":
-        raise ValueError(f"unsupported oracle generator {settings.get('generator')!r}")
-    prior_id = str(settings.get("prior", ""))
-    if not prior_id or prior_id == "custom":
+    if generator_id(settings) != "dms-pairwise-v1":
+        raise ValueError(f"unsupported oracle generator {generator_id(settings)!r}")
+    saved = LegacyOracleManifest.model_validate(settings)
+    if not saved.prior or saved.prior == "custom":
         raise ValueError("the manifest does not name a bundled prior")
-    maximum_depth_value = settings.get("maximum_depth")
-    maximum_depth = int(maximum_depth_value) if maximum_depth_value is not None else None
     if wild_type_fitness is None:
-        wild_type_fitness = float(settings.get("wild_type_fitness", 0.0))
+        wild_type_fitness = saved.wild_type_fitness
     generator = from_dms(
         dms,
         fasta=fasta,
         wt_sequence=wt_sequence,
         wild_type_fitness=wild_type_fitness,
-        maximum_depth=maximum_depth,
-        prior_id=prior_id,
+        maximum_depth=saved.maximum_depth,
+        prior_id=saved.prior,
     )
-    expected_digest = str(settings.get("source_digest", ""))
-    if "completion" in settings:
-        generator = restore_completion(generator, settings["completion"])
-    if generator.source_digest != expected_digest:
+    if saved.completion is not None:
+        generator = restore_completion(generator, saved.completion)
+    if generator.source_digest != saved.source_digest:
         raise ValueError("DMS data and wild-type sequence do not match the oracle manifest")
-    return generator.sample_dms_pairwise(
-        seed=int(settings["seed"]),
-        coupling=float(settings["coupling"]),
-    )
+    return generator.sample_dms_pairwise(seed=saved.seed, coupling=saved.coupling)

@@ -181,6 +181,101 @@ def _pin_nk_wildtype(tensor: ContactNKTensor, wild_type: dict[int, str]) -> Cont
     )
 
 
+def _hash_normal(key: object, seed: int | None) -> float:
+    """Draw a standard normal pinned to a key, so a repeated query never changes."""
+    payload = f"{seed!r}|{key!r}".encode()
+    digest = hashlib.blake2b(payload, digest_size=16).digest()
+    normal_seed = int.from_bytes(digest[:8], byteorder="little", signed=False)
+    return float(np.random.default_rng(normal_seed).normal())
+
+
+@dataclass(frozen=True)
+class ReadoutTexture:
+    """Perturbation added after the readout to variants sitting on its floor.
+
+    A censored assay maps every dead variant to one value, leaving a plateau
+    with no local topology for a search method to move through. This breaks
+    that plateau into a stable neutral network without touching the latent
+    score, which is what brings synthetic local-optima counts near the real
+    ones. It applies after the global-epistasis function, never inside it.
+
+    Attributes
+    sigma : float
+        Scale of the perturbation. Zero disables the texture entirely.
+    order : int
+        Interaction order of the correlated component. Zero gives an
+        independent draw per genotype.
+    iid_fraction : float
+        Share of the perturbation taken from the independent draw rather than
+        the order-`order` one, clamped to [0, 1].
+    floor : float or None
+        Fitness at or below which the texture applies. None falls back to the
+        readout's own hard floor, and a readout without one textures every
+        variant.
+    floor_band : float
+        Width above `floor` still counted as sitting on it.
+    seed : int or None
+        Seed for the perturbation. None falls back to the landscape seed.
+    """
+
+    sigma: float = 0.0
+    order: int = 0
+    iid_fraction: float = 0.0
+    floor: float | None = None
+    floor_band: float = 1e-9
+    seed: int | None = None
+
+    @property
+    def enabled(self) -> bool:
+        return self.sigma > 0
+
+    def applies(self, fitness: float, *, readout_floor: float | None) -> bool:
+        """Whether this variant sits on the floor the texture perturbs."""
+        floor = self.floor if self.floor is not None else readout_floor
+        if floor is None:
+            return True
+        return fitness <= float(floor) + self.floor_band
+
+    def value(self, mutations: Mapping[int, str], *, default_seed: int | None) -> float:
+        """Return the unscaled perturbation for one genotype."""
+        states = tuple((int(position), aa) for position, aa in sorted(mutations.items()))
+        seed = self.seed if self.seed is not None else default_seed
+        iid = _hash_normal(("readout-iid", states), seed)
+
+        order = int(self.order)
+        if order <= 0:
+            return iid
+        if len(states) < order:
+            ordered = 0.0
+        else:
+            draws = [
+                _hash_normal(("readout-order", combo), seed)
+                for combo in combinations(states, order)
+            ]
+            ordered = float(np.sum(draws) / np.sqrt(len(draws)))
+
+        mix = min(max(float(self.iid_fraction), 0.0), 1.0)
+        if mix == 0.0:
+            return ordered
+        denominator = np.sqrt((1.0 - mix) ** 2 + mix**2)
+        if denominator == 0.0:
+            return 0.0
+        return ((1.0 - mix) * ordered + mix * iid) / denominator
+
+    def perturbation(
+        self,
+        fitness: float,
+        mutations: Mapping[int, str],
+        *,
+        readout_floor: float | None,
+        default_seed: int | None,
+    ) -> float:
+        """Return the amount to add to this variant's fitness."""
+        if not self.enabled or not self.applies(fitness, readout_floor=readout_floor):
+            return 0.0
+        return self.sigma * self.value(mutations, default_seed=default_seed)
+
+
 @dataclass
 class Landscape:
     """Synthetic combinatorial protein fitness landscape.
@@ -208,10 +303,9 @@ class Landscape:
         seed. This makes the landscape a stable oracle: repeated queries for
         the same variant return the same value. If False, each query draws a
         fresh observation-noise sample from the landscape RNG.
-    readout_texture_sigma : float
-        Standard deviation of an optional post-readout texture term.
-        This term is useful for breaking censored low-fitness plateaus into a
-        stable neutral network without changing the latent biophysical score.
+    readout_texture : ReadoutTexture
+        Optional perturbation applied to variants on the readout floor. See
+        :class:`ReadoutTexture`.
     """
 
     wild_type: dict[int, str]
@@ -222,12 +316,7 @@ class Landscape:
     noise_sigma: float = 0.0
     seed: int | None = None
     deterministic_noise: bool = True
-    readout_texture_sigma: float = 0.0
-    readout_texture_order: int = 0
-    readout_texture_iid_fraction: float = 0.0
-    readout_texture_floor: float | None = None
-    readout_texture_floor_band: float = 1e-9
-    readout_texture_seed: int | None = None
+    readout_texture: ReadoutTexture = field(default_factory=ReadoutTexture)
     wt_sequence: str | None = None
     nonlinearity: NonLinearity = field(default_factory=Identity)
     higher_order: ContactNKTensor | None = None
@@ -413,8 +502,12 @@ class Landscape:
             raw += self._noise_for_mutations(active_mutations)
 
         fitness = float(self.nonlinearity.forward(raw))
-        if self.readout_texture_sigma > 0 and self._readout_texture_applies(fitness):
-            fitness += self.readout_texture_sigma * self._readout_texture_value(active_mutations)
+        fitness += self.readout_texture.perturbation(
+            fitness,
+            active_mutations,
+            readout_floor=getattr(self.nonlinearity, "floor_hard", None),
+            default_seed=self.seed,
+        )
 
         return fitness
 
@@ -429,50 +522,6 @@ class Landscape:
         noise_seed = int.from_bytes(digest[:8], byteorder="little", signed=False)
         rng = np.random.default_rng(noise_seed)
         return float(rng.normal(0, self.noise_sigma))
-
-    def _readout_texture_applies(self, fitness: float) -> bool:
-        """Whether the post-readout texture should perturb this variant."""
-        floor = self.readout_texture_floor
-        if floor is None:
-            floor = getattr(self.nonlinearity, "floor_hard", None)
-        if floor is None:
-            return True
-        return fitness <= float(floor) + self.readout_texture_floor_band
-
-    def _readout_texture_value(self, mutations: dict[int, str]) -> float:
-        """Stable high-order readout texture for censored neutral networks."""
-        states = tuple((int(pos), aa) for pos, aa in sorted(mutations.items()))
-        texture_seed = self.seed if self.readout_texture_seed is None else self.readout_texture_seed
-        iid = self._hash_normal(("readout-iid", states), texture_seed)
-
-        order = int(self.readout_texture_order)
-        if order <= 0:
-            return iid
-
-        if len(states) < order:
-            ordered = 0.0
-        else:
-            vals = [
-                self._hash_normal(("readout-order", combo), texture_seed)
-                for combo in combinations(states, order)
-            ]
-            ordered = float(np.sum(vals) / np.sqrt(len(vals)))
-
-        mix = min(max(float(self.readout_texture_iid_fraction), 0.0), 1.0)
-        if mix == 0.0:
-            return ordered
-        denom = np.sqrt((1.0 - mix) ** 2 + mix**2)
-        if denom == 0.0:
-            return 0.0
-        return ((1.0 - mix) * ordered + mix * iid) / denom
-
-    @staticmethod
-    def _hash_normal(key: object, seed: int | None) -> float:
-        payload = f"{seed!r}|{key!r}".encode()
-        digest = hashlib.blake2b(payload, digest_size=16).digest()
-        normal_seed = int.from_bytes(digest[:8], byteorder="little", signed=False)
-        rng = np.random.default_rng(normal_seed)
-        return float(rng.normal())
 
     def evaluate_batch(self, variants: Sequence[Mapping[int, str]]) -> NDArray[np.float64]:
         """Evaluate fitness for a batch of variants.
@@ -957,12 +1006,7 @@ class Landscape:
         alpha: float = 1.0,
         noise_sigma: float = 0.0,
         seed: int | None = None,
-        readout_texture_sigma: float = 0.0,
-        readout_texture_order: int = 0,
-        readout_texture_iid_fraction: float = 0.0,
-        readout_texture_floor: float | None = None,
-        readout_texture_floor_band: float = 1e-9,
-        readout_texture_seed: int | None = None,
+        readout_texture: ReadoutTexture | None = None,
         nonlinearity: NonLinearity | str | None = None,
     ) -> Landscape:
         """Build a landscape from pLM-predicted single-site effects.
@@ -1011,12 +1055,7 @@ class Landscape:
             alpha=alpha,
             noise_sigma=noise_sigma,
             seed=seed,
-            readout_texture_sigma=readout_texture_sigma,
-            readout_texture_order=readout_texture_order,
-            readout_texture_iid_fraction=readout_texture_iid_fraction,
-            readout_texture_floor=readout_texture_floor,
-            readout_texture_floor_band=readout_texture_floor_band,
-            readout_texture_seed=readout_texture_seed,
+            readout_texture=readout_texture or ReadoutTexture(),
             wt_sequence=sequence,
             nonlinearity=nl,
         )
@@ -1030,12 +1069,7 @@ class Landscape:
         alpha: float = 1.0,
         noise_sigma: float = 0.0,
         seed: int | None = None,
-        readout_texture_sigma: float = 0.0,
-        readout_texture_order: int = 0,
-        readout_texture_iid_fraction: float = 0.0,
-        readout_texture_floor: float | None = None,
-        readout_texture_floor_band: float = 1e-9,
-        readout_texture_seed: int | None = None,
+        readout_texture: ReadoutTexture | None = None,
         wt_fasta: str | Path | None = None,
         wt_sequence: str | None = None,
         scorer: PLMScorer | None = None,
@@ -1163,12 +1197,7 @@ class Landscape:
             alpha=alpha,
             noise_sigma=noise_sigma,
             seed=seed,
-            readout_texture_sigma=readout_texture_sigma,
-            readout_texture_order=readout_texture_order,
-            readout_texture_iid_fraction=readout_texture_iid_fraction,
-            readout_texture_floor=readout_texture_floor,
-            readout_texture_floor_band=readout_texture_floor_band,
-            readout_texture_seed=readout_texture_seed,
+            readout_texture=readout_texture or ReadoutTexture(),
             nonlinearity=nl,
             wt_sequence=wt_sequence,
         )

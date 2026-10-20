@@ -164,9 +164,9 @@ oracle = QuantileCalibratedLandscape.from_dict(saved).draw(seed=42)
 Store the dictionary and the seed with the benchmark result.
 A singles-only oracle writes a manifest instead with `oracle.save_manifest("oracle.json")`, and `load_oracle` restores it.
 
-## Limits
+## Limitations
 
-- Mutascape is a benchmark generator. It does not predict the true fitness of unmeasured variants.
+- Mutascape is a synthetic landscape generator for benchmarks. It does not predict the true fitness of experimentally unmeasured variants.
 - Calibration estimates score percentiles from 100,000 uniformly sampled generated multi-mutants, or uses all multi-mutants in smaller spaces. No default search-space limit applies. Set `draw(seed, reference_size=None)` for exact enumeration.
 - Measured combinations shape the fitness distribution but do not keep their exact values.
 - Every queried substitution needs a measured single mutant, unless the singles-only mode imputes it with ESM-2.

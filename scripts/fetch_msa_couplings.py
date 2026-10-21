@@ -63,6 +63,15 @@ PROTEIN_CONFIG = {
         "n_pages": 8,
         "whole_protein": True,
     },
+    "phoq": {
+        "wt_fasta": REPO_ROOT / "data/phoq/phoq_wt.fasta",
+        "positions": (284, 285, 288, 289),
+        "pfam": "PF02518",
+        "out_npz": REPO_ROOT / "data/phoq/phoq_msa_couplings.npz",
+        "page_size": 500,
+        "n_pages": 4,
+        "whole_protein": False,
+    },
     # tem1 data lives in mutantopt/experiments/datasets/tem1/.
     # Wire it after copying or symlinking the WT FASTA.
 }

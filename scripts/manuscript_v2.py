@@ -738,6 +738,23 @@ def search_summary() -> pd.DataFrame:
     return summary
 
 
+def aggregate_search_summary(summary: pd.DataFrame) -> pd.DataFrame:
+    """Give each calibration sample equal weight in the agreement summary."""
+    return (
+        summary.assign(agreement=lambda t: t.matching_pairs / t.eligible_pairs)
+        .groupby(["protein", "budget", "arm"])
+        .agg(
+            kendall_tau=("kendall_tau", "mean"),
+            tied=("tied", "mean"),
+            matching=("matching_pairs", "sum"),
+            eligible=("eligible_pairs", "sum"),
+            agreement=("agreement", "mean"),
+            agreement_sd=("agreement", "std"),
+            agreement_n=("agreement", "count"),
+        )
+    )
+
+
 def summarise() -> None:
     fidelity = pd.concat(
         [pd.read_csv(p) for n in PROTEINS for p in (OUT / n / "fidelity").glob("*.csv")],
@@ -755,16 +772,7 @@ def summarise() -> None:
     columns = ["w1", "walsh", "auc_sequence", "share_above_start", "measured_share_above_start"]
     print(per_protein.loc[list(EVALUATION), columns].round(3).to_string())
     summary = search_summary()
-    table = (
-        summary.groupby(["protein", "budget", "arm"])
-        .agg(
-            kendall_tau=("kendall_tau", "mean"),
-            tied=("tied", "mean"),
-            matching=("matching_pairs", "sum"),
-            eligible=("eligible_pairs", "sum"),
-        )
-        .assign(agreement=lambda t: t.matching / t.eligible)
-    )
+    table = aggregate_search_summary(summary)
     table.to_csv(OUT / "search_table.csv")
     print(table.round(3).to_string())
 

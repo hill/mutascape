@@ -162,7 +162,9 @@ def draw_sequence_walk(fig, colour):
     ax.set(xlim=(-1.45, 1.45), ylim=(-1.45, 1.45), zlim=(0, 1.15))
     ax.set_axis_off()
     fig.text(0.25, 0.455, "(c) Combinatorial sequence graph", ha="center", fontsize=13)
-    fig.text(0.715, 0.455, "(d) Mutation order shapes the walk", ha="center", fontsize=13)
+    fig.text(
+        0.715, 0.455, "(d) Mutation paths to local and global optima", ha="center", fontsize=13
+    )
     fig.text(0.25, 0.015, "Each edge changes one mutation", ha="center", fontsize=10)
     fig.text(0.59, 0.015, "Local optima", color=RED, ha="center", fontsize=10)
     fig.text(

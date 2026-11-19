@@ -31,8 +31,8 @@ def landscape_values(name: str, model: str, c: int, landscape: int) -> np.ndarra
 
 def configure() -> None:
     experiment.OUT = OUTPUT
-    experiment.seed_for = fresh_seed
-    experiment.landscape_values = landscape_values
+    experiment.seed_for = fresh_seed  # ty: ignore[invalid-assignment]
+    experiment.landscape_values = landscape_values  # ty: ignore[invalid-assignment]
 
 
 def prepare() -> None:

@@ -1,11 +1,14 @@
 """Audit and report the fixed calibration follow-up after every campaign finishes."""
 
 import json
+import shutil
+import tempfile
 from pathlib import Path
 
 import matplotlib
 import numpy as np
 import pandas as pd
+from threadpoolctl import threadpool_limits
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -51,8 +54,38 @@ def audit() -> dict:
     return {"campaigns": total, "warnings": warnings, "campaigns_with_fallback": fallback}
 
 
+def replay() -> dict:
+    """Rebuild two fixed batches from their seeds and compare every output row."""
+    original_output = run.OUTPUT
+    checks = {}
+    try:
+        with tempfile.TemporaryDirectory(prefix="mutascape-replay-") as temporary:
+            run.OUTPUT = Path(temporary)
+            (run.OUTPUT / "PhoQ").mkdir()
+            shutil.copy2(original_output / "selected.json", run.OUTPUT / "selected.json")
+            for name in ("frame.pkl", "metadata.json", "design.npz"):
+                shutil.copy2(original_output / "PhoQ" / name, run.OUTPUT / "PhoQ" / name)
+            with threadpool_limits(limits=1):
+                for model in ("calibrated", "sigmoid"):
+                    run.task("PhoQ", 0, model, 0)
+                    relative = Path("PhoQ/search") / f"{model}_0_0.csv"
+                    expected = pd.read_csv(original_output / relative)
+                    actual = pd.read_csv(run.OUTPUT / relative)
+                    pd.testing.assert_frame_equal(expected, actual, check_exact=True)
+                    relative = Path("PhoQ/landscapes") / f"{model}_0_0.npy"
+                    np.testing.assert_array_equal(
+                        np.load(original_output / relative), np.load(run.OUTPUT / relative)
+                    )
+                    checks[model] = {"campaigns": len(actual), "exact_match": True}
+    finally:
+        run.OUTPUT = original_output
+        run.configure()
+    return checks
+
+
 def main() -> None:
     counts = audit()
+    replay_checks = replay()
     run.configure()
     summary = experiment.search_summary()
     experiment.aggregate_search_summary(summary).to_csv(run.OUTPUT / "search_table.csv")
@@ -72,6 +105,7 @@ def main() -> None:
     counts["samples_without_eligible_pairs"] = int(
         summary.loc[summary.arm == "calibrated", "eligible_pairs"].eq(0).sum()
     )
+    (DESTINATION / "replay.json").write_text(json.dumps(replay_checks, indent=2) + "\n")
     (DESTINATION / "audit.json").write_text(json.dumps(counts, indent=2) + "\n")
     for name in ("manifest.json", "provenance.json"):
         (DESTINATION / name).write_bytes((run.OUTPUT / name).read_bytes())

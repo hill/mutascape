@@ -3,6 +3,7 @@
 import argparse
 import json
 import shutil
+import subprocess
 import time
 from pathlib import Path
 
@@ -71,6 +72,34 @@ def prepare() -> None:
             shutil.copytree(SOURCE / name / "search", destination / "search", dirs_exist_ok=True)
         np.savez(destination / "design.npz", **design)
     (OUTPUT / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    provenance = OUTPUT / "provenance.json"
+    if not provenance.exists():
+        files = [
+            Path(__file__),
+            Path(experiment.__file__),
+            Path("uv.lock"),
+            Path("src/mutascape/calibrated.py"),
+            Path("src/mutascape/model.py"),
+            Path("src/mutascape/benchmarks/methods.py"),
+            Path("src/mutascape/benchmarks/validity.py"),
+            SOURCE / "selected.json",
+        ]
+        files += [
+            p
+            for name in experiment.MODEL_SELECTION
+            for p in (SOURCE / name / "search").glob("*.csv")
+        ]
+        commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False
+        ).stdout.strip()
+        experiment.save_json(
+            provenance,
+            {
+                "commit": commit,
+                "sha256": {str(p): experiment.digest(p) for p in files},
+                "seed": ROOT_SEED,
+            },
+        )
 
 
 def task(name: str, c: int, model: str, landscape: int) -> None:

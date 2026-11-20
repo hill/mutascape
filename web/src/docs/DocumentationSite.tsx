@@ -568,9 +568,31 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
           <ProtocolItem
             number="04"
             title="Repeat methods and oracle samples"
-            text="Repeat searches across landscape samples. The current study uses five samples with six repeats each."
+            text="Repeat searches across landscape samples. The archived reference study uses five samples with six repeats each."
           />
         </ol>
+      </section>
+
+      <section className="docs-section">
+        <h2>Calibration and search-method agreement</h2>
+        <p>
+          A follow-up search experiment uses 40 fresh calibration samples per protein on GB1, TrpB4,
+          RBD-S309 and PhoQ. Each sample contains 96 measured multi-mutants. Both Mutascape
+          configurations use three fresh landscapes per sample. All 460,800 campaigns compare 12
+          search methods at budgets of 48 and 96 new measurements.
+        </p>
+        <p>
+          Combination calibration increases mean pair agreement by 20.1 percentage points at 48
+          evaluations and 17.9 points at 96. The 95% paired bootstrap intervals are 13.7 to 26.3 and
+          11.1 to 24.6 points. Both intervals support higher average agreement on these four
+          datasets. Both Holm-adjusted p-values are below 0.0001.
+        </p>
+        <p>
+          The gains are concentrated in RBD-S309 and PhoQ. GB1 and TrpB4 show no clear
+          pair-agreement improvement. Kendall correlation improves overall at 48 evaluations, while
+          GB1 has a lower Kendall correlation at 96. The fixed-ranking control retains higher
+          descriptive mean pair agreement. Further proteins are needed to assess broader transfer.
+        </p>
       </section>
 
       <section className="docs-section">
@@ -597,7 +619,7 @@ function BenchmarkingPage({ onNavigate }: { onNavigate: (page: DocsPage) => void
       </section>
 
       <section className="docs-section">
-        <h2>Current single-site-only evaluation</h2>
+        <h2>Earlier single-site-only evaluation</h2>
         <p>
           Five protein datasets select the model and hyperparameters. GB1, TrpB4, T7 and TEV test
           the generator. Mean scaled Wasserstein distance is 1.049 and local Walsh distance is

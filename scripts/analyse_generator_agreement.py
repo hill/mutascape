@@ -113,117 +113,67 @@ def analyse(summary: pd.DataFrame, resamples: int, seed: int) -> tuple[pd.DataFr
 
 
 def write_report(overall: pd.DataFrame, individual: pd.DataFrame, output: Path) -> None:
-    """Write the estimates and their scope as a review report."""
+    """Write estimates without assumptions about the supplied experiment's outcome."""
     lines = [
-        "# Paired comparison of Mutascape generators",
+        "# Paired comparison of Mutascape configurations",
         "",
-        "Positive differences favour calibrated Mutascape over single-site-only Mutascape.",
-        "All four overall 95% intervals include zero. None of the overall paired tests rejects "
-        "the null at the 5% level, before or after Holm correction.",
+        "Positive differences favour combination-calibrated over single-site-only Mutascape.",
+        "Intervals are pointwise 95% paired bootstrap intervals within the four fixed datasets.",
+        "The overall estimate gives each protein equal weight.",
+        "Kendall comparisons retain samples with defined rankings in both configurations.",
+        "Pair agreement excludes samples without eligible experimental method pairs.",
+        "Valid zero-agreement values remain in the analysis.",
         "",
-        "## Overall results",
-        "",
-        "| Metric | Evaluations | Difference | 95% interval | Raw p | Holm p |",
-        "|---|---:|---:|---:|---:|---:|",
     ]
-    for row in overall.to_dict("records"):
-        scale = 100 if row["metric"] == "agreement" else 1
-        label = "Pair agreement, percentage points" if scale == 100 else "Kendall correlation"
-        lines.append(
-            f"| {label} | {row['budget']} | {scale * row['difference']:.3f} | "
-            f"{scale * row['ci_low']:.3f} to {scale * row['ci_high']:.3f} | "
-            f"{row['pvalue']:.4f} | {row['pvalue_holm']:.4f} |"
-        )
-    lines.extend(
-        [
+    for title, frame in (("Overall comparisons", overall), ("Protein comparisons", individual)):
+        lines += [
+            f"## {title}",
             "",
-            "## Analysis",
-            "",
-            "The unit of analysis is a paired calibration sample. "
-            "Each sample supplies a result for both generators on the same protein and budget. "
-            "Search runs and landscape seeds were averaged before this analysis. "
-            "Individual method pairs and runs are not treated as independent replicates.",
-            "",
-            "Pair agreement uses ten calibration samples per protein. "
-            "Kendall correlation includes only samples with defined correlations "
-            "for both generators. "
-            "There are seven such samples for GB1, nine for TrpB4 "
-            "and four each for RBD-S309 and PhoQ. "
-            "These counts apply at both budgets.",
-            "",
-            "We resample paired differences within each protein 100,000 times. "
-            "The overall estimate gives each protein equal weight. "
-            "Intervals use the 2.5th and 97.5th bootstrap percentiles. "
-            "These are pointwise intervals without a multiplicity adjustment.",
-            "",
-            "Two-sided tests swap generator labels within pairs. "
-            "Protein-specific tests enumerate every possible swap. "
-            "Overall tests use 100,000 random swaps with a finite-sampling correction. "
-            "The test assumes that labels are exchangeable within pairs under the null. "
-            "Holm correction treats the four overall tests and the sixteen protein-specific tests "
-            "as separate families.",
-            "",
-            "## Results within each protein",
-            "",
-            "| Protein | Metric | Evaluations | Paired samples | Difference | 95% interval | "
-            "Raw p | Holm p |",
-            "|---|---|---:|---:|---:|---:|---:|---:|",
+            "| Protein | Metric | Budget | Samples | Difference | 95% interval | Adjusted p |",
+            "|---|---|---:|---:|---:|---:|---:|",
         ]
-    )
-    for row in individual.to_dict("records"):
-        scale = 100 if row["metric"] == "agreement" else 1
-        label = "Agreement, percentage points" if scale == 100 else "Kendall"
-        lines.append(
-            f"| {row['protein']} | {label} | {row['budget']} | {row['n_pairs']} | "
-            f"{scale * row['difference']:.3f} | {scale * row['ci_low']:.3f} to "
-            f"{scale * row['ci_high']:.3f} | {row['pvalue']:.4f} | {row['pvalue_holm']:.4f} |"
-        )
-    lines.extend(
-        [
-            "",
-            "## Interpretation",
-            "",
-            "PhoQ at 48 evaluations has the strongest agreement gain. "
-            "Its raw p-value is 0.0039 and its Holm-adjusted p-value is 0.0625. "
-            "No protein-specific comparison passes the 5% threshold after correction. "
-            "GB1 comparisons remain uncertain, with all four intervals spanning zero.",
-            "",
-            "This is an exploratory analysis performed after inspecting the descriptive results. "
-            "It measures calibration-sampling uncertainty within these four fixed datasets "
-            "and the stored simulations. "
-            "Calibration samples are not biological replicates. "
-            "Small matched sample counts limit bootstrap accuracy, and Kendall estimates "
-            "condition on both generators producing a ranking. "
-            "Failure to reject a difference does not establish equivalence.",
-            "",
-            "As a sensitivity check, treating the four protein means as the units gives "
-            "two-sided exact p-values between 0.25 and 0.625. "
-            "With four proteins, this sign-flip test cannot attain a p-value below 0.125.",
-            "",
-            "The figure can retain mean and SD bars. "
-            "These confidence intervals and tests concern paired differences between generators, "
-            "rather than overlap between their SD bars.",
-            "",
-            "## Reproduction",
-            "",
-            "`uv run python scripts/analyse_generator_agreement.py`",
-            "",
-            "The metadata file records the input checksum, random seed and assumptions. "
-            "The CSV files contain all paired observations and numerical results.",
-            "",
-        ]
-    )
+        for row in frame.to_dict("records"):
+            scale = 100 if row["metric"] == "agreement" else 1
+            pvalue = row["pvalue_holm"]
+            formatted_p = "<0.0001" if pvalue < 0.0001 else f"{pvalue:.4f}"
+            lines.append(
+                f"| {row.get('protein', 'Overall')} | {row['metric']} | {row['budget']} | "
+                f"{row['n_pairs']} | {scale * row['difference']:.3f} | "
+                f"{scale * row['ci_low']:.3f} to {scale * row['ci_high']:.3f} | {formatted_p} |"
+            )
+        lines.append("")
+    lines += [
+        "Agreement differences use percentage points. Kendall differences use correlation units.",
+        "Holm correction covers four overall tests and sixteen protein-specific tests.",
+        "Tests enumerate label swaps for at most sixteen pairs. "
+        "Larger comparisons use Monte Carlo swaps.",
+        "Configuration labels must be exchangeable within pairs under the null.",
+        "Calibration samples are computational samples of fixed datasets. "
+        "They are not biological replicates.",
+        "With four protein units, the two-sided sign-flip test cannot reach p < 0.125.",
+        "",
+    ]
     (output / "report.md").write_text("\n".join(lines))
+
+
+def format_pvalue(value: float) -> str:
+    """Keep small p-values distinct from zero in published tables."""
+    return "<0.0001" if value < 0.0001 else f"{value:.4f}"
 
 
 def write_manuscript_table(overall: pd.DataFrame, manuscript: Path) -> None:
     """Export the overall contrasts for the manuscript supplement."""
     lines = [
         "// Generated by scripts/analyse_generator_agreement.py --manuscript-dir.",
+        "#block[",
+        "#set text(size: 8pt)",
+        "#set par(justify: false)",
         "#table(",
-        "  columns: (1.6fr, 0.7fr, 0.8fr, 1.3fr, 0.7fr),",
+        "  columns: (1.55fr, 0.7fr, 0.8fr, 1.2fr, 0.8fr),",
+        "  inset: (x: 3pt, y: 3pt),",
+        "  stroke: 0.35pt,",
         "  align: (left, right, right, right, right),",
-        "  table.header([*Metric*], [*Evaluations*], [*Difference*], "
+        "  table.header([*Metric*], [*Budget*], [*Change*], "
         "[*95% interval*], [*Adjusted p*]),",
     ]
     for row in overall.to_dict("records"):
@@ -233,19 +183,21 @@ def write_manuscript_table(overall: pd.DataFrame, manuscript: Path) -> None:
         lines.append(
             f"  [{label}], [{row['budget']}], [{scale * row['difference']:.{digits}f}], "
             f"[{scale * row['ci_low']:.{digits}f} to {scale * row['ci_high']:.{digits}f}], "
-            f"[{row['pvalue_holm']:.3f}],"
+            f"[${format_pvalue(row['pvalue_holm'])}$],"
         )
-    lines.extend([")", ""])
+    lines.extend([")", "]", ""])
     (manuscript / "tables" / "generator_comparison.typ").write_text("\n".join(lines))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--input", type=Path, default=Path("results/manuscript_v2_20261015/search_summary.csv")
+        "--input",
+        type=Path,
+        default=Path("results/calibration_confidence_20261119/search_summary.csv"),
     )
     parser.add_argument(
-        "--output", type=Path, default=Path("results/manuscript_v2_20261015/agreement_inference")
+        "--output", type=Path, default=Path("results/calibration_confidence_20261119/inference")
     )
     parser.add_argument("--resamples", type=int, default=100_000)
     parser.add_argument("--seed", type=int, default=20261119)
@@ -267,7 +219,7 @@ def main() -> None:
         "test_assumption": "Generator labels are exchangeable within each calibration pair",
         "holm_families": {"overall": 4, "per_protein": 16},
         "limitations": [
-            "Exploratory analysis specified after inspecting the descriptive results",
+            "Interpretation is conditional on the supplied experiment and analysis protocol",
             "Conditional on these four datasets and the stored simulations",
             "Kendall comparisons condition on both generators yielding a defined ranking",
             "Intervals are pointwise and do not include a multiplicity adjustment",

@@ -27,7 +27,11 @@
             },
             {
               "kind": "text",
-              "text": "With calibration, `generator.draw(seed=...)` fixes the percentile map using 100,000 uniformly sampled generated multi-mutants, or all multi-mutants when fewer exist. The search space has no default size limit. Pass `reference_size=None` to `draw` for exact enumeration. This mode does not support `complete` or `maximum_depth`. Omitting calibration keeps the single-site-only generator. `pilot` remains an alias for `calibration`. Supply only one."
+              "text": "With calibration, `generator.draw(seed=...)` fixes the percentile map using 100,000 uniformly sampled generated multi-mutants, or all multi-mutants when fewer exist. The search space has no default size limit. Pass `reference_size=None` to `draw` for exact enumeration. This mode does not support `complete` or `maximum_depth`. Omitting calibration keeps the single-site-only generator."
+            },
+            {
+              "kind": "text",
+              "text": "`margin` pads the sigmoid beyond the supplied range, as a fraction of that range, so every measurement sits strictly inside the limits."
             }
           ],
           "parameters": [
@@ -80,14 +84,14 @@
               "name": "calibration"
             },
             {
-              "annotation": "DMSInput | None",
-              "default": "None",
+              "annotation": "float",
+              "default": "0.05",
               "keywordOnly": true,
-              "name": "pilot"
+              "name": "margin"
             }
           ],
           "returns": "DMSGenerator | QuantileCalibratedLandscape",
-          "signature": "from_dms(dms: DMSInput, *, fasta: str | Path | None = None, wt_sequence: str | None = None, wild_type_fitness: float = 0.0, maximum_depth: int | None = None, complete: Literal['esm2'] | None = None, esm_model: str = 'esm2_t33_650M_UR50D', calibration: DMSInput | None = None, pilot: DMSInput | None = None) -> DMSGenerator | QuantileCalibratedLandscape",
+          "signature": "from_dms(dms: DMSInput, *, fasta: str | Path | None = None, wt_sequence: str | None = None, wild_type_fitness: float = 0.0, maximum_depth: int | None = None, complete: Literal['esm2'] | None = None, esm_model: str = 'esm2_t33_650M_UR50D', calibration: DMSInput | None = None, margin: float = 0.05) -> DMSGenerator | QuantileCalibratedLandscape",
           "summary": "Build a generator from WT, single-site fitness and optional combination measurements."
         },
         {
@@ -100,7 +104,7 @@
           ],
           "parameters": [
             {
-              "annotation": "str | Path | Mapping[str, object]",
+              "annotation": "str | Path | Manifest",
               "default": "",
               "keywordOnly": false,
               "name": "manifest"
@@ -131,7 +135,7 @@
             }
           ],
           "returns": "DMSLandscape | DMSPairwiseLandscape",
-          "signature": "load_oracle(manifest: str | Path | Mapping[str, object], *, dms: DMSInput, fasta: str | Path | None = None, wt_sequence: str | None = None, wild_type_fitness: float | None = None) -> DMSLandscape | DMSPairwiseLandscape",
+          "signature": "load_oracle(manifest: str | Path | Manifest, *, dms: DMSInput, fasta: str | Path | None = None, wt_sequence: str | None = None, wild_type_fitness: float | None = None) -> DMSLandscape | DMSPairwiseLandscape",
           "summary": "Recreate and verify one fixed oracle from its saved manifest."
         }
       ],
@@ -212,14 +216,14 @@
           "notes": [],
           "parameters": [
             {
-              "annotation": "list[VariantLike]",
+              "annotation": "Sequence[VariantLike]",
               "default": "",
               "keywordOnly": false,
               "name": "variants"
             }
           ],
           "returns": "Series",
-          "signature": "Oracle.score_many(variants: list[VariantLike]) -> Series",
+          "signature": "Oracle.score_many(variants: Sequence[VariantLike]) -> Series",
           "summary": "Score variants and return values indexed by canonical mutation labels."
         },
         {

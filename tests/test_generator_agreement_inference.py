@@ -67,3 +67,25 @@ def test_no_eligible_pairs_is_missing_rather_than_zero_agreement():
     assert agreement.calibration.tolist() == [1]
     assert agreement.difference.iloc[0] == -0.5
     assert len(paired_differences(frame, "kendall_tau", 48)) == 2
+
+
+def test_manuscript_table_keeps_small_pvalues_distinct_from_zero(tmp_path):
+    from scripts.analyse_generator_agreement import write_manuscript_table
+
+    (tmp_path / "tables").mkdir()
+    frame = pd.DataFrame(
+        [
+            dict(
+                metric="agreement",
+                budget=48,
+                difference=0.2,
+                ci_low=0.1,
+                ci_high=0.3,
+                pvalue_holm=0.00004,
+            )
+        ]
+    )
+    write_manuscript_table(frame, tmp_path)
+    text = (tmp_path / "tables/generator_comparison.typ").read_text()
+    assert "[$<0.0001$]" in text
+    assert "[20.0]" in text

@@ -1,5 +1,6 @@
 """Audit and report the fixed calibration follow-up after every campaign finishes."""
 
+import hashlib
 import json
 import shutil
 import tempfile
@@ -91,6 +92,15 @@ def main() -> None:
     experiment.aggregate_search_summary(summary).to_csv(run.OUTPUT / "search_table.csv")
     overall, individual, pairs = analyse(summary, resamples=100000, seed=20261119)
     DESTINATION.mkdir(parents=True, exist_ok=True)
+    campaign_files = sorted(
+        p for name in experiment.EVALUATION for p in (run.OUTPUT / name / "search").glob("*.csv")
+    )
+    assert len(campaign_files) == 1280
+    checksums = {
+        str(p.relative_to(run.OUTPUT)): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in campaign_files
+    }
+    (DESTINATION / "campaign_sha256.json").write_text(json.dumps(checksums, indent=2) + "\n")
     for label, table in [
         ("overall", overall),
         ("per_protein", individual),
@@ -110,7 +120,7 @@ def main() -> None:
     for name in ("manifest.json", "provenance.json"):
         (DESTINATION / name).write_bytes((run.OUTPUT / name).read_bytes())
     order = [*experiment.EVALUATION, "Overall"]
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True, layout="constrained")
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharex=True, sharey=True, layout="constrained")
     for ax, budget in zip(axes, experiment.BUDGETS):
         rows = (
             pd.concat(

@@ -178,4 +178,3 @@ A singles-only oracle writes a manifest instead with `oracle.save_manifest("orac
 - [Singles input guide](docs/singles_generator.md)
 - [Optional ESM-2 completion](docs/esm_completion.md)
 - [Evidence for the manuscript model](docs/evidence.md)
-- [Legacy generators, browser studio and archived studies](docs/legacy.md)

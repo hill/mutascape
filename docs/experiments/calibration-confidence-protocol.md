@@ -51,6 +51,8 @@ Report mixed or negative results without changing the endpoints.
 ```sh
 .venv/bin/python -m scripts.calibration_confidence prepare
 .venv/bin/python -m scripts.calibration_confidence run --jobs 6
-.venv/bin/python -m scripts.calibration_confidence summarise
-.venv/bin/python scripts/analyse_generator_agreement.py --input results/calibration_confidence_20261119/search_summary.csv --output results/calibration_confidence_20261119/inference
+.venv/bin/python -m scripts.report_calibration_confidence
 ```
+
+The reporting command audits every campaign and replays two fixed batches before calculating the contrasts.
+Generated data, tables and figures stay under the ignored results directory.

@@ -18,7 +18,7 @@ from scripts import calibration_confidence as run
 from scripts import manuscript_v2 as experiment
 from scripts.analyse_generator_agreement import analyse
 
-DESTINATION = Path("docs/experiments/calibration-confidence")
+DESTINATION = run.OUTPUT / "report"
 
 
 def audit() -> dict:

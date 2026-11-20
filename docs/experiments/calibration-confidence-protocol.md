@@ -37,6 +37,8 @@ Calculate eligible experimental method pairs with the original 2,000 paired boot
 Calculate configuration contrasts with 100,000 paired bootstrap draws and paired sign-flip tests.
 Report all protein-specific effects, with the existing 16-test Holm adjustment.
 Report undefined rankings and the number of matched observations.
+If no experimental method pairs qualify, pair agreement is undefined. Exclude that sample from both configurations for this endpoint.
+Keep valid zero agreement values. This missing-data rule was recorded before inspecting the new effect estimates.
 Keep the original ten samples out of the primary analysis.
 
 These tests concern repeated calibration and simulation on four fixed datasets.

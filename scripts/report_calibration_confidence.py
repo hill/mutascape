@@ -65,6 +65,13 @@ def main() -> None:
     ]:
         table.to_csv(DESTINATION / f"{label}.csv", index=False)
     summary.to_csv(DESTINATION / "search_summary.csv", index=False)
+    matched = pairs.groupby(["protein", "metric", "budget"]).agg(
+        matched_samples=("difference", "count")
+    )
+    matched.to_csv(DESTINATION / "matched_samples.csv")
+    counts["samples_without_eligible_pairs"] = int(
+        summary.loc[summary.arm == "calibrated", "eligible_pairs"].eq(0).sum()
+    )
     (DESTINATION / "audit.json").write_text(json.dumps(counts, indent=2) + "\n")
     for name in ("manifest.json", "provenance.json"):
         (DESTINATION / name).write_bytes((run.OUTPUT / name).read_bytes())

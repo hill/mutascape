@@ -49,3 +49,21 @@ def test_overall_contrast_weights_proteins_equally():
 def test_holm_adjustment_restores_input_order():
     actual = holm_adjust(np.array([0.04, 0.001, 0.03]))
     np.testing.assert_allclose(actual, [0.06, 0.003, 0.06])
+
+
+def test_no_eligible_pairs_is_missing_rather_than_zero_agreement():
+    frame = pd.DataFrame(
+        {
+            "protein": ["GB1"] * 4,
+            "budget": [48] * 4,
+            "calibration": [0, 0, 1, 1],
+            "arm": ["calibrated", "sigmoid"] * 2,
+            "eligible_pairs": [0, 0, 10, 10],
+            "matching_pairs": [0, 0, 0, 5],
+            "kendall_tau": [0.2, 0.3, 0.4, 0.5],
+        }
+    )
+    agreement = paired_differences(frame, "agreement", 48)
+    assert agreement.calibration.tolist() == [1]
+    assert agreement.difference.iloc[0] == -0.5
+    assert len(paired_differences(frame, "kendall_tau", 48)) == 2

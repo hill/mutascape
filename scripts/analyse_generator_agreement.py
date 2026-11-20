@@ -22,9 +22,9 @@ def paired_differences(summary: pd.DataFrame, metric: str, budget: int) -> pd.Da
         & (summary.budget == budget)
     ].copy()
     if metric == "agreement":
-        if (frame.eligible_pairs <= 0).any():
-            raise ValueError("Each sample must contain eligible method pairs.")
-        frame[metric] = frame.matching_pairs / frame.eligible_pairs
+        if (frame.eligible_pairs < 0).any():
+            raise ValueError("Eligible pair counts cannot be negative.")
+        frame[metric] = frame.matching_pairs / frame.eligible_pairs.replace(0, np.nan)
     wide = frame.pivot(index=["protein", "calibration"], columns="arm", values=metric)
     wide = wide.dropna(subset=["calibrated", "sigmoid"])
     wide["difference"] = wide.calibrated - wide.sigmoid

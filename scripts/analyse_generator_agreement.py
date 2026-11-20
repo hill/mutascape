@@ -173,8 +173,7 @@ def write_manuscript_table(overall: pd.DataFrame, manuscript: Path) -> None:
         "  inset: (x: 3pt, y: 3pt),",
         "  stroke: 0.35pt,",
         "  align: (left, right, right, right, right),",
-        "  table.header([*Metric*], [*Budget*], [*Change*], "
-        "[*95% interval*], [*Adjusted p*]),",
+        "  table.header([*Metric*], [*Budget*], [*Change*], [*95% interval*], [*Adjusted p*]),",
     ]
     for row in overall.to_dict("records"):
         agreement = row["metric"] == "agreement"

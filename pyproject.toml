@@ -43,6 +43,8 @@ build-backend = "uv_build"
 [tool.ruff]
 line-length = 100
 target-version = "py314"
+# Preserve the upstream SLIP benchmark source.
+extend-exclude = ["external/slip"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
